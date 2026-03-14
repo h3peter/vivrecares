@@ -6,16 +6,29 @@ import LoginModal from '../components/LoginModal';
 
 const LandingPage = () => {
   const navigate = useNavigate();
-  const handleBookingClick = () => {
-  const isLoggedIn = localStorage.getItem('user');
-  if (isLoggedIn) {
-    navigate('/patient-dashboard');
-  } else {
-    setIsLoginOpen(true);
-  }
-};
-    const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isLoginOpen, setIsLoginOpen] = useState(false);
 
+  // 1. Logic for "Book an Appointment" button
+  const handleBookingClick = () => {
+    const isLoggedIn = localStorage.getItem('user');
+    if (isLoggedIn) {
+      navigate('/patient-dashboard');
+    } else {
+      setIsLoginOpen(true);
+    }
+  };
+
+  // 2. Logic for the User Icon on the Navbar
+  const handleUserIconClick = () => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user) {
+      // If logged in, go to the profile page (Content Management Module)
+      navigate('/profile');
+    } else {
+      // If not logged in, open the login modal
+      setIsLoginOpen(true);
+    }
+  };
   return (
     <div className="min-h-screen bg-[#faf9f6] font-sans text-gray-800 relative">
       
@@ -46,9 +59,9 @@ const LandingPage = () => {
           </button>
           
           <button 
-            onClick={() => setIsLoginOpen(true)}
-            className="w-10 h-10 bg-[#f4f1eb] rounded-full flex items-center justify-center hover:bg-[#eae5d9] transition"
-          >
+  onClick={handleUserIconClick}
+  className="w-10 h-10 bg-[#f4f1eb] rounded-full flex items-center justify-center hover:bg-[#eae5d9] transition"
+>
             <svg className="w-5 h-5 text-[#2d2a26]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>

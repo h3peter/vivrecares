@@ -4,6 +4,10 @@ import LandingPage from './pages/LandingPage';
 import Register from './pages/Register';
 import PatientDashboard from './pages/PatientDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import PatientProfile from './pages/PatientProfile';
+import RequestAppointment from './pages/RequestAppointment';
+import AppointmentHistory from './pages/AppointmentHistory';
+import AccountSettings from './pages/AccountSettings';
 
 // This acts as a security guard for your routes
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -33,14 +37,37 @@ function App() {
         <Route path="/register" element={<Register />} />
         {/* Protected Patient Route */}
         <Route 
-          path="/patient-dashboard" 
-          element={
-            <ProtectedRoute allowedRole="Patient">
-              <PatientDashboard />
-            </ProtectedRoute>
-          } 
-        />
-
+        path="/profile" 
+        element={
+          <ProtectedRoute allowedRole="Patient">
+            <PatientProfile />
+          </ProtectedRoute>
+        } 
+      />
+      {/* Request Appointment Module */}
+      <Route 
+        path="/request-appointment" 
+        element={
+          <ProtectedRoute allowedRole="Patient">
+            <RequestAppointment />
+          </ProtectedRoute>
+        } 
+      /><Route 
+        path="/appointment-history" 
+        element={
+          <ProtectedRoute allowedRole="Patient">
+            <AppointmentHistory />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/account-settings" 
+        element={
+          <ProtectedRoute allowedRole="Patient">
+            <AccountSettings />
+          </ProtectedRoute>
+        } 
+      />
         {/* Protected Admin Route */}
         <Route 
           path="/admin-dashboard" 

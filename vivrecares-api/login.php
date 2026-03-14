@@ -1,49 +1,52 @@
 <?php
-require 'cors.php'; 
-require 'config.php';
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Content-Type: application/json");
 
-header('Content-Type: application/json');
+require_once 'config.php';
 
-$json = file_get_contents("php://input");
-$data = json_decode($json);
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
-// 1. Validate the incoming request
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(["status" => "error", "message" => "Invalid request method."]);
-    exit();
+$data = json_decode(file_get_contents("php://input"), true);
+
+if (!$data || !isset($data['email']) || !isset($data['password'])) {
+    echo json_encode(["status" => "error", "message" => "Missing credentials."]);
+    exit;
 }
 
-if (empty($data->email) || empty($data->password)) {
-    echo json_encode(["status" => "error", "message" => "Please provide both email and password."]);
-    exit();
-}
-
-// 2. Authenticate the user
 try {
-    // Search for the user using their email
-    $stmt = $conn->prepare("SELECT user_id, password, role FROM users WHERE email = ? LIMIT 1");
-    $stmt->execute([$data->email]);
+    // We JOIN users (u) and patients (p) to get the nickname and full name
+    $sql = "SELECT u.user_id, u.password, u.role, u.first_name, u.nickname, u.profile_photo, p.patient_id 
+            FROM users u 
+            LEFT JOIN patients p ON u.user_id = p.user_id 
+            WHERE u.email = ? AND u.deleted_at IS NULL LIMIT 1";
+            
+    $stmt = $conn->prepare($sql);
+    $stmt->execute([$data['email']]);
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    // Verify the user exists and the typed password matches the Bcrypt hash
-    if ($user && password_verify($data->password, $user['password'])) {
+    // Verify password against the hash
+    if ($user && password_verify($data['password'], $user['password'])) {
         
-        // Return a success status along with the user's role and ID
-        // The role is crucial so React knows if it should load the Patient Portal or Admin Dashboard
+        // Decide what name to show on the dashboard (Nickname is the 'soft luxury' choice)
+        $displayName = !empty($user['nickname']) ? $user['nickname'] : $user['first_name'];
+
         echo json_encode([
             "status" => "success",
-            "message" => "Login authorized.",
             "user" => [
                 "id" => $user['user_id'],
-                "role" => $user['role']
+                "patient_id" => $user['patient_id'], // Useful for booking later
+                "role" => $user['role'],
+                "name" => $displayName,
+                "photo" => $user['profile_photo']
             ]
         ]);
     } else {
-        // We use a generic error message for both wrong email and wrong password for security
         echo json_encode(["status" => "error", "message" => "Invalid email or password."]);
     }
 
 } catch (Exception $e) {
-    echo json_encode(["status" => "error", "message" => "System error: " . $e->getMessage()]);
+    echo json_encode(["status" => "error", "message" => "Server error: " . $e->getMessage()]);
 }
 ?>
