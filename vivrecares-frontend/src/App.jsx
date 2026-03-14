@@ -9,6 +9,8 @@ import RequestAppointment from './pages/RequestAppointment';
 import AppointmentHistory from './pages/AppointmentHistory';
 import AccountSettings from './pages/AccountSettings';
 
+import PatientLayout from './components/PatientLayout';
+
 // This acts as a security guard for your routes
 const ProtectedRoute = ({ children, allowedRole }) => {
   const user = JSON.parse(localStorage.getItem('user'));
@@ -36,38 +38,12 @@ function App() {
         <Route path="/login" element={<Login />} />            {/* Moved login to its own route */}
         <Route path="/register" element={<Register />} />
         {/* Protected Patient Route */}
-        <Route 
-        path="/profile" 
-        element={
-          <ProtectedRoute allowedRole="Patient">
-            <PatientProfile />
-          </ProtectedRoute>
-        } 
-      />
-      {/* Request Appointment Module */}
-      <Route 
-        path="/request-appointment" 
-        element={
-          <ProtectedRoute allowedRole="Patient">
-            <RequestAppointment />
-          </ProtectedRoute>
-        } 
-      /><Route 
-        path="/appointment-history" 
-        element={
-          <ProtectedRoute allowedRole="Patient">
-            <AppointmentHistory />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/account-settings" 
-        element={
-          <ProtectedRoute allowedRole="Patient">
-            <AccountSettings />
-          </ProtectedRoute>
-        } 
-      />
+       <Route element={<PatientLayout />}>
+    <Route path="/profile" element={<ProtectedRoute allowedRole="Patient"><PatientProfile /></ProtectedRoute>} />
+    <Route path="/request-appointment" element={<ProtectedRoute allowedRole="Patient"><RequestAppointment /></ProtectedRoute>} />
+    <Route path="/appointment-history" element={<ProtectedRoute allowedRole="Patient"><AppointmentHistory /></ProtectedRoute>} />
+    <Route path="/account-settings" element={<ProtectedRoute allowedRole="Patient"><AccountSettings /></ProtectedRoute>} />
+    </Route>
         {/* Protected Admin Route */}
         <Route 
           path="/admin-dashboard" 
