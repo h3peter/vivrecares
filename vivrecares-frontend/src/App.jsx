@@ -8,8 +8,13 @@ import PatientProfile from './pages/PatientProfile';
 import RequestAppointment from './pages/RequestAppointment';
 import AppointmentHistory from './pages/AppointmentHistory';
 import AccountSettings from './pages/AccountSettings';
-
+import AdminLayout from './components/AdminLayout';
 import PatientLayout from './components/PatientLayout';
+import ManagePatients from './pages/admin/ManagePatients';
+import PatientDetails from './pages/admin/PatientDetails';
+import AppointmentLogs from './pages/admin/AppointmentLogs';
+import BillingAndPayments from './pages/admin/BillingAndPayments';
+import AdminProfile from './pages/admin/AdminProfile';
 
 // This acts as a security guard for your routes
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -44,15 +49,49 @@ function App() {
     <Route path="/appointment-history" element={<ProtectedRoute allowedRole="Patient"><AppointmentHistory /></ProtectedRoute>} />
     <Route path="/account-settings" element={<ProtectedRoute allowedRole="Patient"><AccountSettings /></ProtectedRoute>} />
     </Route>
-        {/* Protected Admin Route */}
-        <Route 
-          path="/admin-dashboard" 
+       {/* Protected Admin Routes */}
+  <Route element={<AdminLayout />}>
+      <Route 
+          path="/admin/patients" 
           element={
-            <ProtectedRoute allowedRole="Admin">
-              <AdminDashboard />
-            </ProtectedRoute>
+              <ProtectedRoute allowedRole="Admin">
+                  <ManagePatients />
+              </ProtectedRoute>
           } 
-        />
+      />
+      <Route 
+          path="/admin/patient/:userId" 
+          element={
+              <ProtectedRoute allowedRole="Admin">
+                  <PatientDetails />
+              </ProtectedRoute>
+          } 
+      />
+      <Route 
+      path="/admin/appointments" 
+      element={
+          <ProtectedRoute allowedRole="Admin">
+              <AppointmentLogs />
+          </ProtectedRoute>
+      } 
+  />
+        <Route 
+      path="/admin/billing" 
+      element={
+          <ProtectedRoute allowedRole="Admin">
+              <BillingAndPayments />
+          </ProtectedRoute>
+      } 
+  />
+        <Route 
+      path="/admin/profile" 
+      element={
+          <ProtectedRoute allowedRole="Admin">
+              <AdminProfile />
+          </ProtectedRoute>
+      } 
+  />
+  </Route>
       </Routes>
     </Router>
   );

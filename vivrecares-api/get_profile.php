@@ -21,12 +21,12 @@ try {
     $sql = "SELECT 
                 u.first_name, u.last_name, u.middle_name, u.extension_name, u.nickname, 
                 u.email, u.profile_photo, u.role,
-                p.age, p.sex, p.address, p.phone, p.illnesses, 
+                p.patient_id, p.age, p.sex, p.address, p.phone, p.illnesses, 
                 p.surgical_procedures, p.aesthetic_procedures, p.current_treatments
             FROM users u
             LEFT JOIN patients p ON u.user_id = p.user_id
             WHERE u.user_id = ? AND u.deleted_at IS NULL";
-
+            
     $stmt = $conn->prepare($sql);
     $stmt->execute([$user_id]);
     $profile = $stmt->fetch(PDO::FETCH_ASSOC);
