@@ -1,77 +1,83 @@
 <?php
-require 'cors.php'; 
-require 'config.php';
-require 'Encryption.php';
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Methods: POST, OPTIONS");
+header("Access-Control-Allow-Headers: Content-Type, Authorization");
+header("Content-Type: application/json");
 
-header('Content-Type: application/json');
+require_once 'config.php';
 
-$json = file_get_contents("php://input");
-$data = json_decode($json);
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
-// 1. Diagnostic Checks
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    echo json_encode(["status" => "error", "message" => "Wrong method: " . $_SERVER['REQUEST_METHOD']]);
-    exit();
+$data = json_decode(file_get_contents("php://input"), true);
+
+if (!$data) {
+    echo json_encode(["status" => "error", "message" => "No data provided."]);
+    exit;
 }
 
-if ($data === null) {
-    echo json_encode(["status" => "error", "message" => "Data is empty or not valid JSON."]);
-    exit();
-}
-
-if (empty($data->email) || empty($data->password)) {
-    echo json_encode(["status" => "error", "message" => "Email or password field is missing from the payload."]);
-    exit();
-}
-
-// 2. Database Insertion Logic
 try {
-    $conn->beginTransaction();
+    $conn->beginTransaction(); // Use transactions to ensure data integrity
 
-    $hashed_password = password_hash($data->password, PASSWORD_BCRYPT);
-    $role = 'Patient'; 
+    // 1. Check if email already exists
+    $check = $conn->prepare("SELECT user_id FROM users WHERE email = ? AND deleted_at IS NULL");
+    $check->execute([$data['email']]);
+    if ($check->rowCount() > 0) {
+        echo json_encode(["status" => "error", "message" => "Email already registered."]);
+        $conn->rollBack();
+        exit;
+    }
 
-    $stmt = $conn->prepare("INSERT INTO users (email, password, role) VALUES (?, ?, ?)");
-    $stmt->execute([$data->email, $hashed_password, $role]);
-    $user_id = $conn->lastInsertId();
-
-    $stmt = $conn->prepare("INSERT INTO patients (user_id, first_name, last_name, birth_date, address, contact_no) VALUES (?, ?, ?, ?, ?, ?)");
-    $stmt->execute([
-        $user_id, 
-        $data->first_name, 
-        $data->last_name, 
-        $data->birth_date, 
-        $data->address, 
-        $data->contact_no
+    // 2. Insert into 'users' table (Identity & Credentials)
+    $hashedPassword = password_hash($data['password'], PASSWORD_BCRYPT);
+    $stmt1 = $conn->prepare("INSERT INTO users (first_name, last_name, middle_name, extension_name, nickname, email, password, role) VALUES (?, ?, ?, ?, ?, ?, ?, 'Patient')");
+    
+    $stmt1->execute([
+        $data['firstName'],
+        $data['lastName'],
+        $data['middleName'] ?? null,
+        $data['extensionName'] ?? null,
+        $data['nickname'] ?? null,
+        $data['email'],
+        $hashedPassword
     ]);
-    $patient_id = $conn->lastInsertId();
+    
+    // Capture the generated user_id for the next step
+    $newUserId = $conn->lastInsertId();
 
-    $enc_allergies = Encryption::encrypt($data->allergies ?? 'None');
-    $enc_surgeries = Encryption::encrypt($data->previous_surgeries ?? 'None');
-    $enc_aesthetic = Encryption::encrypt($data->aesthetic_procedures ?? 'None');
-    $pregnancy_status = $data->pregnancy_status ?? 'N/A';
+    // 3. Insert into 'patients' table (Medical Data)
+    $sql2 = "INSERT INTO patients (
+        user_id, age, sex, address, phone, 
+        tooth_extraction, surgical_procedures, aesthetic_procedures, pregnant, 
+        untoward_reactions, illnesses, other_illness, medications, current_treatments
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-    $stmt = $conn->prepare("INSERT INTO medical_histories (patient_id, allergies, previous_surgeries, aesthetic_procedures, pregnancy_status) VALUES (?, ?, ?, ?, ?)");
-    $stmt->execute([
-        $patient_id, 
-        $enc_allergies, 
-        $enc_surgeries, 
-        $enc_aesthetic, 
-        $pregnancy_status
+    $stmt2 = $conn->prepare($sql2);
+    
+    // Format illnesses array into a string for storage
+    $illnessString = isset($data['illnesses']) ? implode(", ", $data['illnesses']) : "";
+
+    $stmt2->execute([
+        $newUserId, 
+        (int)$data['age'], 
+        $data['sex'],
+        $data['address'], 
+        $data['phone'], 
+        $data['toothExtraction'] ? 1 : 0,
+        $data['surgicalProcedures'], 
+        $data['aestheticProcedures'], 
+        $data['pregnant'],
+        $data['untowardReactions'], 
+        $illnessString, 
+        $data['otherIllness'],
+        $data['medications'], 
+        $data['currentTreatments']
     ]);
 
-    $conn->commit();
-
-    echo json_encode([
-        "status" => "success", 
-        "message" => "Patient account created."
-    ]);
+    $conn->commit(); // Save changes to both tables
+    echo json_encode(["status" => "success", "message" => "Welcome to Vivre! Account created."]);
 
 } catch (Exception $e) {
-    $conn->rollBack();
-    echo json_encode([
-        "status" => "error", 
-        "message" => "Database failure: " . $e->getMessage()
-    ]);
+    if ($conn->inTransaction()) $conn->rollBack(); // Undo everything if an error occurs
+    echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
 }
 ?>
