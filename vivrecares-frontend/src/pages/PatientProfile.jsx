@@ -16,7 +16,7 @@ const PatientProfile = () => {
     // Fetch full profile from backend using JOIN logic
     const fetchProfile = async () => {
       try {
-        const response = await axios.get(`http://localhost/vivrecares/vivrecares-api/get-profile.php?user_id=${user.id}`);
+        const response = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_profile.php?user_id=${user.id}`);
         setPatientData(response.data);
       } catch (error) {
         console.error("Fetch error:", error);

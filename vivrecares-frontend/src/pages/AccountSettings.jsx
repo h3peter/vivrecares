@@ -14,7 +14,7 @@ const AccountSettings = () => {
         const fetchCurrentData = async () => {
             const user = JSON.parse(localStorage.getItem('user'));
             if (user) {
-                const res = await axios.get(`http://localhost/vivrecares/vivrecares-api/get-profile.php?user_id=${user.id}`);
+                const res = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_profile.php?user_id=${user.id}`);
                 setFormData({
                     first_name: res.data.first_name,
                     last_name: res.data.last_name,
