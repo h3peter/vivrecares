@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import ProfileAvatar from '../../components/ProfileAvatar'; // Added this!
+import ProfileAvatar from '../../components/ProfileAvatar'; 
 
 const PatientDetails = () => {
     const { userId } = useParams(); 
     const navigate = useNavigate();
     const [patientData, setPatientData] = useState(null);
     const [appointments, setAppointments] = useState([]);
+    const [treatments, setTreatments] = useState([]);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -15,15 +16,20 @@ const PatientDetails = () => {
                 // 1. Fetch Profile
                 const profileRes = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_profile.php?user_id=${userId}`);
                 
-                // Fixed: Checking for success and grabbing the .data payload
                 if (profileRes.data.status === 'success') {
                     const patientInfo = profileRes.data.data;
                     setPatientData(patientInfo);
 
-                    // 2. Fetch their Appointment History
                     if (patientInfo && patientInfo.patient_id) {
+                        // 2. Fetch their Appointment History
                         const aptRes = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_appointments.php?patient_id=${patientInfo.patient_id}`);
                         setAppointments(aptRes.data);
+
+                        // 3. Fetch their Availed Treatments (Moved inside here!)
+                        const treatmentRes = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_patient_treatments.php?patient_id=${patientInfo.patient_id}`);
+                        if (treatmentRes.data.status === 'success') {
+                            setTreatments(treatmentRes.data.data);
+                        }
                     }
                 }
             } catch (error) {
@@ -45,10 +51,6 @@ const PatientDetails = () => {
                     </button>
                     <h2 className="text-2xl font-light tracking-widest text-gray-800">Patient Details</h2>
                 </div>
-                <div className="flex gap-4 text-gray-400">
-                    <button className="hover:text-[#d4af37] transition"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
-                    <button className="hover:text-red-500 transition"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
-                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -56,7 +58,6 @@ const PatientDetails = () => {
                 <div className="space-y-8">
                     {/* Profile Card */}
                     <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
-                        {/* Fixed: Now using ProfileAvatar instead of a broken img tag */}
                         <ProfileAvatar user={patientData} className="w-24 h-24 rounded-full mb-4 mx-auto" textSize="text-3xl" />
                         
                         <h4 className="font-bold text-gray-800">{patientData.first_name} {patientData.last_name}</h4>
@@ -90,7 +91,6 @@ const PatientDetails = () => {
                             <span className="text-[10px] uppercase tracking-[0.2em] text-[#b2a58d] font-bold">Medical History</span>
                         </div>
                         <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
-                            {/* Fixed: Updated database column variables */}
                             <InfoBlock label="Allergies" value={patientData.allergies || "None"} />
                             <InfoBlock label="Previous Surgery" value={patientData.surgical_procedures || "N/A"} />
                             <InfoBlock label="Previous Aesthetic Procedures" value={patientData.aesthetic_procedures || "None"} />
@@ -99,29 +99,36 @@ const PatientDetails = () => {
                     </div>
 
                     {/* Availed Treatments & Pricing */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="bg-[#fcfaf5] px-6 py-3 border-b border-gray-100">
-                            <span className="text-[10px] uppercase tracking-[0.2em] text-[#b2a58d] font-bold">Availed Treatments & Pricing</span>
+                    <div className="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 overflow-hidden mb-6">
+                        <div className="bg-[#faf9f6] px-8 py-5 border-b border-gray-50">
+                            <h4 className="text-[10px] text-[#c4ba9d] font-bold uppercase tracking-[0.2em]">Availed Treatments & Pricing</h4>
                         </div>
-                        <div className="p-6">
-                            <div className="space-y-3">
-                                {appointments.length > 0 ? appointments.map((apt, index) => (
-                                    <div key={index} className="flex justify-between items-center bg-white border border-gray-100 rounded-lg p-4 shadow-sm hover:shadow-md transition">
-                                        <div>
-                                            <p className="text-sm font-medium text-gray-800">{apt.service}</p>
-                                            <p className="text-[10px] text-gray-400 uppercase tracking-widest">{apt.remarks || "No remarks"}</p>
+                        
+                        <div className="p-8">
+                            {treatments.length > 0 ? (
+                                <div className="space-y-4">
+                                    {treatments.map((treatment, index) => (
+                                        <div key={index} className="flex justify-between items-center border-b border-gray-50 pb-4 last:border-0 last:pb-0">
+                                            <div>
+                                                <p className="font-bold text-gray-800 text-sm">{treatment.description}</p>
+                                                <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">
+                                                    {new Date(treatment.payment_date).toLocaleDateString()} 
+                                                    <span className="mx-2">•</span> 
+                                                    INV-{String(treatment.invoice_id).padStart(4, '0')}
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="font-bold text-gray-900 text-sm">₱{parseFloat(treatment.total_price).toLocaleString()}</p>
+                                                <span className={`text-[9px] font-bold uppercase tracking-widest ${treatment.payment_status === 'Paid' ? 'text-green-500' : 'text-red-400'}`}>
+                                                    {treatment.payment_status}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="text-center text-xs text-gray-500">
-                                            {apt.date}
-                                        </div>
-                                        <div className="text-sm text-gray-700 font-medium">
-                                            ₱{parseFloat(apt.price).toLocaleString()}
-                                        </div>
-                                    </div>
-                                )) : (
-                                    <p className="text-xs text-gray-400 italic text-center py-4">No availed treatments yet.</p>
-                                )}
-                            </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-center text-sm text-gray-400 italic py-4">No availed treatments yet.</p>
+                            )}
                         </div>
                     </div>
                 </div>

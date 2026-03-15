@@ -17,6 +17,7 @@ import BillingAndPayments from './pages/admin/BillingAndPayments';
 import AdminProfile from './pages/admin/AdminProfile';
 import AdminAddPatient from './pages/admin/AdminAddPatient';
 import AdminViewPatient from './pages/admin/AdminViewPatient';
+import AdminCreateInvoice from './pages/admin/AdminCreateInvoice';
 
 // This acts as a security guard for your routes
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -109,6 +110,11 @@ function App() {
             </ProtectedRoute>
         } 
     />
+    <Route 
+    path="/admin/create-invoice" 
+    element={<ProtectedRoute allowedRole="Admin">
+        <AdminCreateInvoice />
+    </ProtectedRoute>} />
   </Route>
       </Routes>
     </Router>
