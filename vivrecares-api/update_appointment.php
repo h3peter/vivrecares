@@ -16,7 +16,7 @@ if (!$data || !isset($data['appointment_id'])) {
 }
 
 try {
-    // We allow the admin to update the date, time, branch, and status
+    // 1. Update the appointment (Your original working code)
     $sql = "UPDATE appointments 
             SET appointment_date = ?, 
                 appointment_time = ?, 
@@ -33,7 +33,27 @@ try {
         $data['appointment_id']
     ]);
 
+    // 2. Find the patient's User ID linked to this specific appointment
+    $userSql = "SELECT p.user_id 
+                FROM appointments a 
+                JOIN patients p ON a.patient_id = p.patient_id 
+                WHERE a.appointment_id = ?";
+    $userStmt = $conn->prepare($userSql);
+    $userStmt->execute([$data['appointment_id']]);
+    $patientUserId = $userStmt->fetchColumn();
+
+    // 3. Send the notification if the patient account is found
+    if ($patientUserId) {
+        $title = "Appointment " . $data['status'];
+        $message = "Your appointment on " . $data['date'] . " has been marked as " . $data['status'] . ".";
+        
+        $notifSql = "INSERT INTO notifications (user_id, title, message) VALUES (?, ?, ?)";
+        $notifStmt = $conn->prepare($notifSql);
+        $notifStmt->execute([$patientUserId, $title, $message]);
+    }
+
     echo json_encode(["status" => "success", "message" => "Appointment updated!"]);
+
 } catch (Exception $e) {
     echo json_encode(["status" => "error", "message" => "Update failed: " . $e->getMessage()]);
 }

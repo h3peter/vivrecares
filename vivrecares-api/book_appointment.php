@@ -16,17 +16,30 @@ if (!$data) {
 }
 
 try {
-    $sql = "INSERT INTO appointments (patient_id, service_id, appointment_date, appointment_time, concerns) 
-            VALUES (?, ?, ?, ?, ?)";
-    
+    // Added branch to the INSERT statement
+    $sql = "INSERT INTO appointments (patient_id, branch, appointment_date, appointment_time, appointment_type, concerns, status) 
+            VALUES (?, ?, ?, ?, ?, ?, 'Pending')";
+            
     $stmt = $conn->prepare($sql);
     $stmt->execute([
         $data['patientId'],
-        $data['serviceId'],
+        $data['branch'], // Added branch variable
         $data['date'],
         $data['time'],
+        $data['type'],
         $data['concerns']
     ]);
+
+    $adminSql = "SELECT user_id FROM users WHERE role = 'admin' LIMIT 1";
+    $adminStmt = $conn->prepare($adminSql);
+    $adminStmt->execute();
+    $adminId = $adminStmt->fetchColumn();
+
+    if ($adminId) {
+        $notifSql = "INSERT INTO notifications (user_id, title, message) VALUES (?, 'New Appointment', 'A patient requested a new appointment.')";
+        $notifStmt = $conn->prepare($notifSql);
+        $notifStmt->execute([$adminId]);
+    }
 
     echo json_encode(["status" => "success", "message" => "Appointment requested!"]);
 
