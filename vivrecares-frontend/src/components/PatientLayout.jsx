@@ -1,6 +1,7 @@
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import logoBlack from '../assets/vivre-black.png';
 import ProfileAvatar from './ProfileAvatar';
+
 
 const PatientLayout = () => {
     const navigate = useNavigate();
@@ -9,6 +10,13 @@ const PatientLayout = () => {
 
     // Fallback logic just in case the login API named the variables differently
     const displayName = user?.nickname || user?.first_name || user?.name || "Patient";
+
+    const handleMenuClick = (path) => {
+        // Only navigate if the user is NOT already on this exact path
+        if (location.pathname !== path) {
+            navigate(path);
+        }
+    };
 
     return (
         <div className="flex min-h-screen bg-[#faf9f6] font-sans">
@@ -29,22 +37,22 @@ const PatientLayout = () => {
                     <SidebarButton 
                         label="Patient Profile" 
                         active={location.pathname === '/profile'} 
-                        onClick={() => navigate('/profile')} 
+                        onClick={() => handleMenuClick('/profile')} 
                     />
                     <SidebarButton 
                         label="Request for Appointment" 
                         active={location.pathname === '/request-appointment'} 
-                        onClick={() => navigate('/request-appointment')} 
+                        onClick={() => handleMenuClick('/request-appointment')} 
                     />
                     <SidebarButton 
                         label="Appointment History" 
                         active={location.pathname === '/appointment-history'} 
-                        onClick={() => navigate('/appointment-history')} 
+                        onClick={() => handleMenuClick('/appointment-history')} 
                     />
                     <SidebarButton 
                         label="Account Settings" 
                         active={location.pathname === '/account-settings'} 
-                        onClick={() => navigate('/account-settings')} 
+                        onClick={() => handleMenuClick('/account-settings')} 
                     />
                 </nav>
 

@@ -13,8 +13,21 @@ const LoginModal = ({ onClose }) => {
     try {
       const response = await axios.post('http://localhost/vivrecares/vivrecares-api/login.php', credentials);
       if (response.data.status === 'success') {
+        // Save the user data to browser storage
         localStorage.setItem('user', JSON.stringify(response.data.user));
-        response.data.user.role === 'Admin' ? navigate('/admin-dashboard') : navigate('/patient-dashboard');
+        
+        // --- THIS IS THE PART WE CHANGED ---
+        // We now route them to the correct, existing pages
+        if (response.data.user.role === 'Admin') {
+            navigate('/admin/patients'); 
+        } else {
+            navigate('/profile'); 
+        }
+        
+        // This forces the page to refresh so the layout updates properly
+        window.location.reload(); 
+        // -----------------------------------
+
       } else {
         setMessage(response.data.message);
       }

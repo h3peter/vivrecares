@@ -1,4 +1,4 @@
-import { useNavigate, useLocation, Outlet } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet, Link } from 'react-router-dom';
 import logoBlack from '../assets/vivre-black.png';
 import ProfileAvatar from './ProfileAvatar'; 
 
@@ -9,6 +9,13 @@ const AdminLayout = () => {
 
     // Admin display name
     const displayName = user?.first_name || "Admin";
+
+    const handleMenuClick = (path) => {
+        // Only navigate if the user is NOT already on this exact path
+        if (location.pathname !== path) {
+            navigate(path);
+        }
+    };
 
     return (
         <div className="flex min-h-screen bg-[#faf9f6] font-sans">
@@ -32,22 +39,22 @@ const AdminLayout = () => {
                     <SidebarButton 
                         label="Manage Patients" 
                         active={location.pathname === '/admin/patients'} 
-                        onClick={() => navigate('/admin/patients')} 
+                        onClick={() => handleMenuClick('/admin/patients')} 
                     />
                     <SidebarButton 
                         label="Appointment Logs" 
                         active={location.pathname === '/admin/appointments'} 
-                        onClick={() => navigate('/admin/appointments')} 
+                        onClick={() => handleMenuClick('/admin/appointments')} 
                     />
                     <SidebarButton 
                         label="Billing & Payments" 
                         active={location.pathname === '/admin/billing'} 
-                        onClick={() => navigate('/admin/billing')} 
+                        onClick={() => handleMenuClick('/admin/billing')} 
                     />
                     <SidebarButton 
                         label="My Profile" 
                         active={location.pathname === '/admin/profile'} 
-                        onClick={() => navigate('/admin/profile')} 
+                        onClick={() => handleMenuClick('/admin/profile')} 
                     />
                 </nav>
 
