@@ -1,5 +1,6 @@
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import logoBlack from '../assets/vivre-black.png';
+import ProfileAvatar from './ProfileAvatar'; 
 
 const AdminLayout = () => {
     const navigate = useNavigate();
@@ -14,11 +15,12 @@ const AdminLayout = () => {
             {/* Fixed Admin Sidebar */}
             <aside className="w-64 bg-[#4d4d4d] text-white flex flex-col py-12 sticky top-0 h-screen">
                 <div className="flex flex-col items-center px-6 mb-12">
-                    <div className="w-24 h-24 rounded-xl bg-[#c4ba9d] flex items-center justify-center mb-4">
-                        {/* Generic Admin Avatar Icon from your wireframe */}
-                        <svg className="w-12 h-12 text-[#4d4d4d]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                        </svg>
+                    <div className="w-24 h-24 mx-auto rounded-full border-2 border-[#d4af37] overflow-hidden mb-4 bg-gray-200">
+                        <ProfileAvatar 
+                            user={user} 
+                            className="w-full h-full" 
+                            textSize="text-4xl" 
+                        />
                     </div>
                     <h3 className="text-sm font-light tracking-widest text-center uppercase">
                         Good day, <br/> 

@@ -1,38 +1,43 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useState } from 'react';
 import clinicImage from '../assets/VIVREFRONT (3).png';
 import logoBlack from '../assets/vivre-black.png';
 import LoginModal from '../components/LoginModal';
+import ProfileAvatar from '../components/ProfileAvatar';
 
 const LandingPage = () => {
   const navigate = useNavigate();
   const [isLoginOpen, setIsLoginOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // Added to control the menu
 
-  // 1. Logic for "Book an Appointment" button
+  // Check if a user is currently logged in
+  const user = JSON.parse(localStorage.getItem('user'));
+
+  // Logic for "Book an Appointment" button
   const handleBookingClick = () => {
-    const isLoggedIn = localStorage.getItem('user');
-    if (isLoggedIn) {
-      navigate('/patient-dashboard');
+    if (user) {
+      // Directs logged-in patients straight to the booking form
+      navigate('/request-appointment'); 
     } else {
       setIsLoginOpen(true);
     }
   };
 
-  // 2. Logic for the User Icon on the Navbar
-  const handleUserIconClick = () => {
-    const user = JSON.parse(localStorage.getItem('user'));
-    if (user) {
-      // If logged in, go to the profile page (Content Management Module)
-      navigate('/profile');
-    } else {
-      // If not logged in, open the login modal
-      setIsLoginOpen(true);
-    }
+  // Logic to clear session and refresh
+  const handleLogout = () => {
+      localStorage.removeItem('user');
+      setIsDropdownOpen(false);
+      window.location.reload(); 
   };
+
+  // Determine correct dashboard path based on role
+  const dashboardRoute = user?.role === 'Admin' ? '/admin/patients' : '/profile';
+  const displayName = user?.nickname || user?.first_name || 'User';
+
   return (
     <div className="min-h-screen bg-[#faf9f6] font-sans text-gray-800 relative">
       
-      {/* 1. The Modal Overlay (Only shows when isLoginOpen is true) */}
+      {/* The Modal Overlay */}
       {isLoginOpen && (
         <LoginModal onClose={() => setIsLoginOpen(false)} />
       )}
@@ -40,7 +45,6 @@ const LandingPage = () => {
       {/* Navigation Bar */}
       <nav className="flex items-center justify-between px-8 py-4 bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-100">
         <div className="flex items-center">
-          {/* Increased Nav Logo Size */}
           <img src={logoBlack} alt="Vivre Logo" className="h-24 w-auto object-contain" />
         </div>
 
@@ -52,20 +56,62 @@ const LandingPage = () => {
         </div>
 
         <div className="flex items-center gap-6">
-          <button onClick={() => setIsLoginOpen(true)} className="w-10 h-10 bg-[#f4f1eb] rounded-full flex items-center justify-center hover:bg-[#eae5d9] transition">
+          {/* Notification Icon */}
+          <button className="w-10 h-10 bg-[#f4f1eb] rounded-full flex items-center justify-center hover:bg-[#eae5d9] transition">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
             </svg>
           </button>
           
-          <button 
-  onClick={handleUserIconClick}
-  className="w-10 h-10 bg-[#f4f1eb] rounded-full flex items-center justify-center hover:bg-[#eae5d9] transition"
->
-            <svg className="w-5 h-5 text-[#2d2a26]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-          </button>
+          {/* Dynamic Profile Section */}
+          {!user ? (
+              // THIS IS THE LOGGED OUT STATE: Just a plain button that opens the Login Modal
+              <button 
+                onClick={() => setIsLoginOpen(true)}
+                className="w-10 h-10 bg-[#f4f1eb] rounded-full flex items-center justify-center hover:bg-[#eae5d9] transition"
+              >
+                <svg className="w-5 h-5 text-[#2d2a26]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </button>
+          ) : (
+              // THIS IS THE LOGGED IN STATE: Shows the Avatar and Dropdown
+              <div className="relative">
+                  <button 
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      className="flex items-center gap-3 focus:outline-none"
+                  >
+                      <div className="w-10 h-10 rounded-full border-2 border-[#d4af37] overflow-hidden bg-gray-200 hover:opacity-80 transition flex items-center justify-center">
+                          <ProfileAvatar user={user} className="w-full h-full" textSize="text-sm" />
+                      </div>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  {isDropdownOpen && (
+                      <div className="absolute right-0 mt-3 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-50">
+                          <div className="px-4 py-3 border-b border-gray-50">
+                              <p className="text-sm text-gray-800 font-bold truncate">
+                                {/* We check nickname first, then the older 'name' label, then first_name */}
+                                Hi, {user?.nickname || user?.name || user?.first_name || 'User'}!
+                              </p>
+                              <p className="text-[10px] text-gray-400 uppercase tracking-widest">{user.role}</p>
+                          </div>
+                          <Link 
+                              to={dashboardRoute}
+                              className="block px-4 py-2 text-sm text-gray-600 hover:bg-[#fcfaf5] hover:text-[#d4af37] transition"
+                          >
+                              My Dashboard
+                          </Link>
+                          <button 
+                              onClick={handleLogout}
+                              className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 transition"
+                          >
+                              Logout
+                          </button>
+                      </div>
+                  )}
+              </div>
+          )}
         </div>
       </nav>
 
@@ -77,7 +123,6 @@ const LandingPage = () => {
         </div>
 
         <div className="w-full md:w-1/2 lg:w-[45%] h-full flex flex-col justify-center px-10 lg:px-24 bg-gradient-to-br from-white to-[#fdfbf7]">
-          {/* Significantly Larger Hero Logo */}
           <div className="mb-12">
             <img src={logoBlack} alt="Vivre Medical Group" className="h-36 w-auto object-contain" />
           </div>
@@ -90,7 +135,6 @@ const LandingPage = () => {
             Your journey to healthy, radiant skin starts here.
           </p>
 
-          {/* New Call to Action Button */}
           <div>
             <button 
               onClick={handleBookingClick}

@@ -1,5 +1,6 @@
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import logoBlack from '../assets/vivre-black.png';
+import ProfileAvatar from './ProfileAvatar';
 
 const PatientLayout = () => {
     const navigate = useNavigate();
@@ -16,7 +17,7 @@ const PatientLayout = () => {
                 <div className="flex flex-col items-center px-6 mb-12">
                     <div className="w-24 h-24 rounded-full border-2 border-[#d4af37] overflow-hidden mb-4 bg-gray-200">
                         {/* Will add actual photo path later when upload is done */}
-                        <img src={`http://localhost/vivrecares/assets/default.png`} className="w-full h-full object-cover" alt="Profile" />
+                        <ProfileAvatar user={user} className="w-full h-full" />
                     </div>
                     <h3 className="text-sm font-light tracking-widest text-center uppercase">
                         Good day,<br/> 

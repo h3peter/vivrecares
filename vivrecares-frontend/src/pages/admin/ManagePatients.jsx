@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import ProfileAvatar from '../../components/ProfileAvatar';
 
 const ManagePatients = () => {
     const navigate = useNavigate();
@@ -86,10 +87,10 @@ const ManagePatients = () => {
                             {String(patient.patient_id).padStart(3, '0')}
                         </div>
                         <div className="col-span-4 flex items-center gap-4">
-                            <img 
-                                src={`http://localhost/vivrecares/assets/${patient.profile_photo || 'default.png'}`} 
-                                alt="Profile" 
-                                className="w-12 h-12 rounded-full object-cover border border-gray-200"
+                            <ProfileAvatar 
+                                user={patient} 
+                                className="w-12 h-12 rounded-full border border-gray-200" 
+                                textSize="text-lg" 
                             />
                             <div>
                                 <p className="text-gray-800 font-medium">{patient.last_name}, {patient.first_name}</p>

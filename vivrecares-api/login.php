@@ -16,8 +16,8 @@ if (!$data || !isset($data['email']) || !isset($data['password'])) {
 }
 
 try {
-    // We JOIN users (u) and patients (p) to get the nickname and full name
-    $sql = "SELECT u.user_id, u.password, u.role, u.first_name, u.nickname, u.profile_photo, p.patient_id 
+    // 1. We added u.last_name to the SELECT list here:
+    $sql = "SELECT u.user_id, u.password, u.role, u.first_name, u.last_name, u.nickname, u.profile_photo, p.patient_id 
             FROM users u 
             LEFT JOIN patients p ON u.user_id = p.user_id 
             WHERE u.email = ? AND u.deleted_at IS NULL LIMIT 1";
@@ -29,17 +29,23 @@ try {
     // Verify password against the hash
     if ($user && password_verify($data['password'], $user['password'])) {
         
-        // Decide what name to show on the dashboard (Nickname is the 'soft luxury' choice)
         $displayName = !empty($user['nickname']) ? $user['nickname'] : $user['first_name'];
 
         echo json_encode([
             "status" => "success",
             "user" => [
                 "id" => $user['user_id'],
-                "patient_id" => $user['patient_id'], // Useful for booking later
+                "patient_id" => $user['patient_id'],
                 "role" => $user['role'],
+                
+                // We keep the old labels so we don't break your existing greetings...
                 "name" => $displayName,
-                "photo" => $user['profile_photo']
+                "photo" => $user['profile_photo'],
+                
+                // ...and we ADD the exact labels your ProfileAvatar component is looking for!
+                "first_name" => $user['first_name'],
+                "last_name" => $user['last_name'],
+                "profile_photo" => $user['profile_photo']
             ]
         ]);
     } else {
