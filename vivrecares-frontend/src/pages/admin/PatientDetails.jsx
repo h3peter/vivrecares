@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import ProfileAvatar from '../../components/ProfileAvatar'; // Added this!
 
 const PatientDetails = () => {
-    const { userId } = useParams(); // Gets the ID from the URL
+    const { userId } = useParams(); 
     const navigate = useNavigate();
     const [patientData, setPatientData] = useState(null);
     const [appointments, setAppointments] = useState([]);
@@ -13,12 +14,17 @@ const PatientDetails = () => {
             try {
                 // 1. Fetch Profile
                 const profileRes = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_profile.php?user_id=${userId}`);
-                setPatientData(profileRes.data);
+                
+                // Fixed: Checking for success and grabbing the .data payload
+                if (profileRes.data.status === 'success') {
+                    const patientInfo = profileRes.data.data;
+                    setPatientData(patientInfo);
 
-                // 2. Fetch their Appointment History (Availed Treatments)
-                if (profileRes.data && profileRes.data.patient_id) {
-                    const aptRes = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_appointments.php?patient_id=${profileRes.data.patient_id}`);
-                    setAppointments(aptRes.data);
+                    // 2. Fetch their Appointment History
+                    if (patientInfo && patientInfo.patient_id) {
+                        const aptRes = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_appointments.php?patient_id=${patientInfo.patient_id}`);
+                        setAppointments(aptRes.data);
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching patient details:", error);
@@ -50,7 +56,9 @@ const PatientDetails = () => {
                 <div className="space-y-8">
                     {/* Profile Card */}
                     <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center text-center">
-                        <img src={`http://localhost/vivrecares/assets/${patientData.profile_photo || 'default.png'}`} className="w-24 h-24 rounded-full mb-4 border border-gray-50 object-cover" alt="" />
+                        {/* Fixed: Now using ProfileAvatar instead of a broken img tag */}
+                        <ProfileAvatar user={patientData} className="w-24 h-24 rounded-full mb-4 mx-auto" textSize="text-3xl" />
+                        
                         <h4 className="font-bold text-gray-800">{patientData.first_name} {patientData.last_name}</h4>
                         <p className="text-xs text-gray-400 uppercase tracking-tighter mb-4">{patientData.sex} • {patientData.age} years old</p>
                         <p className="text-xs text-gray-500 mb-6">{patientData.address}</p>
@@ -82,10 +90,11 @@ const PatientDetails = () => {
                             <span className="text-[10px] uppercase tracking-[0.2em] text-[#b2a58d] font-bold">Medical History</span>
                         </div>
                         <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-8">
-                            <InfoBlock label="Allergies" value={patientData.illnesses || "None"} />
+                            {/* Fixed: Updated database column variables */}
+                            <InfoBlock label="Allergies" value={patientData.allergies || "None"} />
                             <InfoBlock label="Previous Surgery" value={patientData.surgical_procedures || "N/A"} />
                             <InfoBlock label="Previous Aesthetic Procedures" value={patientData.aesthetic_procedures || "None"} />
-                            <InfoBlock label="Current Skin Treatment" value={patientData.current_treatments || "None"} />
+                            <InfoBlock label="Current Skin Treatment" value={patientData.current_skin_treatment || "None"} />
                         </div>
                     </div>
 

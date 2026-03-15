@@ -8,7 +8,7 @@ require_once 'config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
-// Get the user_id from the URL parameter (e.g., get_profile.php?user_id=1)
+// Get the user_id from the URL parameter
 $user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
 
 if (!$user_id) {
@@ -17,12 +17,11 @@ if (!$user_id) {
 }
 
 try {
-    // Joining tables to get the full profile in one go
+    // We use p.* to ensure we grab every single medical column we recently added
     $sql = "SELECT 
                 u.first_name, u.last_name, u.middle_name, u.extension_name, u.nickname, 
-                u.email, u.profile_photo, u.role,
-                p.patient_id, p.age, p.sex, p.address, p.phone, p.illnesses, 
-                p.surgical_procedures, p.aesthetic_procedures, p.current_treatments
+                u.email, u.profile_photo, u.role, u.created_at,
+                p.*
             FROM users u
             LEFT JOIN patients p ON u.user_id = p.user_id
             WHERE u.user_id = ? AND u.deleted_at IS NULL";
@@ -32,7 +31,8 @@ try {
     $profile = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($profile) {
-        echo json_encode($profile);
+        // Wrapped in a success status to match our standard formatting
+        echo json_encode(["status" => "success", "data" => $profile]);
     } else {
         echo json_encode(["status" => "error", "message" => "Profile not found."]);
     }
