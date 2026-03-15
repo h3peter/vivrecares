@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProfileAvatar from '../../components/ProfileAvatar';
+import AddPatientModal from '../../components/AddPatientModal';
 
 const ManagePatients = () => {
     const navigate = useNavigate();
@@ -11,6 +12,9 @@ const ManagePatients = () => {
     // Pagination States
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+
+
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchPatients = async () => {
@@ -65,9 +69,13 @@ const ManagePatients = () => {
                     </div>
                 </div>
 
-                <button className="bg-[#c4ba9d] text-white px-6 py-2 rounded-md text-sm hover:bg-[#b2a58d] shadow-sm transition">
-                    + Add Patient
-                </button>
+                {/* Update the button */}
+                    <button 
+                        onClick={() => navigate('/admin/add-patient')} 
+                        className="bg-[#c4ba9d] text-white px-6 py-2 rounded-md text-sm hover:bg-[#b2a58d] shadow-sm transition"
+                    >
+                        + Add Patient
+                    </button>
             </div>
 
             {/* Table Headers */}

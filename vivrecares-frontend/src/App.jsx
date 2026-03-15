@@ -15,6 +15,7 @@ import PatientDetails from './pages/admin/PatientDetails';
 import AppointmentLogs from './pages/admin/AppointmentLogs';
 import BillingAndPayments from './pages/admin/BillingAndPayments';
 import AdminProfile from './pages/admin/AdminProfile';
+import AdminAddPatient from './pages/admin/AdminAddPatient';
 
 // This acts as a security guard for your routes
 const ProtectedRoute = ({ children, allowedRole }) => {
@@ -91,6 +92,14 @@ function App() {
           </ProtectedRoute>
       } 
   />
+    <Route 
+        path="/admin/add-patient" 
+        element={
+            <ProtectedRoute allowedRole="Admin">
+                <AdminAddPatient />
+            </ProtectedRoute>
+        } 
+    />
   </Route>
       </Routes>
     </Router>

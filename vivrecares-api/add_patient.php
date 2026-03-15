@@ -10,8 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
 $data = json_decode(file_get_contents("php://input"), true);
 
-// Ensure the absolute minimum data, including the password, is provided
-if (!$data || !isset($data['email']) || !isset($data['first_name']) || !isset($data['password'])) {
+if (!$data || !isset($data['email']) || !isset($data['first_name'])) {
     echo json_encode(["status" => "error", "message" => "Missing required fields."]);
     exit;
 }
@@ -20,7 +19,7 @@ try {
     $conn->beginTransaction();
 
     // 1. Check for duplicate email
-    $stmt = $conn->prepare("SELECT user_id FROM users WHERE email = ? AND deleted_at IS NULL");
+    $stmt = $conn->prepare("SELECT user_id FROM users WHERE email = ?");
     $stmt->execute([$data['email']]);
     if ($stmt->fetch()) {
         echo json_encode(["status" => "error", "message" => "Email is already registered."]);
@@ -29,8 +28,8 @@ try {
     }
 
     // 2. Insert into users table
-    // Hash the password explicitly provided by the patient from Step 3
-    $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
+    $passwordToHash = isset($data['password']) && !empty($data['password']) ? $data['password'] : 'Vivre2026!';
+    $hashedPassword = password_hash($passwordToHash, PASSWORD_DEFAULT);
     
     $sqlUser = "INSERT INTO users (first_name, middle_name, last_name, extension_name, nickname, email, password, role) VALUES (?, ?, ?, ?, ?, ?, ?, 'Patient')";
     $stmtUser = $conn->prepare($sqlUser);
