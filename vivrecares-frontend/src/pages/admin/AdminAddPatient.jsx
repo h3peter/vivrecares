@@ -173,13 +173,11 @@ const AdminAddPatient = () => {
                 <div className="mb-12 border-t border-gray-50 pt-8">
                     <h2 className="text-sm font-bold text-[#d4af37] tracking-widest uppercase mb-8 text-center">Initial Disclosure</h2>
                     
-                    <div className="grid grid-cols-3 gap-8">
-                        <div className="flex flex-col justify-center">
-                            <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-3">Recent Tooth Extraction?</label>
-                            <div className="flex items-center gap-3">
-                                <input type="checkbox" name="tooth_extraction" onChange={handleChange} className="w-4 h-4 text-[#d4af37] bg-gray-100 border-gray-300 rounded focus:ring-[#d4af37]" />
-                                <label className="text-sm text-gray-600">Yes</label>
-                            </div>
+                    {/* Row 1: 3 columns, all top-aligned */}
+                    <div className="grid grid-cols-3 gap-8 mt-6">
+                        <div>
+                            <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Previous Aesthetic Procedures</label>
+                            <input type="text" name="aesthetic_procedures" placeholder="(if any)" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                         </div>
                         <div>
                             <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Previous Surgical Procedures</label>
@@ -191,24 +189,30 @@ const AdminAddPatient = () => {
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-8 mt-6">
+                    {/* Row 2: Aesthetic Procedures + Pregnant side by side */}
+                        <div className="grid grid-cols-3 gap-8 mt-6">
                         <div>
-                            <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Previous Aesthetic Procedures</label>
-                            <input type="text" name="aesthetic_procedures" placeholder="(if any)" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
+                            <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Recent Tooth Extraction?</label>
+                            {/* Matches the input height so all 3 cells are visually equal */}
+                            <div className="w-full p-3  rounded-lg flex items-center gap-3">
+                                <input type="checkbox" name="tooth_extraction" onChange={handleChange} className="w-4 h-4 accent-[#d4af37]" />
+                                <span className="text-sm text-gray-600">Yes</span>
+                            </div>
                         </div>
                         <div className="col-span-2">
                             <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Pregnant / Breastfeeding / Planning?</label>
-                            <div className="flex items-center gap-6 mt-4">
-                                <label className="flex items-center gap-2 text-sm text-gray-600">
-                                    <input type="radio" name="pregnant" value="Yes" onChange={handleChange} className="w-4 h-4 text-[#d4af37]" /> Yes
+                            <div className="w-full p-3 rounded-lg flex items-center gap-8">
+                                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                                    <input type="radio" name="pregnant" value="Yes" onChange={handleChange} className="w-4 h-4 accent-[#d4af37]" /> Yes
                                 </label>
-                                <label className="flex items-center gap-2 text-sm text-gray-600">
-                                    <input type="radio" name="pregnant" value="No" defaultChecked onChange={handleChange} className="w-4 h-4 text-[#d4af37]" /> No
+                                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                                    <input type="radio" name="pregnant" value="No" defaultChecked onChange={handleChange} className="w-4 h-4 accent-[#d4af37]" /> No
                                 </label>
                             </div>
                         </div>
                     </div>
 
+                    {/* Row 3: Full width */}
                     <div className="mt-6">
                         <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Have you had any untoward reactions? If yes, please specify:</label>
                         <input type="text" name="untoward_reactions" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />

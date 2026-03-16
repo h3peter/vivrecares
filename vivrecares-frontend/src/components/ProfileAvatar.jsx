@@ -1,39 +1,43 @@
-const ProfileAvatar = ({ user, className, textSize = "text-xl" }) => {
-    if (!user) return <div className={`bg-gray-200 ${className}`}></div>;
+/**
+ * ProfileAvatar.jsx
+ *
+ * Renders a user's profile photo if one is uploaded,
+ * otherwise falls back to a coloured initials badge.
+ *
+ * Props:
+ *   user       — object with { first_name, last_name, profile_photo? }
+ *   className  — extra classes for the outer wrapper (size, border, etc.)
+ *   textSize   — Tailwind text size for initials, default "text-sm"
+ */
 
-    // Grab whichever photo key exists (some APIs send 'photo', some send 'profile_photo')
-    const photoStr = user.profile_photo || user.photo;
+const BASE_URL = 'http://localhost/vivrecares';
 
-    // Strict check: Ignore nulls, empty strings, AND your specific default file names
-    const hasPhoto = photoStr && 
-                     photoStr !== 'default.png' && 
-                     photoStr !== 'default-avatar.png' && 
-                     photoStr !== 'null' && 
-                     photoStr.trim() !== '';
+const ProfileAvatar = ({ user = {}, className = 'w-10 h-10 rounded-full', textSize = 'text-sm' }) => {
+    const { first_name = '', last_name = '', profile_photo } = user;
+    const initials = `${first_name?.[0] ?? ''}${last_name?.[0] ?? ''}`.toUpperCase();
+
+    const hasPhoto =
+        profile_photo &&
+        profile_photo !== 'default-avatar.png' &&
+        profile_photo !== '';
 
     if (hasPhoto) {
         return (
-            <img 
-                src={`http://localhost/vivrecares/assets/${photoStr}`} 
-                alt="Profile" 
-                className={`object-cover ${className}`} 
-                onError={(e) => { e.target.style.display = 'none'; }}
+            <img
+                src={`${BASE_URL}/assets/uploads/${profile_photo}`}
+                alt={`${first_name} ${last_name}`}
+                className={`object-cover ${className}`}
+                onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                }}
             />
         );
     }
 
-    // Aggressive Name Grabber
-    const fullName = user.name || ''; 
-    const fName = user.first_name || user.nickname || fullName.split(' ')[0] || '';
-    const lName = user.last_name || (fullName.split(' ').length > 1 ? fullName.split(' ').pop() : '') || '';
-    
-    const firstInitial = fName ? fName.charAt(0).toUpperCase() : '';
-    const lastInitial = lName ? lName.charAt(0).toUpperCase() : '';
-    const initials = (firstInitial + lastInitial) || 'U'; 
-
+    // Warm taupe — matches the VIVRE design system
     return (
-        <div className={`flex items-center justify-center bg-[#c4ba9d] text-white font-bold tracking-widest ${className} ${textSize}`}>
-            {initials}
+        <div className={`flex items-center justify-center font-bold bg-[#c4ba9d]/40 text-[#8c7f6a] ${className}`}>
+            <span className={textSize}>{initials || '?'}</span>
         </div>
     );
 };
