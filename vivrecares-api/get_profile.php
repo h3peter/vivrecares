@@ -5,10 +5,10 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json");
 
 require_once 'config.php';
+require_once 'Encryption.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
-// Get the user_id from the URL parameter
 $user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
 
 if (!$user_id) {
@@ -16,22 +16,45 @@ if (!$user_id) {
     exit;
 }
 
+// Fields in the patients table that are stored encrypted
+$encryptedFields = [
+    'allergies',
+    'surgical_procedures',
+    'aesthetic_procedures',
+    'untoward_reactions',
+    'medications',
+    'others',
+    'current_skin_treatment',
+];
+
 try {
-    // We use p.* to ensure we grab every single medical column we recently added
     $sql = "SELECT 
-                u.first_name, u.last_name, u.middle_name, u.extension_name, u.nickname, 
+                u.first_name, u.last_name, u.middle_name, u.extension_name, u.nickname,
                 u.email, u.profile_photo, u.role, u.created_at,
                 p.*
             FROM users u
             LEFT JOIN patients p ON u.user_id = p.user_id
             WHERE u.user_id = ? AND u.deleted_at IS NULL";
-            
+
     $stmt = $conn->prepare($sql);
     $stmt->execute([$user_id]);
     $profile = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($profile) {
-        // Wrapped in a success status to match our standard formatting
+        // Decrypt each sensitive field before returning to the frontend.
+        // Encryption::decrypt() will return the raw value if decryption fails,
+        // so existing plain-text rows from before encryption was added are safe.
+        foreach ($encryptedFields as $field) {
+            if (isset($profile[$field]) && $profile[$field] !== '') {
+                try {
+                    $decrypted = Encryption::decrypt($profile[$field]);
+                    $profile[$field] = $decrypted !== false ? $decrypted : $profile[$field];
+                } catch (Exception $e) {
+                    // If decryption throws (e.g. old plain-text row), leave value as-is
+                }
+            }
+        }
+
         echo json_encode(["status" => "success", "data" => $profile]);
     } else {
         echo json_encode(["status" => "error", "message" => "Profile not found."]);
