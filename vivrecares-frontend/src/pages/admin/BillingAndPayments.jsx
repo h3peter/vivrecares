@@ -310,8 +310,8 @@ const BillingAndPayments = () => {
                             ))}
                         </select>
                     </div>
-                    <div className="flex gap-3 xl:justify-end xl:pl-3">
-                        <button onClick={clearFilters} className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 hover:border-[#d4af37] hover:text-[#a8892d] transition">Clear</button>
+                    <div className="flex gap-2 xl:justify-end xl:pl-3">
+                        <button onClick={clearFilters} className="px-2 py-3 rounded-xl border border-gray-200 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 hover:border-[#d4af37] hover:text-[#a8892d] transition">Clear</button>
                         <button onClick={() => setIsAddModalOpen(true)} className="bg-[#555555] text-[#c4ba9d] px-6 py-3 rounded-xl text-sm font-bold uppercase tracking-[0.18em] shadow-lg hover:bg-[#404040] transition">+ Add Invoice</button>
                     </div>
                 </div>

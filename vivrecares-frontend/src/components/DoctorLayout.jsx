@@ -2,11 +2,12 @@ import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import logoBlack from '../assets/vivre-black.png';
 import ProfileAvatar from './ProfileAvatar';
 import NotificationBell from './NotificationBell';
+import { clearStoredSession, getStoredUser } from '../utils/session';
 
 const DoctorLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const user = JSON.parse(localStorage.getItem('user'));
+    const user = getStoredUser();
     const displayName = user?.first_name || 'Doctor';
 
     const handleMenuClick = (path) => {
@@ -45,7 +46,7 @@ const DoctorLayout = () => {
                     </button>
 
                     <button
-                        onClick={() => { localStorage.clear(); navigate('/'); }}
+                        onClick={() => { clearStoredSession(); navigate('/'); }}
                         className="flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-[#5c5c5c] hover:bg-red-900/40 text-red-400 hover:text-red-300 transition-all duration-200 group"
                     >
                         <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">

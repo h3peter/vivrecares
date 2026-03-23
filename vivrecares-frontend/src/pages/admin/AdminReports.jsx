@@ -489,37 +489,97 @@ const StatusBadge = ({ value }) => (
 );
 
 const PreviewTable = ({ title, description, count, columns, rows, rowKey, renderRow, emptyMessage, gridClassName }) => (
-    <div className="mt-8 border border-gray-100 rounded-3xl overflow-hidden">
-        <div className="flex items-center justify-between gap-4 bg-white px-6 py-5 border-b border-gray-50">
-            <div>
-                <h3 className="text-xl font-bold text-gray-800">{title}</h3>
-                <p className="text-sm text-gray-500 mt-1">{description}</p>
-            </div>
-            <p className="text-sm text-gray-500">
-                Showing <span className="font-semibold text-gray-700">{count}</span> records
-            </p>
-        </div>
-
-        <div className="overflow-x-auto bg-white">
-            <div className="min-w-[980px] p-6">
-                <div className={`grid ${gridClassName} gap-4 mb-4 text-[#b2a58d] text-xs uppercase tracking-[0.18em] font-bold px-4`}>
-                    {columns.map((column) => (
-                        <div key={column} className={column === 'Amount' ? 'text-right' : ''}>
-                            {column}
-                        </div>
-                    ))}
-                </div>
-                <div className="space-y-3">
-                    {rows.map((row) => (
-                        <div key={rowKey(row)} className={`grid ${gridClassName} gap-4 items-center rounded-2xl border border-gray-100 bg-[#faf9f6] px-4 py-4 text-sm text-gray-700`}>
-                            {renderRow(row)}
-                        </div>
-                    ))}
-                    {rows.length === 0 && <p className="text-center text-sm text-gray-400 italic py-8">{emptyMessage}</p>}
-                </div>
-            </div>
-        </div>
-    </div>
+    <PaginatedPreviewTable
+        title={title}
+        description={description}
+        count={count}
+        columns={columns}
+        rows={rows}
+        rowKey={rowKey}
+        renderRow={renderRow}
+        emptyMessage={emptyMessage}
+        gridClassName={gridClassName}
+    />
 );
+
+const PaginatedPreviewTable = ({ title, description, count, columns, rows, rowKey, renderRow, emptyMessage, gridClassName }) => {
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [rows, rowsPerPage, title]);
+
+    const totalPages = Math.max(1, Math.ceil(rows.length / rowsPerPage));
+    const indexOfLastRow = currentPage * rowsPerPage;
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+    const paginatedRows = rows.slice(indexOfFirstRow, indexOfLastRow);
+
+    return (
+        <div className="mt-8 border border-gray-100 rounded-3xl overflow-hidden">
+            <div className="flex items-center justify-between gap-4 bg-white px-6 py-5 border-b border-gray-50">
+                <div>
+                    <h3 className="text-xl font-bold text-gray-800">{title}</h3>
+                    <p className="text-sm text-gray-500 mt-1">{description}</p>
+                </div>
+                <p className="text-sm text-gray-500">
+                    Showing <span className="font-semibold text-gray-700">{count}</span> records
+                </p>
+            </div>
+
+            <div className="overflow-x-auto bg-white">
+                <div className="min-w-[980px] p-6">
+                    <div className={`grid ${gridClassName} gap-4 mb-4 text-[#b2a58d] text-xs uppercase tracking-[0.18em] font-bold px-4`}>
+                        {columns.map((column) => (
+                            <div key={column} className={column === 'Amount' ? 'text-right' : ''}>
+                                {column}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="space-y-3">
+                        {paginatedRows.map((row) => (
+                            <div key={rowKey(row)} className={`grid ${gridClassName} gap-4 items-center rounded-2xl border border-gray-100 bg-[#faf9f6] px-4 py-4 text-sm text-gray-700`}>
+                                {renderRow(row)}
+                            </div>
+                        ))}
+                        {rows.length === 0 && <p className="text-center text-sm text-gray-400 italic py-8">{emptyMessage}</p>}
+                    </div>
+                </div>
+            </div>
+
+            {rows.length > 0 && (
+                <div className="px-6 pb-6 flex justify-between items-center bg-white">
+                    <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
+                        <span>Rows per page:</span>
+                        <select
+                            className="bg-white border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-[#d4af37] text-sm text-gray-700"
+                            value={rowsPerPage}
+                            onChange={(e) => {
+                                setRowsPerPage(Number(e.target.value));
+                                setCurrentPage(1);
+                            }}
+                        >
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                        </select>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                        <span className="text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <div className="flex gap-2">
+                            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg></button>
+                            <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg></button>
+                            <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg></button>
+                            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg></button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 export default AdminReports;

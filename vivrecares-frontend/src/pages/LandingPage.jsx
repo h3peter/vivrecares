@@ -4,6 +4,7 @@ import clinicImage from '../assets/VIVREFRONT (3).png';
 import logoBlack from '../assets/vivre-black.png';
 import LoginModal from '../components/LoginModal';
 import ProfileAvatar from '../components/ProfileAvatar';
+import { clearStoredSession, getStoredUser } from '../utils/session';
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -11,7 +12,7 @@ const LandingPage = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false); // Added to control the menu
 
   // Check if a user is currently logged in
-  const user = JSON.parse(localStorage.getItem('user'));
+  const user = getStoredUser();
 
   // Logic for "Book an Appointment" button
   const handleBookingClick = () => {
@@ -32,7 +33,7 @@ const LandingPage = () => {
 
   // Logic to clear session and refresh
   const handleLogout = () => {
-      localStorage.removeItem('user');
+      clearStoredSession();
       setIsDropdownOpen(false);
       window.location.reload(); 
   };

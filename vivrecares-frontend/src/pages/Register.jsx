@@ -6,24 +6,33 @@ import logoBlack from '../assets/vivre-black.png';
 const Register = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationToken, setVerificationToken] = useState('');
+  const [developmentCode, setDevelopmentCode] = useState('');
+  const [verificationStatus, setVerificationStatus] = useState('');
+  const [verificationError, setVerificationError] = useState('');
+  const [sendingCode, setSendingCode] = useState(false);
+  const [verifyingCode, setVerifyingCode] = useState(false);
   
-  // Synced exactly with your database and AdminAddPatient form
   const [formData, setFormData] = useState({
-    // Step 1: Personal
     first_name: '', middle_name: '', last_name: '', extension_name: '', nickname: '',
     age: '', sex: '', address: '', email: '', phone: '',
     tooth_extraction: false, surgical_procedures: '', allergies: '', aesthetic_procedures: '', 
     pregnant: 'No', untoward_reactions: '',
-    
-    // Step 2: Medical
     heart_disease: false, hypertension: false, diabetes: false, hyperthyroidism: false,
     autoimmune_disease: false, cancer: false, renal_failure: false, liver_disease: false,
     bronchial_asthma: false, pulmonary_disease: false, infectious_disease: false,
     others: '', medications: '', current_skin_treatment: '',
-    
-    // Step 3: Account
     password: '', confirmPassword: ''
   });
+
+  const resetVerificationState = () => {
+    setVerificationCode('');
+    setVerificationToken('');
+    setDevelopmentCode('');
+    setVerificationStatus('');
+    setVerificationError('');
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -31,28 +40,107 @@ const Register = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+
+    if (name === 'email' || name === 'first_name') {
+      resetVerificationState();
+    }
   };
 
-  const handleNext = () => setStep(prev => prev + 1);
+  const handleSendVerificationCode = async () => {
+    if (!formData.email.trim()) {
+      setVerificationError('Enter your email first.');
+      return;
+    }
+
+    setSendingCode(true);
+    setVerificationError('');
+    setVerificationStatus('');
+
+    try {
+      const response = await axios.post('http://localhost/vivrecares/vivrecares-api/send_patient_verification_code.php', {
+        email: formData.email,
+        first_name: formData.first_name || 'Patient',
+      });
+
+      if (response.data.status === 'success') {
+        setVerificationStatus(response.data.message || 'Verification code sent.');
+        setDevelopmentCode(response.data.dev_code || '');
+      } else {
+        setVerificationError(response.data.mail_error ? `${response.data.message} (${response.data.mail_error})` : (response.data.message || 'Unable to send verification code.'));
+      }
+    } catch (error) {
+      setVerificationError(error.response?.data?.message || 'Unable to send verification code right now.');
+    } finally {
+      setSendingCode(false);
+    }
+  };
+
+  const handleVerifyCode = async () => {
+    if (!formData.email.trim() || !verificationCode.trim()) {
+      setVerificationError('Enter your email and verification code.');
+      return;
+    }
+
+    setVerifyingCode(true);
+    setVerificationError('');
+    setVerificationStatus('');
+
+    try {
+      const response = await axios.post('http://localhost/vivrecares/vivrecares-api/verify_patient_email_code.php', {
+        email: formData.email,
+        code: verificationCode,
+      });
+
+      if (response.data.status === 'success') {
+        setVerificationToken(response.data.verification_token);
+        setVerificationStatus(response.data.message || 'Email verified.');
+      } else {
+        setVerificationError(response.data.message || 'Invalid verification code.');
+      }
+    } catch (error) {
+      setVerificationError(error.response?.data?.message || 'Unable to verify the code right now.');
+    } finally {
+      setVerifyingCode(false);
+    }
+  };
+
+  const handleNext = () => {
+    if (step === 1 && !verificationToken) {
+      alert('Please verify your email before continuing.');
+      return;
+    }
+    setStep(prev => prev + 1);
+  };
+
   const handleBack = () => setStep(prev => prev - 1);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!verificationToken) {
+      alert('Please verify your email before creating an account.');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      alert('Passwords do not match!');
       return;
     }
 
     try {
-      const response = await axios.post('http://localhost/vivrecares/vivrecares-api/register.php', formData);
+      const response = await axios.post('http://localhost/vivrecares/vivrecares-api/register.php', {
+        ...formData,
+        verification_token: verificationToken,
+      });
+
       if (response.data.status === 'success') {
-        alert("Account created! Please login.");
-        navigate('/'); 
+        alert('Account created! Please login.');
+        navigate('/');
       } else {
-        alert(response.data.message || "Registration failed.");
+        alert(response.data.message || 'Registration failed.');
       }
     } catch (error) {
-      alert("Registration failed. Check your connection.");
+      alert(error.response?.data?.message || 'Registration failed. Check your connection.');
     }
   };
 
@@ -65,7 +153,22 @@ const Register = () => {
           <h2 className="text-3xl tracking-[0.2em] uppercase font-light text-[#2d2a26] mb-12 text-center">Create Account</h2>
 
           <form onSubmit={handleSubmit}>
-            {step === 1 && <StepOne formData={formData} handleChange={handleChange} />}
+            {step === 1 && (
+              <StepOne
+                formData={formData}
+                handleChange={handleChange}
+                verificationCode={verificationCode}
+                setVerificationCode={setVerificationCode}
+                verificationToken={verificationToken}
+                verificationStatus={verificationStatus}
+                verificationError={verificationError}
+                developmentCode={developmentCode}
+                sendingCode={sendingCode}
+                verifyingCode={verifyingCode}
+                onSendVerificationCode={handleSendVerificationCode}
+                onVerifyCode={handleVerifyCode}
+              />
+            )}
             {step === 2 && <StepTwo formData={formData} handleChange={handleChange} />}
             {step === 3 && <StepThree formData={formData} handleChange={handleChange} />}
 
@@ -95,9 +198,20 @@ const Register = () => {
   );
 };
 
-/* --- STEP COMPONENTS --- */
-
-const StepOne = ({ formData, handleChange }) => (
+const StepOne = ({
+  formData,
+  handleChange,
+  verificationCode,
+  setVerificationCode,
+  verificationToken,
+  verificationStatus,
+  verificationError,
+  developmentCode,
+  sendingCode,
+  verifyingCode,
+  onSendVerificationCode,
+  onVerifyCode,
+}) => (
   <div className="space-y-10 animate-fadeIn">
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
       <Input label="First Name" name="first_name" value={formData.first_name} onChange={handleChange} />
@@ -117,6 +231,56 @@ const StepOne = ({ formData, handleChange }) => (
       <Input label="Phone Number" name="phone" value={formData.phone} onChange={handleChange} />
       <Input label="Email" name="email" type="email" value={formData.email} onChange={handleChange} className="lg:col-span-2" />
       <Input label="Address" name="address" value={formData.address} onChange={handleChange} className="lg:col-span-2" />
+    </div>
+
+    <div className="rounded-2xl border border-[#e9dcc0] bg-[#fcfaf5] p-6">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h3 className="text-sm uppercase tracking-[0.2em] font-medium text-[#b59643]">Email Verification</h3>
+          <p className="text-xs text-gray-500 mt-2">Send a one-time code to your email, then verify it before continuing.</p>
+        </div>
+        {verificationToken && (
+          <span className="inline-flex items-center rounded-full bg-green-50 border border-green-200 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-green-700">
+            Verified
+          </span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-4 mt-6">
+        <input
+          type="text"
+          value={verificationCode}
+          onChange={(e) => setVerificationCode(e.target.value)}
+          placeholder="Enter 6-digit verification code"
+          className="w-full px-4 py-3 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#d4af37]"
+        />
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            type="button"
+            onClick={onSendVerificationCode}
+            disabled={sendingCode || !formData.email}
+            className="px-5 py-3 rounded-xl border border-gray-200 text-xs font-bold uppercase tracking-[0.18em] text-gray-600 hover:border-[#d4af37] hover:text-[#a8892d] transition disabled:opacity-50"
+          >
+            {sendingCode ? 'Sending...' : 'Send Code'}
+          </button>
+          <button
+            type="button"
+            onClick={onVerifyCode}
+            disabled={verifyingCode || !verificationCode}
+            className="px-5 py-3 rounded-xl bg-[#555555] text-[#c4ba9d] text-xs font-bold uppercase tracking-[0.18em] shadow-lg hover:bg-[#404040] transition disabled:opacity-50"
+          >
+            {verifyingCode ? 'Verifying...' : 'Verify Email'}
+          </button>
+        </div>
+      </div>
+
+      {verificationStatus && <p className="mt-4 text-sm text-green-700">{verificationStatus}</p>}
+      {verificationError && <p className="mt-4 text-sm text-red-600">{verificationError}</p>}
+      {developmentCode && (
+        <p className="mt-3 text-sm text-[#8f6d1f]">
+          Development code: <span className="font-bold tracking-[0.2em]">{developmentCode}</span>
+        </p>
+      )}
     </div>
     
     <div className="border-t border-gray-50 pt-10">
@@ -202,7 +366,6 @@ const StepThree = ({ formData, handleChange }) => (
   </div>
 );
 
-/* --- UTILITIES --- */
 const Input = ({ label, className = "", ...props }) => (
   <div className={`flex flex-col gap-2 ${className}`}>
     <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">{label}</label>

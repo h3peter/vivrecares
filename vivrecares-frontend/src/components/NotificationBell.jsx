@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { getStoredUser } from '../utils/session';
 
 const NotificationBell = () => {
     const navigate = useNavigate();
@@ -9,8 +10,7 @@ const NotificationBell = () => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef(null);
 
-    const userStr = localStorage.getItem('user');
-    const user = userStr ? JSON.parse(userStr) : null;
+    const user = getStoredUser();
 
     useEffect(() => {
         if (!user) return;

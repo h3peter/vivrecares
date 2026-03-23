@@ -17,6 +17,22 @@ if (!$data || !isset($data['appointment_id'])) {
 }
 
 try {
+    $currentStmt = $conn->prepare("
+        SELECT a.appointment_date, a.appointment_time, a.branch, a.status,
+               COALESCE(s.service_name, a.appointment_type) AS appointment_type
+        FROM appointments a
+        LEFT JOIN services s ON a.service_id = s.service_id
+        WHERE a.appointment_id = ?
+        LIMIT 1
+    ");
+    $currentStmt->execute([$data['appointment_id']]);
+    $currentAppointment = $currentStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$currentAppointment) {
+        echo json_encode(["status" => "error", "message" => "Appointment not found."]);
+        exit;
+    }
+
     // 1. Update the appointment (Your original working code)
     $sql = "UPDATE appointments 
             SET appointment_date = ?, 
@@ -47,8 +63,23 @@ try {
 
     // 3. Send the notification if the patient account is found
     if ($patientUserId) {
-        $title = "Appointment " . $data['status'];
-        $message = "Your appointment on " . $data['date'] . " has been marked as " . $data['status'] . ".";
+        $normalizedBranch = $data['branch'] === 'Main Branch' ? 'Pasay Branch' : $data['branch'];
+        $serviceLabel = $currentAppointment['appointment_type'] ?: 'appointment';
+        $status = (string) $data['status'];
+
+        if ($status === 'Cancelled') {
+            $title = 'Appointment Cancelled';
+            $message = "Your {$serviceLabel} appointment scheduled for {$data['date']} at {$data['time']} in {$normalizedBranch} has been cancelled.";
+        } elseif ($status === 'Confirmed') {
+            $title = 'Appointment Confirmed';
+            $message = "Your {$serviceLabel} appointment is confirmed for {$data['date']} at {$data['time']} in {$normalizedBranch}.";
+        } elseif ($status === 'Completed') {
+            $title = 'Appointment Completed';
+            $message = "Your {$serviceLabel} appointment on {$data['date']} at {$data['time']} has been marked as completed.";
+        } else {
+            $title = 'Appointment Updated';
+            $message = "Your {$serviceLabel} appointment has been updated to {$status} for {$data['date']} at {$data['time']} in {$normalizedBranch}.";
+        }
         
         $notifSql = "INSERT INTO notifications (user_id, title, message, redirect_url) VALUES (?, ?, ?, ?)";
         $notifStmt = $conn->prepare($notifSql);

@@ -6,6 +6,7 @@ header("Content-Type: application/json");
 
 require_once 'config.php';
 require_once 'Encryption.php';
+require_once 'verification_helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
@@ -33,8 +34,8 @@ try {
     $hashedPassword = password_hash($passwordToHash, PASSWORD_DEFAULT);
 
     $stmtUser = $conn->prepare("
-        INSERT INTO users (first_name, middle_name, last_name, extension_name, nickname, email, password, role)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 'Patient')
+        INSERT INTO users (first_name, middle_name, last_name, extension_name, nickname, email, email_verified_at, password, role)
+        VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, 'Patient')
     ");
     $stmtUser->execute([
         $data['first_name'],
@@ -47,6 +48,7 @@ try {
     ]);
 
     $newUserId = $conn->lastInsertId();
+    mark_user_email_verified($conn, $newUserId);
 
     // 3. Insert into patients table
     //    Sensitive text fields encrypted via Encryption::encrypt() — AES-256-CBC

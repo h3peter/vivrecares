@@ -28,10 +28,11 @@ import DoctorPatientRecord from './pages/doctor/DoctorPatientRecord';
 import DoctorAppointments from './pages/doctor/DoctorAppointments';
 import DoctorReports from './pages/doctor/DoctorReports';
 import DoctorProfile from './pages/doctor/DoctorProfile';
+import { getStoredUser } from './utils/session';
 
 // This acts as a security guard for your routes
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
-  const user = JSON.parse(localStorage.getItem('user'));
+  const user = getStoredUser();
 
   // If they are not logged in at all, kick them to the login screen
   if (!user) {
@@ -166,6 +167,7 @@ function App() {
       element={<ProtectedRoute allowedRole="Doctor"><DoctorProfile /></ProtectedRoute>}
     />
   </Route>
+  <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
   );

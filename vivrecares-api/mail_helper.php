@@ -5,6 +5,8 @@ require_once __DIR__ . '/vendor/autoload.php';
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
 
+$GLOBALS['vivre_last_mail_error'] = null;
+
 if (!function_exists('is_mail_enabled')) {
     function is_mail_enabled()
     {
@@ -58,7 +60,10 @@ if (!function_exists('build_mail_html')) {
 if (!function_exists('send_vivre_email')) {
     function send_vivre_email($toEmail, $toName, $subject, $title, $message, $actionUrl = null, $actionLabel = 'Open Dashboard')
     {
+        $GLOBALS['vivre_last_mail_error'] = null;
+
         if (!is_mail_enabled()) {
+            $GLOBALS['vivre_last_mail_error'] = 'Mail sending is disabled.';
             return false;
         }
 
@@ -70,6 +75,7 @@ if (!function_exists('send_vivre_email')) {
         $fromName = app_env('MAIL_FROM_NAME', 'Vivre Medical Group');
 
         if (!$toEmail || !$smtpUser || !$smtpPass || !$fromEmail) {
+            $GLOBALS['vivre_last_mail_error'] = 'Mail configuration is incomplete.';
             return false;
         }
 
@@ -101,9 +107,17 @@ if (!function_exists('send_vivre_email')) {
             $mail->send();
             return true;
         } catch (Exception $e) {
+            $GLOBALS['vivre_last_mail_error'] = $e->getMessage();
             error_log('Mailer error: ' . $e->getMessage());
             return false;
         }
+    }
+}
+
+if (!function_exists('get_last_mail_error')) {
+    function get_last_mail_error()
+    {
+        return $GLOBALS['vivre_last_mail_error'] ?? null;
     }
 }
 

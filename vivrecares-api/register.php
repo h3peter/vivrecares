@@ -6,17 +6,19 @@ header("Content-Type: application/json");
 
 require_once 'config.php';
 require_once 'Encryption.php';
+require_once 'verification_helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
 $data = json_decode(file_get_contents("php://input"), true);
 
-if (!$data || !isset($data['email']) || !isset($data['first_name']) || !isset($data['password'])) {
+if (!$data || !isset($data['email']) || !isset($data['first_name']) || !isset($data['password']) || !isset($data['verification_token'])) {
     echo json_encode(["status" => "error", "message" => "Missing required fields."]);
     exit;
 }
 
 try {
+    ensure_email_verification_schema($conn);
     $conn->beginTransaction();
 
     $stmt = $conn->prepare("SELECT user_id FROM users WHERE email = ? AND deleted_at IS NULL");
@@ -27,9 +29,11 @@ try {
         exit;
     }
 
+    consume_verified_email_token($conn, $data['email'], verification_purpose_patient_registration(), $data['verification_token']);
+
     $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
 
-    $sqlUser = "INSERT INTO users (first_name, middle_name, last_name, extension_name, nickname, email, password, role) VALUES (?, ?, ?, ?, ?, ?, ?, 'Patient')";
+    $sqlUser = "INSERT INTO users (first_name, middle_name, last_name, extension_name, nickname, email, email_verified_at, password, role) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, 'Patient')";
     $stmtUser = $conn->prepare($sqlUser);
     $stmtUser->execute([
         $data['first_name'],
@@ -42,6 +46,7 @@ try {
     ]);
 
     $newUserId = $conn->lastInsertId();
+    mark_user_email_verified($conn, $newUserId);
 
     $sqlPatient = "INSERT INTO patients (
         user_id, age, sex, address, phone,
@@ -85,8 +90,22 @@ try {
     $conn->commit();
     echo json_encode(["status" => "success", "message" => "Account created successfully."]);
 
+} catch (PDOException $e) {
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
+
+    $errorCode = $e->errorInfo[1] ?? null;
+    if ((string) $e->getCode() === '23000' || (int) $errorCode === 1062) {
+        echo json_encode(["status" => "error", "message" => "Email is already registered."]);
+        exit;
+    }
+
+    echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
 } catch (Exception $e) {
-    $conn->rollBack();
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
     echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
 }
 ?>
