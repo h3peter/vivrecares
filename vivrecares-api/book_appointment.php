@@ -75,6 +75,20 @@ try {
         throw new Exception('The selected time slot is not available.');
     }
 
+    $conflictStmt = $conn->prepare("
+        SELECT appointment_id
+        FROM appointments
+        WHERE branch = ?
+          AND appointment_date = ?
+          AND appointment_time = ?
+          AND status IN ('Pending', 'Confirmed')
+        LIMIT 1
+    ");
+    $conflictStmt->execute([$branch, $appointmentDate, $appointmentTime]);
+    if ($conflictStmt->fetchColumn()) {
+        throw new Exception('The selected time slot is already reserved for that branch and day.');
+    }
+
     $sql = "INSERT INTO appointments (patient_id, service_id, branch, appointment_date, appointment_time, appointment_type, concerns, status) 
             VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')";
             

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import PasswordChangePanel from '../components/PasswordChangePanel';
 
 const BASE_URL = 'http://localhost/vivrecares';
 
@@ -203,6 +204,10 @@ const AccountSettings = () => {
                             </div>
                         </form>
                     </div>
+                </div>
+
+                <div className="mt-8">
+                    <PasswordChangePanel roleLabel="Patient" />
                 </div>
             </div>
         </div>

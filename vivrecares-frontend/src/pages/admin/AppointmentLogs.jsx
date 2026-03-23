@@ -110,6 +110,9 @@ const AppointmentLogs = () => {
             if (res.data.status === 'success') {
                 setIsModalOpen(false);
                 fetchAppointments();
+                if (res.data.mail_status === 'failed') {
+                    alert(res.data.mail_error ? `${res.data.message}\n\nMail error: ${res.data.mail_error}` : res.data.message);
+                }
             }
         } catch (error) {
             console.error('Update error:', error);
