@@ -7,6 +7,11 @@ try {
     $sql = "SELECT
                 b.invoice_id, b.total_amount, b.payment_method, b.reference_number, b.payment_status, b.payment_date,
                 u.first_name, u.last_name,
+                CASE
+                    WHEN a.branch = 'Main Branch' THEN 'Pasay Branch'
+                    WHEN a.branch IS NULL OR a.branch = '' THEN 'Direct Billing'
+                    ELSE a.branch
+                END AS branch,
                 (SELECT description FROM billing_items WHERE invoice_id = b.invoice_id ORDER BY item_id ASC LIMIT 1) as main_treatment,
                 (SELECT COUNT(*) FROM billing_items WHERE invoice_id = b.invoice_id) as item_count
             FROM billings b

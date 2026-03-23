@@ -32,28 +32,27 @@ const escapeHtml = (value) =>
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
 
-export const printTableReport = ({ title, subtitle = '', columns, rows, meta = [] }) => {
-    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=1100,height=800');
-    if (!printWindow) return;
+const buildMetaRows = (meta) => {
+    if (!meta.length) return '';
 
+    const cells = meta
+        .map(
+            (item) => `
+                <td class="detail-label">${escapeHtml(item.label)}</td>
+                <td class="detail-value">${escapeHtml(item.value)}</td>
+            `
+        )
+        .join('');
+
+    return `
+        <table class="details-table">
+            <tr>${cells}</tr>
+        </table>
+    `;
+};
+
+const buildPrintableHtml = ({ title, subtitle = '', columns, rows, meta = [] }) => {
     const generatedAt = new Date().toLocaleString();
-    const metaMarkup = meta.length
-        ? `
-            <div class="meta-grid">
-                ${meta
-                    .map(
-                        (item) => `
-                            <div class="meta-card">
-                                <div class="meta-label">${escapeHtml(item.label)}</div>
-                                <div class="meta-value">${escapeHtml(item.value)}</div>
-                            </div>
-                        `
-                    )
-                    .join('')}
-            </div>
-        `
-        : '';
-
     const tableHead = columns.map((column) => `<th>${escapeHtml(column.label)}</th>`).join('');
     const tableRows = rows.length
         ? rows
@@ -67,110 +66,212 @@ export const printTableReport = ({ title, subtitle = '', columns, rows, meta = [
               .join('')
         : `<tr><td colspan="${columns.length}" class="empty">No report data available.</td></tr>`;
 
-    printWindow.document.write(`
+    return `
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
             <head>
                 <meta charset="utf-8" />
                 <title>${escapeHtml(title)}</title>
                 <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        color: #222;
-                        margin: 32px;
+                    @page {
+                        size: A4 portrait;
+                        margin: 18mm;
                     }
-                    .header {
-                        border-bottom: 2px solid #d6c39d;
-                        padding-bottom: 16px;
+                    body {
+                        font-family: Helvetica, Arial, sans-serif;
+                        color: #333;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .header-table {
+                        width: 100%;
+                        border: none;
                         margin-bottom: 24px;
                     }
-                    h1 {
-                        margin: 0;
-                        font-size: 28px;
+                    .header-table td {
+                        border: none;
+                        padding: 0;
+                        vertical-align: top;
                     }
-                    .subtitle {
-                        margin-top: 8px;
+                    .brand-title {
+                        font-size: 26px;
+                        font-weight: bold;
+                        color: #b8a16b;
+                        letter-spacing: 0.06em;
+                    }
+                    .company-info {
+                        font-size: 11px;
                         color: #666;
-                        font-size: 14px;
+                        margin-top: 14px;
+                        line-height: 1.6;
+                    }
+                    .report-title {
+                        font-size: 30px;
+                        font-weight: bold;
+                        color: #b8a16b;
+                        text-transform: uppercase;
+                        letter-spacing: 0.12em;
+                        text-align: right;
+                    }
+                    .report-subtitle {
+                        font-size: 12px;
+                        color: #666;
+                        margin-top: 10px;
+                        text-align: right;
+                        line-height: 1.5;
                     }
                     .generated-at {
-                        margin-top: 10px;
-                        font-size: 12px;
-                        color: #888;
+                        font-size: 11px;
+                        color: #999;
+                        margin-top: 12px;
+                        text-align: right;
                         text-transform: uppercase;
                         letter-spacing: 0.08em;
                     }
-                    .meta-grid {
-                        display: grid;
-                        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-                        gap: 12px;
-                        margin-bottom: 20px;
+                    .details-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin: 0 0 22px;
+                        table-layout: fixed;
                     }
-                    .meta-card {
-                        border: 1px solid #ece7db;
-                        background: #faf8f2;
-                        border-radius: 12px;
-                        padding: 12px 14px;
+                    .details-table td {
+                        border: 1px solid #eee;
+                        padding: 10px 12px;
                     }
-                    .meta-label {
-                        font-size: 11px;
+                    .detail-label {
+                        background: #faf9f6;
+                        color: #b8a16b;
+                        font-size: 10px;
+                        font-weight: bold;
                         text-transform: uppercase;
-                        letter-spacing: 0.12em;
-                        color: #8a7f68;
-                        margin-bottom: 6px;
+                        letter-spacing: 0.08em;
+                        width: 16%;
                     }
-                    .meta-value {
-                        font-size: 18px;
+                    .detail-value {
+                        color: #555;
+                        font-size: 13px;
                         font-weight: bold;
                     }
-                    table {
+                    .items-table {
                         width: 100%;
                         border-collapse: collapse;
                     }
-                    th, td {
-                        border: 1px solid #e7e2d6;
+                    .items-table th {
+                        background: #faf9f6;
+                        color: #b8a16b;
+                        padding: 12px 10px;
                         text-align: left;
-                        padding: 10px 12px;
-                        font-size: 13px;
-                        vertical-align: top;
-                    }
-                    th {
-                        background: #f3eee4;
+                        font-size: 10px;
                         text-transform: uppercase;
                         letter-spacing: 0.08em;
-                        font-size: 11px;
-                        color: #6e6552;
+                        border-top: 1px solid #eee;
+                        border-bottom: 2px solid #b8a16b;
+                    }
+                    .items-table td {
+                        padding: 12px 10px;
+                        font-size: 12px;
+                        border-bottom: 1px solid #eee;
+                        vertical-align: top;
+                        color: #444;
+                        word-break: break-word;
                     }
                     .empty {
                         text-align: center;
                         color: #888;
                         font-style: italic;
-                        padding: 18px;
+                        padding: 22px;
                     }
-                    @media print {
-                        body {
-                            margin: 18px;
-                        }
+                    .footer-note {
+                        text-align: center;
+                        margin-top: 40px;
+                        font-size: 11px;
+                        font-style: italic;
+                        color: #888;
                     }
                 </style>
             </head>
             <body>
-                <div class="header">
-                    <h1>${escapeHtml(title)}</h1>
-                    ${subtitle ? `<div class="subtitle">${escapeHtml(subtitle)}</div>` : ''}
-                    <div class="generated-at">Generated ${escapeHtml(generatedAt)}</div>
-                </div>
-                ${metaMarkup}
-                <table>
+                <table class="header-table">
+                    <tr>
+                        <td style="width: 52%;">
+                            <div class="brand-title">VIVRE MEDICAL GROUP</div>
+                            <div class="company-info">
+                                Reports and Records Office<br>
+                                Valenzuela Branch and Pasay Branch<br>
+                                Internal clinic-generated report
+                            </div>
+                        </td>
+                        <td style="width: 48%;">
+                            <div class="report-title">${escapeHtml(title)}</div>
+                            ${subtitle ? `<div class="report-subtitle">${escapeHtml(subtitle)}</div>` : ''}
+                            <div class="generated-at">Generated ${escapeHtml(generatedAt)}</div>
+                        </td>
+                    </tr>
+                </table>
+
+                ${buildMetaRows(meta)}
+
+                <table class="items-table">
                     <thead>
                         <tr>${tableHead}</tr>
                     </thead>
                     <tbody>${tableRows}</tbody>
                 </table>
+
+                <div class="footer-note">Prepared from the Vivre Medical Group system.</div>
             </body>
         </html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
+    `;
+};
+
+export const printTableReport = ({ title, subtitle = '', columns, rows, meta = [] }) => {
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.setAttribute('aria-hidden', 'true');
+
+    const cleanup = () => {
+        window.setTimeout(() => {
+            if (iframe.parentNode) {
+                iframe.parentNode.removeChild(iframe);
+            }
+        }, 300);
+    };
+
+    iframe.onload = () => {
+        const frameWindow = iframe.contentWindow;
+        if (!frameWindow) {
+            cleanup();
+            return;
+        }
+
+        const handleAfterPrint = () => {
+            frameWindow.removeEventListener('afterprint', handleAfterPrint);
+            cleanup();
+        };
+
+        frameWindow.addEventListener('afterprint', handleAfterPrint);
+
+        window.setTimeout(() => {
+            frameWindow.focus();
+            frameWindow.print();
+            window.setTimeout(cleanup, 1500);
+        }, 250);
+    };
+
+    document.body.appendChild(iframe);
+
+    const frameDocument = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!frameDocument) {
+        cleanup();
+        return;
+    }
+
+    frameDocument.open();
+    frameDocument.write(buildPrintableHtml({ title, subtitle, columns, rows, meta }));
+    frameDocument.close();
 };
