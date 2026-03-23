@@ -16,9 +16,10 @@
         .invoice-title { font-size: 32px; font-weight: bold; color: #b8a16b; text-transform: uppercase; letter-spacing: 2px; }
         
         /* Mini table for invoice details on the right */
-        .details-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .details-table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; }
         .details-table th { background-color: #faf9f6; color: #b8a16b; padding: 8px 10px; font-size: 11px; text-transform: uppercase; text-align: center; border: 1px solid #eee; }
-        .details-table td { background-color: #ffffff; padding: 8px 10px; font-size: 12px; text-align: center; border: 1px solid #eee; font-weight: bold; color: #555; }
+        .details-table td { background-color: #ffffff; padding: 8px 10px; font-size: 12px; text-align: center; border: 1px solid #eee; font-weight: bold; color: #555; word-wrap: break-word; overflow-wrap: break-word; }
+        .details-table .wide-value { text-align: left; font-size: 11px; padding: 10px 12px; }
         
         /* Main items table */
         .items-table { width: 100%; border-collapse: collapse; margin-top: 30px; }
@@ -77,10 +78,27 @@
                     <tr>
                         <td colspan="2"><?php echo htmlspecialchars($patient_name); ?></td>
                     </tr>
+                    <tr>
+                        <th>Method</th>
+                        <th>Status</th>
+                    </tr>
+                    <tr>
+                        <td><?php echo htmlspecialchars($payment_method); ?></td>
+                        <td><?php echo htmlspecialchars($payment_status); ?></td>
+                    </tr>
                 </table>
             </td>
         </tr>
     </table>
+
+    <?php if (!empty($reference_number)): ?>
+    <table class="details-table" style="width: 40%; margin-left: auto; margin-top: -18px; margin-bottom: 20px;">
+        <tr>
+            <th style="width: 35%;">Reference #</th>
+            <td class="wide-value"><?php echo htmlspecialchars($reference_number); ?></td>
+        </tr>
+    </table>
+    <?php endif; ?>
 
     <table class="items-table">
         <thead>

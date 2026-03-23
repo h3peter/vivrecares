@@ -12,10 +12,11 @@ if (!$user_id) {
 
 try {
     // We join the patients table so we can look them up by their login account (user_id)
-    $sql = "SELECT a.appointment_id, a.appointment_type, a.branch, a.appointment_date as date, 
+    $sql = "SELECT a.appointment_id, COALESCE(s.service_name, a.appointment_type) AS appointment_type, a.branch, a.appointment_date as date, 
                    a.appointment_time as time, a.status, a.concerns 
             FROM appointments a
             JOIN patients p ON a.patient_id = p.patient_id
+            LEFT JOIN services s ON a.service_id = s.service_id
             WHERE p.user_id = ?
             ORDER BY a.appointment_date DESC, a.appointment_time DESC";
             

@@ -8,7 +8,7 @@ const PatientLayout = () => {
     const location = useLocation();
     const user = JSON.parse(localStorage.getItem('user'));
 
-    const displayName = user?.nickname || user?.first_name || user?.name || "Patient";
+    const displayName = user?.nickname || user?.first_name || user?.name || 'Patient';
 
     const handleMenuClick = (path) => {
         if (location.pathname !== path) navigate(path);
@@ -16,30 +16,26 @@ const PatientLayout = () => {
 
     return (
         <div className="flex min-h-screen bg-[#faf9f6] font-sans">
-            {/* Sidebar */}
             <aside className="w-64 bg-[#4d4d4d] text-white flex flex-col py-12 sticky top-0 h-screen">
-
-                {/* Avatar + Greeting */}
                 <div className="flex flex-col items-center px-6 mb-12">
                     <div className="w-24 h-24 rounded-full border-2 border-[#d4af37] overflow-hidden mb-4 bg-gray-200">
                         <ProfileAvatar user={user} className="w-full h-full" textSize="text-4xl" />
                     </div>
                     <h3 className="text-sm font-light tracking-widest text-center uppercase">
-                        Good day,<br/>
+                        Good day,
+                        <br />
                         <span className="font-bold text-lg">{displayName}!</span>
                     </h3>
                 </div>
 
-                {/* Nav */}
                 <nav className="w-full flex flex-col space-y-1">
-                    <SidebarButton label="Patient Profile"          active={location.pathname === '/profile'}              onClick={() => handleMenuClick('/profile')} />
-                    <SidebarButton label="Request for Appointment"  active={location.pathname === '/request-appointment'}  onClick={() => handleMenuClick('/request-appointment')} />
-                    <SidebarButton label="Appointment History"      active={location.pathname === '/appointment-history'}  onClick={() => handleMenuClick('/appointment-history')} />
-                    <SidebarButton label="Billing History"          active={location.pathname === '/billing-history'}      onClick={() => handleMenuClick('/billing-history')} />
-                    <SidebarButton label="Account Settings"         active={location.pathname === '/account-settings'}     onClick={() => handleMenuClick('/account-settings')} />
+                    <SidebarButton label="Patient Profile" active={location.pathname === '/profile'} onClick={() => handleMenuClick('/profile')} />
+                    <SidebarButton label="Request Appointment" active={location.pathname === '/request-appointment'} onClick={() => handleMenuClick('/request-appointment')} />
+                    <SidebarButton label="Appointment History" active={location.pathname === '/appointment-history'} onClick={() => handleMenuClick('/appointment-history')} />
+                    <SidebarButton label="Billing History" active={location.pathname === '/billing-history'} onClick={() => handleMenuClick('/billing-history')} />
+                    <SidebarButton label="Account Settings" active={location.pathname === '/account-settings'} onClick={() => handleMenuClick('/account-settings')} />
                 </nav>
 
-                {/* Bottom actions */}
                 <div className="mt-auto px-5 pb-8 flex flex-col gap-3">
                     <button
                         onClick={() => navigate('/')}
@@ -63,9 +59,7 @@ const PatientLayout = () => {
                 </div>
             </aside>
 
-            {/* Main Content */}
             <div className="flex-1 flex flex-col min-w-0">
-                {/* Navbar — logo navigates to landing page */}
                 <header className="h-20 bg-white border-b border-gray-100 flex items-center justify-between px-12 sticky top-0 z-10">
                     <img
                         src={logoBlack}

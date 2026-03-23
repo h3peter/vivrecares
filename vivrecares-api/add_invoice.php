@@ -10,24 +10,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
 $data = json_decode(file_get_contents("php://input"), true);
 
-// Basic validation
 if (!$data || empty($data['appointment_id']) || empty($data['total_amount'])) {
     echo json_encode(["status" => "error", "message" => "Missing required fields."]);
     exit;
 }
 
 try {
-    $sql = "INSERT INTO billings (appointment_id, total_amount, payment_method, payment_status) 
-            VALUES (?, ?, ?, 'Paid')";
-            
+    $paymentMethod = $data['payment_method'] ?? 'Cash';
+    $paymentStatus = $data['payment_status'] ?? 'Paid';
+    $referenceNumber = trim($data['reference_number'] ?? '');
+    $allowedMethods = ['Cash', 'GCash', 'Maya', 'Credit Card', 'Bank Transfer'];
+    $allowedStatuses = ['Paid', 'Unpaid'];
+
+    if (!in_array($paymentMethod, $allowedMethods, true)) {
+        throw new Exception('Invalid payment method.');
+    }
+
+    if (!in_array($paymentStatus, $allowedStatuses, true)) {
+        throw new Exception('Invalid payment status.');
+    }
+
+    if ($paymentMethod !== 'Cash' && $paymentStatus === 'Paid' && $referenceNumber === '') {
+        throw new Exception('Reference number is required for non-cash paid invoices.');
+    }
+
+    if ($paymentMethod === 'Cash' || $referenceNumber === '') {
+        $referenceNumber = null;
+    }
+
+    $paymentDate = $paymentStatus === 'Paid' ? date('Y-m-d H:i:s') : null;
+
+    $sql = "INSERT INTO billings (appointment_id, total_amount, payment_method, reference_number, payment_status, payment_date)
+            VALUES (?, ?, ?, ?, ?, ?)";
+
     $stmt = $conn->prepare($sql);
     $stmt->execute([
         $data['appointment_id'],
         $data['total_amount'],
-        $data['payment_method']
+        $paymentMethod,
+        $referenceNumber,
+        $paymentStatus,
+        $paymentDate
     ]);
 
-    // Optional pro-move: We could also automatically update that appointment's status to 'Completed' here!
     $updateApt = $conn->prepare("UPDATE appointments SET status = 'Completed' WHERE appointment_id = ?");
     $updateApt->execute([$data['appointment_id']]);
 
