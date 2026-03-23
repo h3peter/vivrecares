@@ -9,6 +9,7 @@ const PatientDetails = () => {
     const [patientData, setPatientData] = useState(null);
     const [appointments, setAppointments] = useState([]);
     const [treatments, setTreatments] = useState([]);
+    const [consultationNotes, setConsultationNotes] = useState([]);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -29,6 +30,12 @@ const PatientDetails = () => {
                         const treatmentRes = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_patient_treatments.php?patient_id=${patientInfo.patient_id}`);
                         if (treatmentRes.data.status === 'success') {
                             setTreatments(treatmentRes.data.data);
+                        }
+
+                        // 4. Fetch doctor-entered consultation notes
+                        const notesRes = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_consultation_notes.php?patient_id=${patientInfo.patient_id}`);
+                        if (notesRes.data.status === 'success') {
+                            setConsultationNotes(notesRes.data.data || []);
                         }
                     }
                 }
@@ -74,11 +81,24 @@ const PatientDetails = () => {
                         <div className="bg-[#fcfaf5] px-6 py-3 border-b border-gray-100">
                             <span className="text-[10px] uppercase tracking-[0.2em] text-[#b2a58d] font-bold">Consultation Notes</span>
                         </div>
-                        <div className="p-6 text-gray-600 text-xs leading-relaxed min-h-[120px]">
-                            <ul className="list-disc ml-4 space-y-1">
-                                <li>Limit alcohol and strenuous exercise</li>
-                                <li>Resume normal activities after 24 to 48 hours</li>
-                            </ul>
+                        <div className="p-6 text-gray-600 text-xs leading-relaxed min-h-[120px] space-y-3">
+                            {consultationNotes.length > 0 ? (
+                                consultationNotes.slice(0, 4).map((note) => (
+                                    <div key={note.note_id} className="rounded-xl border border-gray-100 bg-[#faf9f6] p-3">
+                                        <p className="text-[10px] uppercase tracking-[0.18em] text-[#b2a58d] font-bold">
+                                            Dr. {note.doctor_first_name || 'Clinic'} {note.doctor_last_name || 'Staff'}
+                                        </p>
+                                        <p className="text-[10px] text-gray-400 mt-1">
+                                            {formatDateTime(note.created_at)}
+                                        </p>
+                                        <p className="text-xs text-gray-700 mt-2"><span className="font-bold">Diagnosis:</span> {note.diagnosis || 'Not specified'}</p>
+                                        <p className="text-xs text-gray-700 mt-1"><span className="font-bold">Plan:</span> {note.treatment_plan || 'Not specified'}</p>
+                                        <p className="text-xs text-gray-700 mt-1"><span className="font-bold">Notes:</span> {note.consultation_notes || 'Not specified'}</p>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="italic text-gray-400">No consultation notes yet.</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -143,5 +163,18 @@ const InfoBlock = ({ label, value }) => (
         <p className="text-sm text-gray-600 font-light">{value}</p>
     </div>
 );
+
+const formatDateTime = (value) => {
+    if (!value) return 'Date unavailable';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'Date unavailable';
+    return parsed.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+    });
+};
 
 export default PatientDetails;

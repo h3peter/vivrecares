@@ -54,10 +54,7 @@ const RequestAppointment = () => {
         fetchInitialData();
     }, []);
 
-    const branchOptions = useMemo(
-        () => [...new Set([...availability.map((day) => day.branch), ...slots.map((slot) => slot.branch)].filter(Boolean))],
-        [availability, slots]
-    );
+    const branchOptions = ['Pasay Branch', 'Valenzuela Branch'];
 
     const branchAvailability = useMemo(
         () => availability.filter((day) => day.branch === branch && Number(day.is_active) === 1),

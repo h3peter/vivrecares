@@ -18,12 +18,19 @@ import AdminProfile from './pages/admin/AdminProfile';
 import AdminAddPatient from './pages/admin/AdminAddPatient';
 import AdminViewPatient from './pages/admin/AdminViewPatient';
 import AdminCreateInvoice from './pages/admin/AdminCreateInvoice';
+import AdminReports from './pages/admin/AdminReports';
 import PatientInvoices from './pages/PatientInvoices';
 import AdminEditPatient from './pages/admin/AdminEditPatient';
 import AdminSettings from './pages/admin/AdminSettings';
+import DoctorLayout from './components/DoctorLayout';
+import DoctorPatients from './pages/doctor/DoctorPatients';
+import DoctorPatientRecord from './pages/doctor/DoctorPatientRecord';
+import DoctorAppointments from './pages/doctor/DoctorAppointments';
+import DoctorReports from './pages/doctor/DoctorReports';
+import DoctorProfile from './pages/doctor/DoctorProfile';
 
 // This acts as a security guard for your routes
-const ProtectedRoute = ({ children, allowedRole }) => {
+const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
   const user = JSON.parse(localStorage.getItem('user'));
 
   // If they are not logged in at all, kick them to the login screen
@@ -32,7 +39,8 @@ const ProtectedRoute = ({ children, allowedRole }) => {
   }
 
   // If they are logged in but have the wrong role (e.g., a patient trying to access admin), kick them out
-  if (allowedRole && user.role !== allowedRole) {
+  const permittedRoles = allowedRoles || (allowedRole ? [allowedRole] : null);
+  if (permittedRoles && !permittedRoles.includes(user.role)) {
     return <Navigate to="/" replace />;
   }
 
@@ -129,6 +137,34 @@ function App() {
     element={<ProtectedRoute allowedRole="Admin">
         <AdminSettings />
     </ProtectedRoute>} />
+    <Route
+    path="/admin/reports"
+    element={<ProtectedRoute allowedRole="Admin">
+        <AdminReports />
+    </ProtectedRoute>} />
+  </Route>
+
+  <Route element={<DoctorLayout />}>
+    <Route
+      path="/doctor/patients"
+      element={<ProtectedRoute allowedRole="Doctor"><DoctorPatients /></ProtectedRoute>}
+    />
+    <Route
+      path="/doctor/patient/:userId"
+      element={<ProtectedRoute allowedRole="Doctor"><DoctorPatientRecord /></ProtectedRoute>}
+    />
+    <Route
+      path="/doctor/appointments"
+      element={<ProtectedRoute allowedRole="Doctor"><DoctorAppointments /></ProtectedRoute>}
+    />
+    <Route
+      path="/doctor/reports"
+      element={<ProtectedRoute allowedRole="Doctor"><DoctorReports /></ProtectedRoute>}
+    />
+    <Route
+      path="/doctor/profile"
+      element={<ProtectedRoute allowedRole="Doctor"><DoctorProfile /></ProtectedRoute>}
+    />
   </Route>
       </Routes>
     </Router>

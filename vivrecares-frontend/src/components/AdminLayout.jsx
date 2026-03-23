@@ -35,6 +35,7 @@ const AdminLayout = () => {
                     <SidebarButton label="Manage Patients"   active={location.pathname === '/admin/patients'}     onClick={() => handleMenuClick('/admin/patients')} />
                     <SidebarButton label="Appointment Logs"  active={location.pathname === '/admin/appointments'} onClick={() => handleMenuClick('/admin/appointments')} />
                     <SidebarButton label="Billing & Payments" active={location.pathname === '/admin/billing'}     onClick={() => handleMenuClick('/admin/billing')} />
+                    <SidebarButton label="Reports"           active={location.pathname === '/admin/reports'}      onClick={() => handleMenuClick('/admin/reports')} />
                     <SidebarButton label="Settings"          active={location.pathname === '/admin/settings'}     onClick={() => handleMenuClick('/admin/settings')} />
                     <SidebarButton label="My Profile"        active={location.pathname === '/admin/profile'}      onClick={() => handleMenuClick('/admin/profile')} />
                 </nav>

@@ -1,12 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const NotificationBell = () => {
+    const navigate = useNavigate();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
 
-    // Get the logged-in user
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
 
@@ -25,18 +27,63 @@ const NotificationBell = () => {
             }
         };
 
-        // Fetch immediately, then check every 10 seconds
         fetchNotifications();
         const interval = setInterval(fetchNotifications, 10000);
         return () => clearInterval(interval);
     }, [user]);
 
+    useEffect(() => {
+        const handleOutsideClick = (event) => {
+            if (!isOpen) return;
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleOutsideClick);
+        return () => document.removeEventListener('mousedown', handleOutsideClick);
+    }, [isOpen]);
+
+    const resolveNotificationRoute = (notif) => {
+        const title = String(notif?.title || '').toLowerCase();
+        const message = String(notif?.message || '').toLowerCase();
+        const role = String(user?.role || '');
+
+        const isAppointment = title.includes('appointment') || message.includes('appointment');
+        const isConsultation = title.includes('consultation') || message.includes('consultation');
+
+        if (role === 'Admin') {
+            if (isAppointment) return '/admin/appointments';
+            return '/admin/patients';
+        }
+
+        if (role === 'Doctor') {
+            if (isAppointment) return '/doctor/appointments';
+            if (isConsultation) return '/doctor/patients';
+            return '/doctor/appointments';
+        }
+
+        if (role === 'Patient') {
+            if (isAppointment) return '/appointment-history';
+            if (isConsultation) return '/profile';
+            return '/profile';
+        }
+
+        return '/';
+    };
+
+    const handleNotificationClick = (notif) => {
+        const targetRoute = notif?.redirect_url || resolveNotificationRoute(notif);
+        setIsOpen(false);
+        navigate(targetRoute);
+    };
+
     const handleOpenDropdown = async () => {
-        setIsOpen(!isOpen);
-        
-        // If they are opening it and there are unread alerts, clear it instantly
-        if (!isOpen && unreadCount > 0) {
-            setUnreadCount(0); // Instantly removes the red dot visually
+        const nextOpen = !isOpen;
+        setIsOpen(nextOpen);
+
+        if (nextOpen && unreadCount > 0 && user?.id) {
+            setUnreadCount(0);
             try {
                 await axios.post('http://localhost/vivrecares/vivrecares-api/mark_notifications_read.php', {
                     user_id: user.id
@@ -46,14 +93,14 @@ const NotificationBell = () => {
             }
         }
     };
+
     return (
-        <div className="relative">
+        <div className="relative" ref={dropdownRef}>
             <button onClick={handleOpenDropdown} className="relative p-2 text-gray-400 hover:text-[#d4af37] transition">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                
-                {/* The Red Status Badge */}
+
                 {unreadCount > 0 && (
                     <span className="absolute top-1 right-2 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">
                         {unreadCount}
@@ -61,21 +108,25 @@ const NotificationBell = () => {
                 )}
             </button>
 
-            {/* Dropdown Menu */}
             {isOpen && (
                 <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-fadeIn">
                     <div className="bg-[#faf9f6] px-6 py-4 border-b border-gray-50">
                         <h4 className="text-[10px] uppercase tracking-widest text-[#b2a58d] font-bold">Notifications</h4>
                     </div>
                     <div className="max-h-72 overflow-y-auto custom-scrollbar p-2">
-                        {notifications.length > 0 ? notifications.map(notif => (
-                            <div key={notif.notification_id} className={`p-4 rounded-xl mb-1 ${notif.is_read == 0 ? 'bg-blue-50/50' : 'hover:bg-gray-50'} transition`}>
+                        {notifications.length > 0 ? notifications.map((notif) => (
+                            <button
+                                key={notif.notification_id}
+                                type="button"
+                                onClick={() => handleNotificationClick(notif)}
+                                className={`w-full text-left p-4 rounded-xl mb-1 ${notif.is_read == 0 ? 'bg-blue-50/50' : 'hover:bg-gray-50'} transition`}
+                            >
                                 <p className="text-xs font-bold text-gray-800">{notif.title}</p>
                                 <p className="text-xs text-gray-600 mt-1">{notif.message}</p>
                                 <p className="text-[9px] text-gray-400 uppercase tracking-widest mt-2">
                                     {new Date(notif.created_at).toLocaleDateString()}
                                 </p>
-                            </div>
+                            </button>
                         )) : (
                             <p className="text-xs text-gray-400 text-center py-6 italic">No new notifications.</p>
                         )}

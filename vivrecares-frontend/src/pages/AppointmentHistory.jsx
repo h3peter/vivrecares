@@ -4,6 +4,8 @@ import axios from 'axios';
 const AppointmentHistory = () => {
     const [appointments, setAppointments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
     useEffect(() => {
         const fetchHistory = async () => {
@@ -49,6 +51,15 @@ const AppointmentHistory = () => {
         return `${h % 12 || 12}:${minute} ${h >= 12 ? 'PM' : 'AM'}`;
     };
 
+    const totalPages = Math.max(1, Math.ceil(appointments.length / rowsPerPage));
+    const indexOfLastRow = currentPage * rowsPerPage;
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+    const currentRows = appointments.slice(indexOfFirstRow, indexOfLastRow);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [rowsPerPage, appointments.length]);
+
     return (
         <div className="p-8 lg:p-12 bg-[#f4f4f4] min-h-screen">
             <div className="mb-8">
@@ -69,7 +80,7 @@ const AppointmentHistory = () => {
                     {loading ? (
                         <p className="text-center text-base text-gray-400 italic py-10">Loading records...</p>
                     ) : appointments.length > 0 ? (
-                        appointments.map((apt) => (
+                        currentRows.map((apt) => (
                             <div key={apt.appointment_id} className="grid grid-cols-12 gap-4 items-center text-base text-gray-700 p-5 bg-[#faf9f6] rounded-[1.5rem] border border-gray-50 hover:border-[#c4ba9d] transition">
                                 <div className="col-span-3 flex flex-col">
                                     <span className="font-bold text-gray-800">{apt.appointment_type || 'General Inquiry'}</span>
@@ -97,6 +108,35 @@ const AppointmentHistory = () => {
                     )}
                 </div>
             </div>
+
+            {appointments.length > 0 && !loading && (
+                <div className="mt-8 flex justify-between items-center">
+                    <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
+                        <span>Rows per page:</span>
+                        <select
+                            className="bg-white border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-[#c4ba9d] text-sm text-gray-700"
+                            value={rowsPerPage}
+                            onChange={(e) => setRowsPerPage(Number(e.target.value))}
+                        >
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                        </select>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                        <span className="text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <div className="flex gap-2">
+                            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#c4ba9d] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg></button>
+                            <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#c4ba9d] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg></button>
+                            <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#c4ba9d] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg></button>
+                            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#c4ba9d] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg></button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

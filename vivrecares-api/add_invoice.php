@@ -20,7 +20,7 @@ try {
     $paymentStatus = $data['payment_status'] ?? 'Paid';
     $referenceNumber = trim($data['reference_number'] ?? '');
     $allowedMethods = ['Cash', 'GCash', 'Maya', 'Credit Card', 'Bank Transfer'];
-    $allowedStatuses = ['Paid', 'Unpaid'];
+    $allowedStatuses = ['Paid', 'Unpaid', 'Overdue'];
 
     if (!in_array($paymentMethod, $allowedMethods, true)) {
         throw new Exception('Invalid payment method.');

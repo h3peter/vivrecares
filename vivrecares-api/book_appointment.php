@@ -5,6 +5,7 @@ header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json");
 
 require_once 'config.php';
+require_once 'mail_helper.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
 
@@ -16,11 +17,19 @@ if (!$data) {
 }
 
 try {
-    $branch = $data['branch'] ?? '';
+    $rawBranch = trim($data['branch'] ?? '');
     $appointmentDate = $data['date'] ?? '';
     $appointmentTime = $data['time'] ?? '';
     $serviceId = !empty($data['service_id']) ? (int) $data['service_id'] : null;
     $appointmentType = trim($data['type'] ?? '');
+
+    $branchMap = [
+        'pasay branch' => 'Pasay Branch',
+        'valenzuela branch' => 'Valenzuela Branch',
+        'main branch' => 'Pasay Branch',
+    ];
+    $branchKey = strtolower($rawBranch);
+    $branch = $branchMap[$branchKey] ?? '';
 
     if (!$branch || !$appointmentDate || !$appointmentTime) {
         throw new Exception('Branch, date, and time are required.');
@@ -80,15 +89,60 @@ try {
         $data['concerns'] ?? ''
     ]);
 
-    $adminSql = "SELECT user_id FROM users WHERE role = 'admin' LIMIT 1";
-    $adminStmt = $conn->prepare($adminSql);
-    $adminStmt->execute();
-    $adminId = $adminStmt->fetchColumn();
+    $patientNameStmt = $conn->prepare("SELECT u.user_id, u.first_name, u.last_name, u.email
+                                       FROM patients p
+                                       JOIN users u ON p.user_id = u.user_id
+                                       WHERE p.patient_id = ?
+                                       LIMIT 1");
+    $patientNameStmt->execute([$data['patientId']]);
+    $patientName = $patientNameStmt->fetch(PDO::FETCH_ASSOC);
+    $fullName = trim(($patientName['first_name'] ?? 'Patient') . ' ' . ($patientName['last_name'] ?? ''));
+    $patientUserId = $patientName['user_id'] ?? null;
 
-    if ($adminId) {
-        $notifSql = "INSERT INTO notifications (user_id, title, message) VALUES (?, 'New Appointment', 'A patient requested a new appointment.')";
+    $staffStmt = $conn->query("SELECT user_id, role, first_name, email FROM users WHERE role IN ('Admin', 'Doctor') AND deleted_at IS NULL");
+    $staffRows = $staffStmt->fetchAll(PDO::FETCH_ASSOC);
+    if (!empty($staffRows)) {
+        $notifMessage = $fullName . " requested an appointment for " . $appointmentDate . " at " . $slotLabel . ".";
+        $notifSql = "INSERT INTO notifications (user_id, title, message, redirect_url) VALUES (?, 'New Appointment', ?, ?)";
         $notifStmt = $conn->prepare($notifSql);
-        $notifStmt->execute([$adminId]);
+        $appBaseUrl = rtrim((string) app_env('APP_BASE_URL', 'http://localhost:5173'), '/');
+        foreach ($staffRows as $staff) {
+            $redirect = $staff['role'] === 'Doctor'
+                ? ($patientUserId ? "/doctor/patient/" . $patientUserId : "/doctor/appointments")
+                : "/admin/appointments";
+            $notifStmt->execute([$staff['user_id'], $notifMessage, $redirect]);
+
+            if (!empty($staff['email'])) {
+                send_vivre_email(
+                    $staff['email'],
+                    $staff['first_name'] ?? '',
+                    'New Appointment Request - Vivre Medical Group',
+                    'New Appointment Request',
+                    $notifMessage,
+                    $appBaseUrl . $redirect,
+                    'View Appointment'
+                );
+            }
+        }
+    }
+
+    if ($patientUserId) {
+        $patientMessage = "Your appointment request for " . $appointmentDate . " at " . $slotLabel . " has been submitted.";
+        $patientNotifStmt = $conn->prepare("INSERT INTO notifications (user_id, title, message, redirect_url) VALUES (?, ?, ?, ?)");
+        $patientNotifStmt->execute([$patientUserId, 'Appointment Requested', $patientMessage, '/appointment-history']);
+
+        if (!empty($patientName['email'])) {
+            $appBaseUrl = rtrim((string) app_env('APP_BASE_URL', 'http://localhost:5173'), '/');
+            send_vivre_email(
+                $patientName['email'],
+                $patientName['first_name'] ?? '',
+                'Appointment Request Submitted - Vivre Medical Group',
+                'Appointment Request Submitted',
+                $patientMessage,
+                $appBaseUrl . '/appointment-history',
+                'View Appointment'
+            );
+        }
     }
 
     echo json_encode(["status" => "success", "message" => "Appointment requested!"]);

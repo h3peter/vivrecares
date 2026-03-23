@@ -57,6 +57,7 @@ const PatientInvoices = () => {
                         <option value="All">All statuses</option>
                         <option value="Paid">Paid</option>
                         <option value="Unpaid">Unpaid</option>
+                        <option value="Overdue">Overdue</option>
                     </select>
                 </div>
             </div>
@@ -82,7 +83,13 @@ const PatientInvoices = () => {
                             <div className="col-span-2 text-sm text-gray-500">{invoice.payment_method || 'N/A'}</div>
                             <div className="col-span-2 text-sm text-gray-500">{invoice.reference_number || 'N/A'}</div>
                             <div className="col-span-1 text-center">
-                                <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-[0.18em] ${invoice.payment_status === 'Paid' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-[0.18em] ${
+                                    invoice.payment_status === 'Paid'
+                                        ? 'bg-green-50 text-green-600'
+                                        : invoice.payment_status === 'Overdue'
+                                            ? 'bg-amber-50 text-amber-600'
+                                            : 'bg-red-50 text-red-600'
+                                }`}>
                                     {invoice.payment_status}
                                 </span>
                             </div>

@@ -6,6 +6,7 @@ const BillingAndPayments = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [methodFilter, setMethodFilter] = useState('All');
+    const [serviceFilter, setServiceFilter] = useState('All');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -17,9 +18,12 @@ const BillingAndPayments = () => {
     const [paymentMethod, setPaymentMethod] = useState('Cash');
     const [paymentStatus, setPaymentStatus] = useState('Paid');
     const [referenceNumber, setReferenceNumber] = useState('');
+    const [viewPaymentStatus, setViewPaymentStatus] = useState('Paid');
     const [markPaidReferenceNumber, setMarkPaidReferenceNumber] = useState('');
     const [items, setItems] = useState([{ type: 'Service', service_id: null, description: '', quantity: 1, unit_price: '' }]);
     const [loadingAdd, setLoadingAdd] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
 
     const fetchData = async () => {
         try {
@@ -57,6 +61,14 @@ const BillingAndPayments = () => {
     };
 
     const paymentMethods = ['All', ...new Set(billings.map((billing) => billing.payment_method).filter(Boolean))];
+    const serviceNames = [
+        'All',
+        ...new Set(
+            billings
+                .map((billing) => billing.main_treatment || 'Clinic Availment')
+                .filter(Boolean)
+        ),
+    ];
     const sortedPatients = useMemo(
         () =>
             [...patients].sort((a, b) =>
@@ -74,7 +86,9 @@ const BillingAndPayments = () => {
         const matchesEnd = endDate ? (billDate && billDate <= normalizeDate(endDate)) : true;
         const matchesStatus = statusFilter === 'All' || billing.payment_status === statusFilter;
         const matchesMethod = methodFilter === 'All' || billing.payment_method === methodFilter;
-        return matchesSearch && matchesStart && matchesEnd && matchesStatus && matchesMethod;
+        const normalizedService = billing.main_treatment || 'Clinic Availment';
+        const matchesService = serviceFilter === 'All' || normalizedService === serviceFilter;
+        return matchesSearch && matchesStart && matchesEnd && matchesStatus && matchesMethod && matchesService;
     });
 
     const totalRevenue = filteredBillings
@@ -82,12 +96,23 @@ const BillingAndPayments = () => {
         .reduce((sum, billing) => sum + parseFloat(billing.total_amount || 0), 0);
     const uniqueClients = new Set(filteredBillings.map((billing) => `${billing.first_name} ${billing.last_name}`)).size;
 
+    const totalPages = Math.max(1, Math.ceil(filteredBillings.length / rowsPerPage));
+    const indexOfLastRow = currentPage * rowsPerPage;
+    const indexOfFirstRow = indexOfLastRow - rowsPerPage;
+    const paginatedBillings = filteredBillings.slice(indexOfFirstRow, indexOfLastRow);
+
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter, methodFilter, serviceFilter, startDate, endDate, rowsPerPage]);
+
     const clearFilters = () => {
         setSearchTerm('');
         setStatusFilter('All');
         setMethodFilter('All');
+        setServiceFilter('All');
         setStartDate('');
         setEndDate('');
+        setCurrentPage(1);
     };
 
     const resetAddInvoiceForm = () => {
@@ -103,6 +128,7 @@ const BillingAndPayments = () => {
             const res = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_invoice_items.php?id=${invoiceId}`);
             if (res.data.status === 'success') {
                 setSelectedInvoice({ ...res.data, invoice_id: invoiceId });
+                setViewPaymentStatus(res.data.payment_status || 'Unpaid');
                 setMarkPaidReferenceNumber(res.data.reference_number || '');
                 setIsViewModalOpen(true);
             }
@@ -117,12 +143,12 @@ const BillingAndPayments = () => {
         window.open(pdfUrl, '_blank');
     };
 
-    const handleMarkAsPaid = async (invoiceId) => {
+    const handleUpdatePaymentStatus = async (invoiceId) => {
         if (!selectedInvoice) return;
-        if (!window.confirm('Mark this invoice as Paid?')) return;
+        if (!window.confirm(`Update this invoice status to ${viewPaymentStatus}?`)) return;
 
-        if (selectedInvoice.payment_method !== 'Cash' && !markPaidReferenceNumber.trim()) {
-            alert('Reference number is required for non-cash payments.');
+        if (selectedInvoice.payment_method !== 'Cash' && viewPaymentStatus === 'Paid' && !markPaidReferenceNumber.trim()) {
+            alert('Reference number is required for non-cash paid invoices.');
             return;
         }
 
@@ -130,6 +156,7 @@ const BillingAndPayments = () => {
             const res = await axios.post('http://localhost/vivrecares/vivrecares-api/update_payment_status.php', {
                 invoice_id: invoiceId,
                 payment_method: selectedInvoice.payment_method,
+                payment_status: viewPaymentStatus,
                 reference_number: selectedInvoice.payment_method === 'Cash' ? '' : markPaidReferenceNumber.trim(),
             });
             if (res.data.status === 'success') {
@@ -226,7 +253,7 @@ const BillingAndPayments = () => {
             <div className="mb-8">
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d] mb-2">Payments Console</p>
                 <h1 className="text-3xl lg:text-4xl font-bold text-gray-800 tracking-tight">Billing and Payments</h1>
-                <p className="text-sm text-gray-500 mt-2">Filter by payment status, method, date range, and patient to review transactions faster.</p>
+                <p className="text-sm text-gray-500 mt-2">Filter by payment status, method, service, date range, and patient to review transactions faster.</p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
@@ -241,7 +268,7 @@ const BillingAndPayments = () => {
             </div>
 
             <div className="bg-white p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 items-end">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-4 items-end">
                     <div>
                         <label className="text-xs text-gray-400 font-bold uppercase tracking-[0.18em] mb-2 block">Start Date</label>
                         <input type="date" className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#d4af37] text-gray-700" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
@@ -260,6 +287,7 @@ const BillingAndPayments = () => {
                             <option value="All">All statuses</option>
                             <option value="Paid">Paid</option>
                             <option value="Unpaid">Unpaid</option>
+                            <option value="Overdue">Overdue</option>
                         </select>
                     </div>
                     <div>
@@ -272,7 +300,17 @@ const BillingAndPayments = () => {
                             ))}
                         </select>
                     </div>
-                    <div className="flex gap-3 xl:justify-end">
+                    <div>
+                        <label className="text-xs text-gray-400 font-bold uppercase tracking-[0.18em] mb-2 block">Service</label>
+                        <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#d4af37] bg-white text-gray-700" value={serviceFilter} onChange={(e) => setServiceFilter(e.target.value)}>
+                            {serviceNames.map((serviceName) => (
+                                <option key={serviceName} value={serviceName}>
+                                    {serviceName === 'All' ? 'All services' : serviceName}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex gap-3 xl:justify-end xl:pl-3">
                         <button onClick={clearFilters} className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 hover:border-[#d4af37] hover:text-[#a8892d] transition">Clear</button>
                         <button onClick={() => setIsAddModalOpen(true)} className="bg-[#555555] text-[#c4ba9d] px-6 py-3 rounded-xl text-sm font-bold uppercase tracking-[0.18em] shadow-lg hover:bg-[#404040] transition">+ Add Invoice</button>
                     </div>
@@ -295,7 +333,7 @@ const BillingAndPayments = () => {
                 </div>
 
                 <div className="space-y-3">
-                    {filteredBillings.map((billing) => (
+                    {paginatedBillings.map((billing) => (
                         <div key={billing.invoice_id} className="grid grid-cols-14 gap-4 items-center text-base text-gray-700 p-4 hover:bg-[#faf9f6] rounded-2xl transition border border-transparent hover:border-gray-100">
                             <div className="col-span-2 uppercase text-xs font-bold tracking-[0.18em] text-gray-400">
                                 INV-{String(billing.invoice_id).padStart(4, '0')}
@@ -319,7 +357,13 @@ const BillingAndPayments = () => {
                                 {billing.reference_number || 'N/A'}
                             </div>
                             <div className="col-span-1 text-center">
-                                <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-[0.18em] ${billing.payment_status === 'Paid' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-[0.18em] ${
+                                    billing.payment_status === 'Paid'
+                                        ? 'bg-green-50 text-green-600'
+                                        : billing.payment_status === 'Overdue'
+                                            ? 'bg-amber-50 text-amber-600'
+                                            : 'bg-red-50 text-red-600'
+                                }`}>
                                     {billing.payment_status}
                                 </span>
                             </div>
@@ -333,6 +377,35 @@ const BillingAndPayments = () => {
                     ))}
                 </div>
             </div>
+
+            {filteredBillings.length > 0 && (
+                <div className="mt-8 flex justify-between items-center">
+                    <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
+                        <span>Rows per page:</span>
+                        <select
+                            className="bg-white border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-[#d4af37] text-sm text-gray-700"
+                            value={rowsPerPage}
+                            onChange={(e) => setRowsPerPage(Number(e.target.value))}
+                        >
+                            <option value={5}>5</option>
+                            <option value={10}>10</option>
+                            <option value={20}>20</option>
+                        </select>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                        <span className="text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <div className="flex gap-2">
+                            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg></button>
+                            <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg></button>
+                            <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg></button>
+                            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg></button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {isAddModalOpen && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -364,6 +437,7 @@ const BillingAndPayments = () => {
                                     <select className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-xl text-sm outline-none focus:border-[#c4ba9d]" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)}>
                                         <option value="Paid">Paid</option>
                                         <option value="Unpaid">Unpaid</option>
+                                        <option value="Overdue">Overdue</option>
                                     </select>
                                 </div>
                                 <div>
@@ -473,7 +547,7 @@ const BillingAndPayments = () => {
                                 <span>|</span>
                                 <span>Method: {selectedInvoice.payment_method || 'N/A'}</span>
                                 <span>|</span>
-                                <span>Status: {selectedInvoice.payment_status || 'Unpaid'}</span>
+                                <span>Status: {viewPaymentStatus || selectedInvoice.payment_status || 'Unpaid'}</span>
                             </div>
                             <div className="mt-3 text-sm text-gray-500">
                                 Reference: {selectedInvoice.reference_number || 'N/A'}
@@ -501,7 +575,7 @@ const BillingAndPayments = () => {
                                 <p className="text-3xl font-bold text-gray-900">{formatCurrency(selectedInvoice.total || 0)}</p>
                             </div>
                             <div className="flex flex-col items-end gap-3">
-                                {selectedInvoice.payment_status?.toUpperCase() === 'UNPAID' && selectedInvoice.payment_method !== 'Cash' && (
+                                {viewPaymentStatus === 'Paid' && selectedInvoice.payment_method !== 'Cash' && (
                                     <input
                                         type="text"
                                         value={markPaidReferenceNumber}
@@ -511,9 +585,16 @@ const BillingAndPayments = () => {
                                     />
                                 )}
                                 <div className="flex items-center gap-3">
-                                    {(selectedInvoice.payment_status?.toUpperCase() === 'UNPAID') && (
-                                        <button onClick={() => handleMarkAsPaid(selectedInvoice.invoice_id)} className="px-6 py-4 bg-green-600 text-white text-xs font-bold uppercase tracking-[0.18em] rounded-full hover:bg-green-700 transition shadow-lg">Mark as Paid</button>
-                                    )}
+                                    <select
+                                        value={viewPaymentStatus}
+                                        onChange={(e) => setViewPaymentStatus(e.target.value)}
+                                        className="px-4 py-3 border border-gray-200 rounded-xl text-xs font-bold uppercase tracking-[0.18em] text-gray-700 bg-white outline-none focus:border-[#c4ba9d]"
+                                    >
+                                        <option value="Paid">Paid</option>
+                                        <option value="Unpaid">Unpaid</option>
+                                        <option value="Overdue">Overdue</option>
+                                    </select>
+                                    <button onClick={() => handleUpdatePaymentStatus(selectedInvoice.invoice_id)} className="px-6 py-4 bg-green-600 text-white text-xs font-bold uppercase tracking-[0.18em] rounded-full hover:bg-green-700 transition shadow-lg">Save Status</button>
                                     <button onClick={handleExportPDF} className="px-6 py-4 bg-[#555555] text-[#c4ba9d] text-xs font-bold uppercase tracking-[0.18em] rounded-full shadow-xl hover:bg-[#404040] transition">Export to PDF</button>
                                 </div>
                             </div>

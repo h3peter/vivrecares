@@ -16,8 +16,15 @@ const LandingPage = () => {
   // Logic for "Book an Appointment" button
   const handleBookingClick = () => {
     if (user) {
-      // Directs logged-in patients straight to the booking form
-      navigate('/request-appointment'); 
+      if (user.role === 'Patient') {
+        navigate('/request-appointment');
+      } else if (user.role === 'Admin') {
+        navigate('/admin/patients');
+      } else if (user.role === 'Doctor') {
+        navigate('/doctor/appointments');
+      } else {
+        navigate('/');
+      }
     } else {
       setIsLoginOpen(true);
     }
@@ -31,7 +38,12 @@ const LandingPage = () => {
   };
 
   // Determine correct dashboard path based on role
-  const dashboardRoute = user?.role === 'Admin' ? '/admin/patients' : '/profile';
+  const dashboardRoute =
+    user?.role === 'Admin'
+      ? '/admin/patients'
+      : user?.role === 'Doctor'
+        ? '/doctor/appointments'
+        : '/profile';
   const displayName = user?.nickname || user?.first_name || 'User';
 
   return (

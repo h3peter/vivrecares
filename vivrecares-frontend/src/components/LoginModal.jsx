@@ -19,9 +19,11 @@ const LoginModal = ({ onClose }) => {
         // --- THIS IS THE PART WE CHANGED ---
         // We now route them to the correct, existing pages
         if (response.data.user.role === 'Admin') {
-            navigate('/admin/patients'); 
+            navigate('/admin/patients');
+        } else if (response.data.user.role === 'Doctor') {
+            navigate('/doctor/appointments');
         } else {
-            navigate('/profile'); 
+            navigate('/profile');
         }
         
         // This forces the page to refresh so the layout updates properly

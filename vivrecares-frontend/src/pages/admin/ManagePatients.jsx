@@ -3,6 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProfileAvatar from '../../components/ProfileAvatar';
 
+const SORT_OPTIONS = [
+    { value: 'newest', label: 'Newest First' },
+    { value: 'oldest', label: 'Oldest First' },
+    { value: 'az', label: 'Name A-Z' },
+    { value: 'za', label: 'Name Z-A' },
+];
+
 const ManagePatients = () => {
     const navigate = useNavigate();
     const [patients, setPatients] = useState([]);
@@ -11,6 +18,7 @@ const ManagePatients = () => {
     const [selectedPatients, setSelectedPatients] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [sortBy, setSortBy] = useState('newest');
 
     const formatCreatedAt = (value) => {
         if (!value) return 'Recently added';
@@ -41,25 +49,50 @@ const ManagePatients = () => {
         fetchPatients();
     }, [showArchived]);
 
-    const filteredPatients = patients.filter((patient) =>
-        [
-            patient.first_name,
-            patient.last_name,
-            patient.patient_id,
-            patient.phone,
-            patient.address,
-            patient.sex,
-        ]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase())
-    );
+    const parseSortableDate = (value) => {
+        if (!value) return 0;
+        const normalized = String(value).replace(' ', 'T');
+        const parsed = new Date(normalized).getTime();
+        return Number.isNaN(parsed) ? 0 : parsed;
+    };
+
+    const filteredPatients = patients
+        .filter((patient) =>
+            [
+                patient.first_name,
+                patient.last_name,
+                patient.patient_id,
+                patient.phone,
+                patient.address,
+                patient.sex,
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase()
+                .includes(searchTerm.toLowerCase())
+        )
+        .sort((a, b) => {
+            if (sortBy === 'az' || sortBy === 'za') {
+                const aName = `${a.first_name || ''} ${a.last_name || ''}`.trim().toLowerCase();
+                const bName = `${b.first_name || ''} ${b.last_name || ''}`.trim().toLowerCase();
+                const diff = aName.localeCompare(bName, undefined, { sensitivity: 'base' });
+                return sortBy === 'az' ? diff : -diff;
+            }
+
+            const aTime = parseSortableDate(a.created_at);
+            const bTime = parseSortableDate(b.created_at);
+            const dateDiff = sortBy === 'oldest' ? aTime - bTime : bTime - aTime;
+            if (dateDiff !== 0) return dateDiff;
+
+            const aUser = Number(a.user_id || 0);
+            const bUser = Number(b.user_id || 0);
+            return sortBy === 'oldest' ? aUser - bUser : bUser - aUser;
+        });
 
     useEffect(() => {
         setCurrentPage(1);
         setSelectedPatients([]);
-    }, [searchTerm, showArchived]);
+    }, [searchTerm, showArchived, sortBy]);
 
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
@@ -142,6 +175,19 @@ const ManagePatients = () => {
                             >
                                 Archived
                             </button>
+                        </div>
+                        <div>
+                            <select
+                                className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 outline-none focus:border-[#d4af37]"
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                            >
+                                {SORT_OPTIONS.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </div>
                     <p className="mt-3 text-sm text-gray-500">

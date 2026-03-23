@@ -29,13 +29,22 @@ try {
                                 SET service_name = ?, category_name = ?, description = ?, base_price = ?, sort_order = ?, is_active = ?
                                 WHERE service_id = ?");
         $stmt->execute([$serviceName, $categoryName, $description, $basePrice, $sortOrder, $isActive, $serviceId]);
+        $savedId = (int) $serviceId;
+        $action = 'updated';
     } else {
         $stmt = $conn->prepare("INSERT INTO services (service_name, category_name, description, base_price, sort_order, is_active)
                                 VALUES (?, ?, ?, ?, ?, ?)");
         $stmt->execute([$serviceName, $categoryName, $description, $basePrice, $sortOrder, $isActive]);
+        $savedId = (int) $conn->lastInsertId();
+        $action = 'created';
     }
 
-    echo json_encode(["status" => "success"]);
+    echo json_encode([
+        "status" => "success",
+        "message" => "Service " . $action . " successfully.",
+        "service_id" => $savedId,
+        "action" => $action
+    ]);
 } catch (Exception $e) {
     echo json_encode(["status" => "error", "message" => $e->getMessage()]);
 }

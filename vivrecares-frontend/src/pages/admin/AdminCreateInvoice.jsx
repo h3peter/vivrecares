@@ -146,6 +146,7 @@ const AdminCreateInvoice = () => {
                             <select className="w-full p-4 bg-[#faf9f6] border border-gray-100 rounded-xl text-sm outline-none focus:border-[#d4af37] transition" value={paymentStatus} onChange={(e) => setPaymentStatus(e.target.value)}>
                                 <option value="Paid">Paid</option>
                                 <option value="Unpaid">Unpaid</option>
+                                <option value="Overdue">Overdue</option>
                             </select>
                         </div>
 
