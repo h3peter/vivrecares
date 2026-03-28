@@ -3,15 +3,24 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import logoBlack from '../assets/vivre-black.png';
 
+const REMEMBERED_EMAIL_KEY = 'rememberedLoginEmail';
+
 const LoginModal = ({ onClose }) => {
   const navigate = useNavigate();
   const [mode, setMode] = useState('login');
-  const [credentials, setCredentials] = useState({ email: '', password: '' });
+  const [credentials, setCredentials] = useState(() => ({
+    email: localStorage.getItem(REMEMBERED_EMAIL_KEY) || '',
+    password: '',
+  }));
+  const [rememberMe, setRememberMe] = useState(() => Boolean(localStorage.getItem(REMEMBERED_EMAIL_KEY)));
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetCode, setResetCode] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [developmentCode, setDevelopmentCode] = useState('');
   const [sendingCode, setSendingCode] = useState(false);
   const [verifyingCode, setVerifyingCode] = useState(false);
@@ -38,8 +47,14 @@ const LoginModal = ({ onClose }) => {
     e.preventDefault();
     resetFeedback();
     try {
-      const response = await axios.post('http://localhost/vivrecares/vivrecares-api/login.php', credentials);
+      const response = await axios.post('/login.php', credentials);
       if (response.data.status === 'success') {
+        if (rememberMe && credentials.email.trim()) {
+          localStorage.setItem(REMEMBERED_EMAIL_KEY, credentials.email.trim());
+        } else {
+          localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+        }
+
         // Save the user data to browser storage
         localStorage.setItem('user', JSON.stringify(response.data.user));
         
@@ -58,9 +73,11 @@ const LoginModal = ({ onClose }) => {
         // -----------------------------------
 
       } else {
+        setCredentials((prev) => ({ ...prev, password: '' }));
         showError(response.data.message);
       }
     } catch (error) {
+      setCredentials((prev) => ({ ...prev, password: '' }));
       showError("Network Error. Check your connection.");
     }
   };
@@ -84,7 +101,7 @@ const LoginModal = ({ onClose }) => {
     resetFeedback();
 
     try {
-      const response = await axios.post('http://localhost/vivrecares/vivrecares-api/send_forgot_password_code.php', {
+      const response = await axios.post('/send_forgot_password_code.php', {
         email: resetEmail.trim(),
       });
 
@@ -111,7 +128,7 @@ const LoginModal = ({ onClose }) => {
     resetFeedback();
 
     try {
-      const response = await axios.post('http://localhost/vivrecares/vivrecares-api/verify_forgot_password_code.php', {
+      const response = await axios.post('/verify_forgot_password_code.php', {
         email: resetEmail.trim(),
         code: resetCode.trim(),
       });
@@ -151,7 +168,7 @@ const LoginModal = ({ onClose }) => {
     resetFeedback();
 
     try {
-      const response = await axios.post('http://localhost/vivrecares/vivrecares-api/reset_forgot_password.php', {
+      const response = await axios.post('/reset_forgot_password.php', {
         email: resetEmail.trim(),
         verification_token: resetToken,
         new_password: newPassword,
@@ -205,20 +222,19 @@ const LoginModal = ({ onClose }) => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Password</label>
-                <input 
-                  type="password" 
-                  placeholder="Password" 
+                <PasswordInput
                   value={credentials.password}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#d4af37] transition"
-                  onChange={(e) => setCredentials({...credentials, password: e.target.value})}
-                  required
+                  onChange={(value) => setCredentials({ ...credentials, password: value })}
+                  visible={showLoginPassword}
+                  onToggleVisibility={() => setShowLoginPassword((prev) => !prev)}
+                  placeholder="Password"
                 />
               </div>
 
               <div className="flex items-center justify-between">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" className="w-4 h-4 accent-[#d4af37]" />
-                  <span className="text-sm text-gray-600">Remember Password</span>
+                  <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} className="w-4 h-4 accent-[#d4af37]" />
+                  <span className="text-sm text-gray-600">Remember Me</span>
                 </label>
                 <button
                   type="button"
@@ -318,22 +334,22 @@ const LoginModal = ({ onClose }) => {
               <div className="grid grid-cols-1 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">New Password</label>
-                  <input
-                    type="password"
-                    placeholder="New password"
+                  <PasswordInput
                     value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#d4af37] transition"
+                    onChange={setNewPassword}
+                    visible={showNewPassword}
+                    onToggleVisibility={() => setShowNewPassword((prev) => !prev)}
+                    placeholder="New password"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Confirm Password</label>
-                  <input
-                    type="password"
-                    placeholder="Confirm password"
+                  <PasswordInput
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#d4af37] transition"
+                    onChange={setConfirmPassword}
+                    visible={showConfirmPassword}
+                    onToggleVisibility={() => setShowConfirmPassword((prev) => !prev)}
+                    placeholder="Confirm password"
                   />
                 </div>
               </div>
@@ -371,5 +387,25 @@ const LoginModal = ({ onClose }) => {
     </div>
   );
 };
+
+const PasswordInput = ({ value, onChange, visible, onToggleVisibility, placeholder }) => (
+  <div className="relative">
+    <input
+      type={visible ? 'text' : 'password'}
+      placeholder={placeholder}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full px-4 py-3 pr-14 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#d4af37] transition"
+      required
+    />
+    <button
+      type="button"
+      onClick={onToggleVisibility}
+      className="absolute inset-y-0 right-0 px-4 text-xs font-bold uppercase tracking-[0.18em] text-gray-400 hover:text-[#b59635] transition"
+    >
+      {visible ? 'Hide' : 'Show'}
+    </button>
+  </div>
+);
 
 export default LoginModal;

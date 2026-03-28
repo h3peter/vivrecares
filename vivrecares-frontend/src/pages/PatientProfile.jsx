@@ -19,15 +19,15 @@ const PatientProfile = () => {
 
         const fetchProfile = async () => {
             try {
-                const response = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_profile.php?user_id=${user.id}`);
+                const response = await axios.get(`/get_profile.php?user_id=${user.id}`);
                 if (response.data.status === 'success') {
                     const profile = response.data.data;
                     setPatientData(profile);
 
                     if (profile?.patient_id) {
                         const [noteResponse, summaryResponse] = await Promise.all([
-                            axios.get(`http://localhost/vivrecares/vivrecares-api/get_consultation_notes.php?patient_id=${profile.patient_id}`),
-                            axios.get(`http://localhost/vivrecares/vivrecares-api/get_patient_visit_summary.php?patient_id=${profile.patient_id}`),
+                            axios.get(`/get_consultation_notes.php?patient_id=${profile.patient_id}`),
+                            axios.get(`/get_patient_visit_summary.php?patient_id=${profile.patient_id}`),
                         ]);
 
                         if (noteResponse.data.status === 'success') {

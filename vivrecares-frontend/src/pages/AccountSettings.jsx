@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import PasswordChangePanel from '../components/PasswordChangePanel';
-
-const BASE_URL = 'http://localhost/vivrecares';
+import { assetUrl } from '../utils/api';
 
 const AccountSettings = () => {
     const [formData, setFormData] = useState({
@@ -25,7 +24,7 @@ const AccountSettings = () => {
             if (!user) return;
 
             try {
-                const res = await axios.get(`${BASE_URL}/vivrecares-api/get_profile.php?user_id=${user.id}`);
+                const res = await axios.get(`/get_profile.php?user_id=${user.id}`);
                 const data = res.data.data ?? res.data;
 
                 setFormData({
@@ -38,7 +37,7 @@ const AccountSettings = () => {
 
                 const photo = data.profile_photo;
                 if (photo && photo !== 'default-avatar.png') {
-                    setPhotoUrl(`${BASE_URL}/assets/uploads/${photo}`);
+                    setPhotoUrl(assetUrl(`assets/uploads/${photo}`));
                 } else {
                     setPhotoUrl(null);
                 }
@@ -67,14 +66,14 @@ const AccountSettings = () => {
                 fd.append('user_id', formData.user_id);
 
                 const photoRes = await axios.post(
-                    `${BASE_URL}/vivrecares-api/upload_profile_photo.php`,
+                    '/upload_profile_photo.php',
                     fd,
                     { headers: { 'Content-Type': 'multipart/form-data' } }
                 );
 
                 if (photoRes.data.status === 'success') {
                     const newFilename = photoRes.data.filename;
-                    setPhotoUrl(`${BASE_URL}/assets/uploads/${newFilename}`);
+                    setPhotoUrl(assetUrl(`assets/uploads/${newFilename}`));
                     setPendingPhoto(null);
 
                     const stored = JSON.parse(localStorage.getItem('user')) ?? {};
@@ -82,7 +81,7 @@ const AccountSettings = () => {
                 }
             }
 
-            const res = await axios.post(`${BASE_URL}/vivrecares-api/update_profile.php`, formData);
+            const res = await axios.post('/update_profile.php', formData);
 
             if (res.data.status === 'success') {
                 const stored = JSON.parse(localStorage.getItem('user')) ?? {};

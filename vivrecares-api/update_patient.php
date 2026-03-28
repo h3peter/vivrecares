@@ -1,13 +1,10 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
-header("Content-Type: application/json");
-
+require_once 'auth.php';
 require_once 'config.php';
 require_once 'Encryption.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
+init_api_auth();
+require_roles(['Admin', 'Doctor']);
 
 $data = json_decode(file_get_contents("php://input"), true);
 

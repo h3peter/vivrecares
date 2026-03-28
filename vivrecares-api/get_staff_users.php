@@ -1,8 +1,9 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json");
-
+require_once 'auth.php';
 require_once 'config.php';
+
+init_api_auth();
+require_roles(['Admin']);
 
 try {
     $stmt = $conn->query("SELECT user_id, first_name, last_name, email, role, created_at, deleted_at

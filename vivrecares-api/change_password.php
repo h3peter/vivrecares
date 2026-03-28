@@ -1,13 +1,9 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Content-Type: application/json");
-
+require_once 'auth.php';
 require_once 'config.php';
 require_once 'verification_helper.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
+init_api_auth();
 
 $data = json_decode(file_get_contents("php://input"), true);
 $userId = (int) ($data['user_id'] ?? 0);
@@ -23,6 +19,8 @@ if (strlen($newPassword) < 8) {
     echo json_encode(["status" => "error", "message" => "Password must be at least 8 characters long."]);
     exit;
 }
+
+require_same_user_or_roles($userId, ['Admin']);
 
 try {
     ensure_email_verification_schema($conn);

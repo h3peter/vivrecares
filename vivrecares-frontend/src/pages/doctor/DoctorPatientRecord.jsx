@@ -3,8 +3,6 @@ import axios from 'axios';
 import { useNavigate, useParams } from 'react-router-dom';
 import ProfileAvatar from '../../components/ProfileAvatar';
 
-const BASE_URL = 'http://localhost/vivrecares/vivrecares-api';
-
 const DoctorPatientRecord = () => {
     const navigate = useNavigate();
     const { userId } = useParams();
@@ -25,16 +23,16 @@ const DoctorPatientRecord = () => {
 
     const loadAll = async () => {
         try {
-            const profileRes = await axios.get(`${BASE_URL}/get_profile.php?user_id=${userId}`);
+            const profileRes = await axios.get(`/get_profile.php?user_id=${userId}`);
             if (profileRes.data.status !== 'success') return;
             const patientInfo = profileRes.data.data;
             setPatient(patientInfo);
 
             const patientId = patientInfo.patient_id;
             const [treatmentRes, noteRes, visitRes] = await Promise.all([
-                axios.get(`${BASE_URL}/get_patient_treatments.php?patient_id=${patientId}`),
-                axios.get(`${BASE_URL}/get_consultation_notes.php?patient_id=${patientId}`),
-                axios.get(`${BASE_URL}/get_patient_visit_summary.php?patient_id=${patientId}`),
+                axios.get(`/get_patient_treatments.php?patient_id=${patientId}`),
+                axios.get(`/get_consultation_notes.php?patient_id=${patientId}`),
+                axios.get(`/get_patient_visit_summary.php?patient_id=${patientId}`),
             ]);
 
             setTreatments(treatmentRes.data?.data || []);
@@ -62,7 +60,7 @@ const DoctorPatientRecord = () => {
         if (!patient?.patient_id) return;
         setSaving(true);
         try {
-            const res = await axios.post(`${BASE_URL}/save_consultation_note.php`, {
+            const res = await axios.post('/save_consultation_note.php', {
                 patient_id: patient.patient_id,
                 doctor_user_id: user?.id,
                 appointment_id: form.appointment_id || null,

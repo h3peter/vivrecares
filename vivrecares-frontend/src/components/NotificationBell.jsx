@@ -17,7 +17,7 @@ const NotificationBell = () => {
 
         const fetchNotifications = async () => {
             try {
-                const res = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_notifications.php?user_id=${user.id}`);
+                const res = await axios.get(`/get_notifications.php?user_id=${user.id}`);
                 if (res.data.status === 'success') {
                     setNotifications(res.data.data);
                     setUnreadCount(res.data.unread_count);
@@ -85,7 +85,7 @@ const NotificationBell = () => {
         if (nextOpen && unreadCount > 0 && user?.id) {
             setUnreadCount(0);
             try {
-                await axios.post('http://localhost/vivrecares/vivrecares-api/mark_notifications_read.php', {
+                await axios.post('/mark_notifications_read.php', {
                     user_id: user.id
                 });
             } catch (error) {
@@ -109,7 +109,7 @@ const NotificationBell = () => {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-fadeIn">
+                <div className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] sm:w-80 max-w-[calc(100vw-1rem)] bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-fadeIn">
                     <div className="bg-[#faf9f6] px-6 py-4 border-b border-gray-50">
                         <h4 className="text-[10px] uppercase tracking-widest text-[#b2a58d] font-bold">Notifications</h4>
                     </div>

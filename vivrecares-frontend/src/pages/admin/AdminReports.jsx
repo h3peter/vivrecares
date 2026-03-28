@@ -48,14 +48,16 @@ const AdminReports = () => {
     const [visitStatus, setVisitStatus] = useState('All');
     const [visitMonth, setVisitMonth] = useState('');
     const [visitDay, setVisitDay] = useState('');
+    const [showTransactionFilters, setShowTransactionFilters] = useState(false);
+    const [showVisitFilters, setShowVisitFilters] = useState(false);
 
     useEffect(() => {
         const loadReports = async () => {
             try {
                 const [billingsRes, appointmentsRes, servicesRes] = await Promise.all([
-                    axios.get('http://localhost/vivrecares/vivrecares-api/get_billings.php'),
-                    axios.get('http://localhost/vivrecares/vivrecares-api/get_all_appointments.php'),
-                    axios.get('http://localhost/vivrecares/vivrecares-api/get_services.php?active_only=1'),
+                    axios.get('/get_billings.php'),
+                    axios.get('/get_all_appointments.php'),
+                    axios.get('/get_services.php?active_only=1'),
                 ]);
 
                 if (Array.isArray(billingsRes.data)) setBillings(billingsRes.data);
@@ -316,7 +318,16 @@ const AdminReports = () => {
                     <MetricCard label="Pending or Unpaid" value={unpaidTransactions} />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-4 mt-8 items-end">
+                <div className="mt-8 lg:hidden">
+                    <MobileFilterToggle
+                        label="Transaction Filters"
+                        description="Show or hide transaction report filters"
+                        isOpen={showTransactionFilters}
+                        onToggle={() => setShowTransactionFilters((prev) => !prev)}
+                    />
+                </div>
+
+                <div className={`${showTransactionFilters ? 'grid' : 'hidden'} grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-4 mt-8 items-end lg:grid`}>
                     <FilterSelect label="Branch" value={transactionBranch} onChange={setTransactionBranch} options={transactionBranches.map((branch) => ({ value: branch, label: branch === 'All' ? 'All branches' : branch }))} />
                     <FilterInput label="Month" type="month" value={transactionMonth} onChange={setTransactionMonth} />
                     <FilterInput label="Specific Day" type="date" value={transactionDay} onChange={setTransactionDay} />
@@ -336,7 +347,7 @@ const AdminReports = () => {
                     <FilterInput label="Search" type="text" value={transactionSearch} onChange={setTransactionSearch} placeholder="Invoice, patient, service, reference" />
                 </div>
 
-                <div className="mt-5 flex justify-end">
+                <div className={`${showTransactionFilters ? 'flex' : 'hidden'} mt-5 justify-end lg:flex`}>
                     <button onClick={clearTransactionFilters} className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 hover:border-[#d4af37] hover:text-[#a8892d] transition">
                         Clear Filters
                     </button>
@@ -391,7 +402,16 @@ const AdminReports = () => {
                     <MetricCard label="Completed Visits" value={completedVisits} />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 mt-8 items-end">
+                <div className="mt-8 lg:hidden">
+                    <MobileFilterToggle
+                        label="Visit Filters"
+                        description="Show or hide visit summary filters"
+                        isOpen={showVisitFilters}
+                        onToggle={() => setShowVisitFilters((prev) => !prev)}
+                    />
+                </div>
+
+                <div className={`${showVisitFilters ? 'grid' : 'hidden'} grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4 mt-8 items-end lg:grid`}>
                     <FilterSelect label="Service" value={visitService} onChange={setVisitService} options={serviceOptions} />
                     <FilterSelect label="Branch" value={visitBranch} onChange={setVisitBranch} options={visitBranches.map((branch) => ({ value: branch, label: branch === 'All' ? 'All branches' : branch }))} />
                     <FilterSelect
@@ -411,7 +431,7 @@ const AdminReports = () => {
                     <FilterInput label="Search" type="text" value={visitSearch} onChange={setVisitSearch} placeholder="Patient, concern, service, branch" />
                 </div>
 
-                <div className="mt-5 flex justify-end">
+                <div className={`${showVisitFilters ? 'flex' : 'hidden'} mt-5 justify-end lg:flex`}>
                     <button onClick={clearVisitFilters} className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 hover:border-[#d4af37] hover:text-[#a8892d] transition">
                         Clear Filters
                     </button>
@@ -486,6 +506,22 @@ const StatusBadge = ({ value }) => (
     <span className="inline-flex px-3 py-1 rounded-full bg-white border border-gray-200 text-xs font-bold uppercase tracking-[0.14em] text-gray-600">
         {value}
     </span>
+);
+
+const MobileFilterToggle = ({ label, description, isOpen, onToggle }) => (
+    <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between rounded-2xl border border-gray-200 bg-[#faf9f6] px-4 py-3 text-left"
+    >
+        <div>
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#b2a58d]">{label}</p>
+            <p className="mt-1 text-sm text-gray-500">{description}</p>
+        </div>
+        <svg className={`h-5 w-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+    </button>
 );
 
 const PreviewTable = ({ title, description, count, columns, rows, rowKey, renderRow, emptyMessage, gridClassName }) => (

@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import { apiUrl } from '../../utils/api';
 
 const BillingAndPayments = () => {
     const [billings, setBillings] = useState([]);
@@ -24,13 +25,14 @@ const BillingAndPayments = () => {
     const [loadingAdd, setLoadingAdd] = useState(false);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [showMobileFilters, setShowMobileFilters] = useState(false);
 
     const fetchData = async () => {
         try {
             const [billRes, patRes, serviceRes] = await Promise.all([
-                axios.get('http://localhost/vivrecares/vivrecares-api/get_billings.php'),
-                axios.get('http://localhost/vivrecares/vivrecares-api/get_all_patients.php?archived=0'),
-                axios.get('http://localhost/vivrecares/vivrecares-api/get_services.php?active_only=1'),
+                axios.get('/get_billings.php'),
+                axios.get('/get_all_patients.php?archived=0'),
+                axios.get('/get_services.php?active_only=1'),
             ]);
 
             if (Array.isArray(billRes.data)) setBillings(billRes.data);
@@ -125,7 +127,7 @@ const BillingAndPayments = () => {
 
     const viewInvoiceDetails = async (invoiceId) => {
         try {
-            const res = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_invoice_items.php?id=${invoiceId}`);
+            const res = await axios.get(`/get_invoice_items.php?id=${invoiceId}`);
             if (res.data.status === 'success') {
                 setSelectedInvoice({ ...res.data, invoice_id: invoiceId });
                 setViewPaymentStatus(res.data.payment_status || 'Unpaid');
@@ -139,7 +141,7 @@ const BillingAndPayments = () => {
 
     const handleExportPDF = () => {
         if (!selectedInvoice) return;
-        const pdfUrl = `http://localhost/vivrecares/vivrecares-api/generate_pdf.php?id=${selectedInvoice.invoice_id}`;
+        const pdfUrl = apiUrl(`generate_pdf.php?id=${selectedInvoice.invoice_id}`);
         window.open(pdfUrl, '_blank');
     };
 
@@ -153,7 +155,7 @@ const BillingAndPayments = () => {
         }
 
         try {
-            const res = await axios.post('http://localhost/vivrecares/vivrecares-api/update_payment_status.php', {
+            const res = await axios.post('/update_payment_status.php', {
                 invoice_id: invoiceId,
                 payment_method: selectedInvoice.payment_method,
                 payment_status: viewPaymentStatus,
@@ -221,7 +223,7 @@ const BillingAndPayments = () => {
 
         setLoadingAdd(true);
         try {
-            const res = await axios.post('http://localhost/vivrecares/vivrecares-api/create_invoice.php', {
+            const res = await axios.post('/create_invoice.php', {
                 patient_id: selectedPatient,
                 total_amount: calculateTotal(),
                 payment_method: paymentMethod,
@@ -268,7 +270,23 @@ const BillingAndPayments = () => {
             </div>
 
             <div className="bg-white p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-4 items-end">
+                <div className="mb-4 lg:hidden">
+                    <button
+                        type="button"
+                        onClick={() => setShowMobileFilters((prev) => !prev)}
+                        className="flex w-full items-center justify-between rounded-2xl border border-gray-200 bg-[#faf9f6] px-4 py-3 text-left"
+                    >
+                        <div>
+                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#b2a58d]">Filters</p>
+                            <p className="mt-1 text-sm text-gray-500">Tap to refine billing records</p>
+                        </div>
+                        <svg className={`h-5 w-5 text-gray-400 transition-transform ${showMobileFilters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </button>
+                </div>
+
+                <div className={`${showMobileFilters ? 'grid' : 'hidden'} grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-4 items-end lg:grid`}>
                     <div>
                         <label className="text-xs text-gray-400 font-bold uppercase tracking-[0.18em] mb-2 block">Start Date</label>
                         <input type="date" className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#d4af37] text-gray-700" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
@@ -318,10 +336,15 @@ const BillingAndPayments = () => {
                 <div className="mt-4 text-sm text-gray-500">
                     Showing <span className="font-semibold text-gray-700">{filteredBillings.length}</span> of {billings.length} transactions
                 </div>
+                <div className="mt-4 lg:hidden">
+                    <button onClick={() => setIsAddModalOpen(true)} className="w-full rounded-xl bg-[#555555] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#c4ba9d] shadow-lg transition hover:bg-[#404040]">
+                        + Add Invoice
+                    </button>
+                </div>
             </div>
 
             <div className="bg-white p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-100">
-                <div className="grid grid-cols-14 gap-4 mb-6 text-[#b2a58d] text-xs uppercase tracking-[0.18em] font-bold px-4 border-b border-gray-50 pb-6">
+                <div className="hidden grid-cols-14 gap-4 mb-6 text-[#b2a58d] text-xs uppercase tracking-[0.18em] font-bold px-4 border-b border-gray-50 pb-6 lg:grid">
                     <div className="col-span-2">ID</div>
                     <div className="col-span-2">Patient</div>
                     <div className="col-span-3">Context & Date</div>
@@ -334,44 +357,86 @@ const BillingAndPayments = () => {
 
                 <div className="space-y-3">
                     {paginatedBillings.map((billing) => (
-                        <div key={billing.invoice_id} className="grid grid-cols-14 gap-4 items-center text-base text-gray-700 p-4 hover:bg-[#faf9f6] rounded-2xl transition border border-transparent hover:border-gray-100">
-                            <div className="col-span-2 uppercase text-xs font-bold tracking-[0.18em] text-gray-400">
-                                INV-{String(billing.invoice_id).padStart(4, '0')}
+                        <div key={billing.invoice_id}>
+                            <div className="rounded-2xl border border-gray-100 bg-[#faf9f6] p-4 sm:p-5 lg:hidden">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="min-w-0">
+                                        <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
+                                            INV-{String(billing.invoice_id).padStart(4, '0')}
+                                        </p>
+                                        <p className="mt-2 text-base font-bold text-gray-800">
+                                            {billing.last_name}, {billing.first_name}
+                                        </p>
+                                    </div>
+                                    <span className={`rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] ${
+                                        billing.payment_status === 'Paid'
+                                            ? 'bg-green-50 text-green-600'
+                                            : billing.payment_status === 'Overdue'
+                                                ? 'bg-amber-50 text-amber-600'
+                                                : 'bg-red-50 text-red-600'
+                                    }`}>
+                                        {billing.payment_status}
+                                    </span>
+                                </div>
+
+                                <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl bg-white p-4 sm:grid-cols-2">
+                                    <InfoBlock
+                                        label="Context"
+                                        value={`${billing.main_treatment || 'Clinic Availment'}${billing.item_count > 1 ? ` (+${billing.item_count - 1} more)` : ''}`}
+                                    />
+                                    <InfoBlock
+                                        label="Date"
+                                        value={billing.payment_date ? new Date(billing.payment_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not yet paid'}
+                                    />
+                                    <InfoBlock label="Method" value={billing.payment_method || 'N/A'} />
+                                    <InfoBlock label="Reference" value={billing.reference_number || 'N/A'} />
+                                    <InfoBlock label="Amount" value={formatCurrency(billing.total_amount)} />
+                                </div>
+
+                                <button onClick={() => viewInvoiceDetails(billing.invoice_id)} className="mt-4 inline-flex w-full items-center justify-center rounded-xl border border-[#c4ba9d]/40 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-[#8f8167] transition hover:border-[#c4ba9d] hover:text-[#6f624c]">
+                                    View Invoice
+                                </button>
                             </div>
-                            <div className="col-span-2 font-bold text-gray-800 truncate">
-                                {billing.last_name}, {billing.first_name}
-                            </div>
-                            <div className="col-span-3 flex flex-col">
-                                <span className="font-medium text-gray-800 truncate">
-                                    {billing.main_treatment || 'Clinic Availment'}
-                                    {billing.item_count > 1 && <span className="text-[#c4ba9d] text-xs ml-1 uppercase font-bold tracking-[0.18em]">(+{billing.item_count - 1} more)</span>}
-                                </span>
-                                <span className="text-xs text-gray-400 mt-1">
-                                    {billing.payment_date ? new Date(billing.payment_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not yet paid'}
-                                </span>
-                            </div>
-                            <div className="col-span-2 text-sm font-medium text-gray-500">
-                                {billing.payment_method || 'N/A'}
-                            </div>
-                            <div className="col-span-2 text-sm text-gray-500">
-                                {billing.reference_number || 'N/A'}
-                            </div>
-                            <div className="col-span-1 text-center">
-                                <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-[0.18em] ${
-                                    billing.payment_status === 'Paid'
-                                        ? 'bg-green-50 text-green-600'
-                                        : billing.payment_status === 'Overdue'
-                                            ? 'bg-amber-50 text-amber-600'
-                                            : 'bg-red-50 text-red-600'
-                                }`}>
-                                    {billing.payment_status}
-                                </span>
-                            </div>
-                            <div className="col-span-1 text-right font-bold text-gray-900">
-                                {formatCurrency(billing.total_amount)}
-                            </div>
-                            <div className="col-span-1 text-right">
-                                <button onClick={() => viewInvoiceDetails(billing.invoice_id)} className="text-[#c4ba9d] hover:text-[#555555] transition text-xs font-bold uppercase tracking-[0.18em]">View</button>
+
+                            <div className="hidden grid-cols-14 gap-4 items-center text-base text-gray-700 p-4 hover:bg-[#faf9f6] rounded-2xl transition border border-transparent hover:border-gray-100 lg:grid">
+                                <div className="col-span-2 uppercase text-xs font-bold tracking-[0.18em] text-gray-400">
+                                    INV-{String(billing.invoice_id).padStart(4, '0')}
+                                </div>
+                                <div className="col-span-2 font-bold text-gray-800 truncate">
+                                    {billing.last_name}, {billing.first_name}
+                                </div>
+                                <div className="col-span-3 flex flex-col">
+                                    <span className="font-medium text-gray-800 truncate">
+                                        {billing.main_treatment || 'Clinic Availment'}
+                                        {billing.item_count > 1 && <span className="text-[#c4ba9d] text-xs ml-1 uppercase font-bold tracking-[0.18em]">(+{billing.item_count - 1} more)</span>}
+                                    </span>
+                                    <span className="text-xs text-gray-400 mt-1">
+                                        {billing.payment_date ? new Date(billing.payment_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not yet paid'}
+                                    </span>
+                                </div>
+                                <div className="col-span-2 text-sm font-medium text-gray-500">
+                                    {billing.payment_method || 'N/A'}
+                                </div>
+                                <div className="col-span-2 text-sm text-gray-500">
+                                    {billing.reference_number || 'N/A'}
+                                </div>
+                                <div className="col-span-1 text-center">
+                                    <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-[0.18em] ${
+                                        billing.payment_status === 'Paid'
+                                            ? 'bg-green-50 text-green-600'
+                                            : billing.payment_status === 'Overdue'
+                                                ? 'bg-amber-50 text-amber-600'
+                                                : 'bg-red-50 text-red-600'
+                                    }`}>
+                                        {billing.payment_status}
+                                    </span>
+                                </div>
+                                <div className="col-span-1 text-right font-bold text-gray-900">
+                                    {formatCurrency(billing.total_amount)}
+                                </div>
+                                <div className="col-span-1 text-right">
+                                    <button onClick={() => viewInvoiceDetails(billing.invoice_id)} className="text-[#c4ba9d] hover:text-[#555555] transition text-xs font-bold uppercase tracking-[0.18em]">View</button>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -379,7 +444,7 @@ const BillingAndPayments = () => {
             </div>
 
             {filteredBillings.length > 0 && (
-                <div className="mt-8 flex justify-between items-center">
+                <div className="mt-8 flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                     <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
                         <span>Rows per page:</span>
                         <select
@@ -393,15 +458,15 @@ const BillingAndPayments = () => {
                         </select>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
                         <span className="text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
                             Page {currentPage} of {totalPages}
                         </span>
                         <div className="flex gap-2">
-                            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg></button>
-                            <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg></button>
-                            <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg></button>
-                            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg></button>
+                            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="rounded-lg bg-[#faf9f6] p-2 text-gray-500 shadow-sm transition hover:text-[#d4af37] disabled:opacity-50"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg></button>
+                            <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="rounded-lg bg-[#faf9f6] p-2 text-gray-500 shadow-sm transition hover:text-[#d4af37] disabled:opacity-50"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg></button>
+                            <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="rounded-lg bg-[#faf9f6] p-2 text-gray-500 shadow-sm transition hover:text-[#d4af37] disabled:opacity-50"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg></button>
+                            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="rounded-lg bg-[#faf9f6] p-2 text-gray-500 shadow-sm transition hover:text-[#d4af37] disabled:opacity-50"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg></button>
                         </div>
                     </div>
                 </div>
@@ -409,8 +474,8 @@ const BillingAndPayments = () => {
 
             {isAddModalOpen && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white w-full max-w-3xl rounded-[2.5rem] shadow-2xl p-12 animate-fadeIn relative max-h-[90vh] overflow-y-auto custom-scrollbar">
-                        <button onClick={() => { setIsAddModalOpen(false); resetAddInvoiceForm(); }} className="absolute top-8 right-8 text-gray-300 hover:text-[#555555] transition">
+                    <div className="bg-white w-full max-w-3xl rounded-[2.5rem] shadow-2xl p-5 sm:p-8 lg:p-12 animate-fadeIn relative max-h-[90vh] overflow-y-auto custom-scrollbar">
+                        <button onClick={() => { setIsAddModalOpen(false); resetAddInvoiceForm(); }} className="absolute right-5 top-5 text-gray-300 transition hover:text-[#555555] sm:right-8 sm:top-8">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
 
@@ -473,16 +538,24 @@ const BillingAndPayments = () => {
                                 </div>
 
                                 {items.map((item, index) => (
-                                    <div key={index} className="flex gap-4 items-center bg-[#faf9f6] p-3 rounded-xl border border-gray-50">
-                                        <select className="p-2 bg-transparent text-sm outline-none focus:text-[#c4ba9d] text-gray-500 font-medium" value={item.type} onChange={(e) => handleItemChange(index, 'type', e.target.value)}>
-                                            <option value="Service">Service</option>
-                                            <option value="Product">Product</option>
-                                        </select>
+                                    <div key={index} className="rounded-xl border border-gray-50 bg-[#faf9f6] p-3">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <select className="rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-500 outline-none focus:border-[#c4ba9d]" value={item.type} onChange={(e) => handleItemChange(index, 'type', e.target.value)}>
+                                                <option value="Service">Service</option>
+                                                <option value="Product">Product</option>
+                                            </select>
 
-                                        <div className="flex-1">
+                                            {items.length > 1 ? (
+                                                <button type="button" onClick={() => handleRemoveItem(index)} className="rounded-full p-2 text-gray-300 transition hover:bg-white hover:text-red-400">
+                                                    <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                </button>
+                                            ) : <div className="h-8 w-8" />}
+                                        </div>
+
+                                        <div className="mt-3">
                                             {item.type === 'Service' ? (
                                                 <select
-                                                    className="w-full p-3 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-[#c4ba9d] text-gray-700"
+                                                    className="w-full rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]"
                                                     value={item.service_id ?? ''}
                                                     onChange={(e) => handleServiceSelect(index, e.target.value)}
                                                     required
@@ -495,35 +568,42 @@ const BillingAndPayments = () => {
                                                     ))}
                                                 </select>
                                             ) : (
-                                                <input type="text" placeholder="Product description" className="w-full p-2 bg-transparent border-b border-gray-200 text-sm outline-none focus:border-[#c4ba9d]" value={item.description} onChange={(e) => handleItemChange(index, 'description', e.target.value)} required />
+                                                <input type="text" placeholder="Product description" className="w-full rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]" value={item.description} onChange={(e) => handleItemChange(index, 'description', e.target.value)} required />
                                             )}
                                         </div>
 
-                                        {item.type === 'Product' ? (
-                                            <input type="number" placeholder="Qty" min="1" className="w-16 p-2 bg-transparent border-b border-gray-200 text-sm text-center outline-none focus:border-[#c4ba9d]" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))} required />
-                                        ) : (
-                                            <div className="w-16 text-center text-xs text-gray-300 uppercase tracking-[0.18em] font-bold">N/A</div>
-                                        )}
+                                        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                                            <div>
+                                                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">Quantity</p>
+                                                {item.type === 'Product' ? (
+                                                    <input type="number" placeholder="Qty" min="1" className="mt-2 w-full rounded-xl border border-gray-200 bg-white p-3 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]" value={item.quantity} onChange={(e) => handleItemChange(index, 'quantity', Number(e.target.value))} required />
+                                                ) : (
+                                                    <div className="mt-2 rounded-xl border border-dashed border-gray-200 bg-white px-3 py-3 text-center text-xs font-bold uppercase tracking-[0.18em] text-gray-300">N/A</div>
+                                                )}
+                                            </div>
 
-                                        <input type="number" placeholder="Price" min="0" step="any" className="w-24 p-2 bg-transparent border-b border-gray-200 text-sm text-right outline-none focus:border-[#c4ba9d]" value={item.unit_price} onChange={(e) => handleItemChange(index, 'unit_price', e.target.value)} required />
+                                            <div>
+                                                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">Price</p>
+                                                <input type="number" placeholder="Price" min="0" step="any" className="mt-2 w-full rounded-xl border border-gray-200 bg-white p-3 text-sm text-right text-gray-700 outline-none focus:border-[#c4ba9d]" value={item.unit_price} onChange={(e) => handleItemChange(index, 'unit_price', e.target.value)} required />
+                                            </div>
 
-                                        <div className="w-24 text-right text-sm font-bold text-gray-800">{formatCurrency((parseFloat(item.unit_price) || 0) * item.quantity)}</div>
-
-                                        {items.length > 1 ? (
-                                            <button type="button" onClick={() => handleRemoveItem(index)} className="text-gray-300 hover:text-red-400 transition pl-1">
-                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                                            </button>
-                                        ) : <div className="w-5"></div>}
+                                            <div>
+                                                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">Line Total</p>
+                                                <div className="mt-2 rounded-xl border border-gray-200 bg-white px-3 py-3 text-right text-sm font-bold text-gray-800">
+                                                    {formatCurrency((parseFloat(item.unit_price) || 0) * item.quantity)}
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
 
-                            <div className="flex justify-between items-center border-t border-gray-100 pt-8">
+                            <div className="flex flex-col gap-4 border-t border-gray-100 pt-8 sm:flex-row sm:items-center sm:justify-between">
                                 <div>
                                     <p className="text-xs text-gray-400 font-bold uppercase tracking-[0.18em]">Total Amount</p>
                                     <span className="text-3xl font-bold text-gray-900">{formatCurrency(calculateTotal())}</span>
                                 </div>
-                                <button type="submit" disabled={loadingAdd} className="px-8 py-4 bg-[#555555] text-[#c4ba9d] text-xs font-bold uppercase tracking-[0.18em] rounded-full shadow-lg hover:bg-[#404040] transition">
+                                <button type="submit" disabled={loadingAdd} className="w-full rounded-full bg-[#555555] px-8 py-4 text-xs font-bold uppercase tracking-[0.18em] text-[#c4ba9d] shadow-lg transition hover:bg-[#404040] sm:w-auto">
                                     {loadingAdd ? 'Saving...' : 'Save Transaction'}
                                 </button>
                             </div>
@@ -605,5 +685,12 @@ const BillingAndPayments = () => {
         </div>
     );
 };
+
+const InfoBlock = ({ label, value }) => (
+    <div>
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">{label}</p>
+        <p className="mt-1 break-words text-sm text-gray-700">{value}</p>
+    </div>
+);
 
 export default BillingAndPayments;

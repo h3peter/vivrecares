@@ -57,7 +57,7 @@ const Register = () => {
     setVerificationStatus('');
 
     try {
-      const response = await axios.post('http://localhost/vivrecares/vivrecares-api/send_patient_verification_code.php', {
+      const response = await axios.post('/send_patient_verification_code.php', {
         email: formData.email,
         first_name: formData.first_name || 'Patient',
       });
@@ -86,7 +86,7 @@ const Register = () => {
     setVerificationStatus('');
 
     try {
-      const response = await axios.post('http://localhost/vivrecares/vivrecares-api/verify_patient_email_code.php', {
+      const response = await axios.post('/verify_patient_email_code.php', {
         email: formData.email,
         code: verificationCode,
       });
@@ -122,13 +122,23 @@ const Register = () => {
       return;
     }
 
+    if (!formData.password.trim()) {
+      alert('Password is required.');
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      alert('Password must be at least 8 characters long.');
+      return;
+    }
+
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match!');
       return;
     }
 
     try {
-      const response = await axios.post('http://localhost/vivrecares/vivrecares-api/register.php', {
+      const response = await axios.post('/register.php', {
         ...formData,
         verification_token: verificationToken,
       });
@@ -359,10 +369,10 @@ const StepTwo = ({ formData, handleChange }) => {
 const StepThree = ({ formData, handleChange }) => (
   <div className="flex flex-col items-center space-y-10 animate-fadeIn max-w-md mx-auto">
     <div className="w-full space-y-6">
-        <Input label="Password" name="password" type="password" value={formData.password} onChange={handleChange} />
-        <Input label="Confirm Password" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} />
+        <Input label="Password" name="password" type="password" value={formData.password} onChange={handleChange} minLength={8} required />
+        <Input label="Confirm Password" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} minLength={8} required />
     </div>
-    <p className="text-[10px] text-center text-gray-400 tracking-widest uppercase">By clicking done, you agree to clinic policies.</p>
+    <p className="text-[10px] text-center text-gray-400 tracking-widest uppercase">Use at least 8 characters. By clicking done, you agree to clinic policies.</p>
   </div>
 );
 

@@ -76,7 +76,7 @@ const AdminAddPatient = () => {
         }
 
         try {
-            const res = await axios.post('http://localhost/vivrecares/vivrecares-api/add_patient.php', formData);
+            const res = await axios.post('/add_patient.php', formData);
             if (res.data.status === 'success') {
                 navigate('/admin/patients'); 
             } else {

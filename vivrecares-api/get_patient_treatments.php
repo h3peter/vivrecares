@@ -1,7 +1,8 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json");
+require_once 'auth.php';
 require_once 'config.php';
+
+init_api_auth();
 
 $patient_id = $_GET['patient_id'] ?? null;
 
@@ -9,6 +10,17 @@ if (!$patient_id) {
     echo json_encode(["status" => "error", "message" => "Patient ID is required"]);
     exit;
 }
+
+$patientUserStmt = $conn->prepare("SELECT user_id FROM patients WHERE patient_id = ? LIMIT 1");
+$patientUserStmt->execute([$patient_id]);
+$patientUserId = $patientUserStmt->fetchColumn();
+
+if (!$patientUserId) {
+    echo json_encode(["status" => "error", "message" => "Patient not found."]);
+    exit;
+}
+
+require_same_user_or_roles($patientUserId, ['Admin', 'Doctor']);
 
 try {
     // We use COALESCE again just in case the bill is tied to an appointment instead of the patient directly

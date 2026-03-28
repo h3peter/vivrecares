@@ -20,7 +20,6 @@ const defaultStaffForm = {
 };
 
 const branches = ['Pasay Branch', 'Valenzuela Branch'];
-const apiBase = 'http://localhost/vivrecares/vivrecares-api';
 
 const getSlotKey = (slot) => {
     if (slot.slot_id) return `slot-${slot.slot_id}`;
@@ -56,9 +55,9 @@ const AdminSettings = () => {
     const fetchAll = async () => {
         try {
             const [serviceRes, appointmentRes, staffRes] = await Promise.all([
-                axios.get(`${apiBase}/get_services.php`),
-                axios.get(`${apiBase}/get_appointment_settings.php`),
-                axios.get(`${apiBase}/get_staff_users.php`),
+                axios.get('/get_services.php'),
+                axios.get('/get_appointment_settings.php'),
+                axios.get('/get_staff_users.php'),
             ]);
 
             setServices(Array.isArray(serviceRes.data) ? serviceRes.data : []);
@@ -119,7 +118,7 @@ const AdminSettings = () => {
                 sort_order: Number(serviceForm.sort_order || 0),
                 is_active: serviceForm.is_active ? 1 : 0,
             };
-            const res = await axios.post(`${apiBase}/save_service.php`, payload);
+            const res = await axios.post('/save_service.php', payload);
             if (res.data.status === 'success') {
                 setServiceForm(defaultServiceForm);
                 setHighlightedServiceId(Number(res.data.service_id));
@@ -147,7 +146,7 @@ const AdminSettings = () => {
                 ...service,
                 is_active: nextActive,
             };
-            const res = await axios.post(`${apiBase}/save_service.php`, payload);
+            const res = await axios.post('/save_service.php', payload);
             if (res.data.status === 'success') {
                 setHighlightedServiceId(Number(service.service_id));
                 await fetchAll();
@@ -218,7 +217,7 @@ const AdminSettings = () => {
                     })),
             };
 
-            const res = await axios.post(`${apiBase}/save_appointment_settings.php`, payload);
+            const res = await axios.post('/save_appointment_settings.php', payload);
             if (res.data.status === 'success') {
                 await fetchAll();
                 showToast('success', 'Appointment schedule saved.');
@@ -236,7 +235,7 @@ const AdminSettings = () => {
         e.preventDefault();
         setSavingStaff(true);
         try {
-            const res = await axios.post(`${apiBase}/save_staff_user.php`, staffForm);
+            const res = await axios.post('/save_staff_user.php', staffForm);
             if (res.data.status === 'success') {
                 setStaffForm(defaultStaffForm);
                 await fetchAll();
@@ -260,7 +259,7 @@ const AdminSettings = () => {
         if (!confirmed) return;
 
         try {
-            const res = await axios.post(`${apiBase}/toggle_staff_status.php`, {
+            const res = await axios.post('/toggle_staff_status.php', {
                 user_id: staff.user_id,
                 is_active: nextActive,
             });
@@ -276,7 +275,7 @@ const AdminSettings = () => {
     };
 
     return (
-        <div className="p-8 lg:p-12 bg-[#f4f4f4] min-h-screen">
+        <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
             {toast && (
                 <div
                     className={`fixed top-6 right-6 z-50 rounded-2xl px-5 py-4 shadow-xl border text-sm font-semibold transition-opacity ${
@@ -295,14 +294,14 @@ const AdminSettings = () => {
                 <p className="text-sm text-gray-500 mt-2">Manage users, services, and appointment availability in one place.</p>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-8">
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.2fr_0.8fr]">
                 <section className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
-                    <div className="px-8 py-6 border-b border-gray-100 bg-[#faf9f6]">
+                    <div className="border-b border-gray-100 bg-[#faf9f6] px-5 py-6 sm:px-8">
                         <h2 className="text-2xl font-bold text-gray-800">Service Catalog</h2>
                         <p className="text-sm text-gray-500 mt-2">Archive services to inactive instead of deleting records.</p>
                     </div>
 
-                    <div className="p-8 space-y-8">
+                    <div className="space-y-8 p-5 sm:p-8">
                         <form onSubmit={handleSaveService} className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <Input label="Service Name" value={serviceForm.service_name} onChange={(value) => setServiceForm((prev) => ({ ...prev, service_name: value }))} />
                             <Input label="Category" value={serviceForm.category_name} onChange={(value) => setServiceForm((prev) => ({ ...prev, category_name: value }))} />
@@ -316,15 +315,15 @@ const AdminSettings = () => {
                                 <input type="checkbox" checked={serviceForm.is_active} onChange={(e) => setServiceForm((prev) => ({ ...prev, is_active: e.target.checked }))} className="w-4 h-4 accent-[#c4ba9d]" />
                                 Active service
                             </label>
-                            <div className="flex justify-end gap-3">
-                                <button type="button" onClick={() => setServiceForm(defaultServiceForm)} className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-bold uppercase tracking-[0.18em] text-gray-600">Clear</button>
-                                <button type="submit" disabled={savingService} className="px-6 py-3 rounded-xl bg-[#555555] text-[#c4ba9d] text-sm font-bold uppercase tracking-[0.18em] shadow-lg hover:bg-[#404040] transition">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                                <button type="button" onClick={() => setServiceForm(defaultServiceForm)} className="w-full rounded-xl border border-gray-200 px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 sm:w-auto">Clear</button>
+                                <button type="submit" disabled={savingService} className="w-full rounded-xl bg-[#555555] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#c4ba9d] shadow-lg transition hover:bg-[#404040] sm:w-auto">
                                     {savingService ? 'Saving...' : serviceForm.service_id ? 'Update Service' : 'Add Service'}
                                 </button>
                             </div>
                         </form>
 
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                             {[
                                 { value: 'active', label: 'Active' },
                                 { value: 'inactive', label: 'Inactive' },
@@ -352,30 +351,32 @@ const AdminSettings = () => {
                                         {categoryServices.map((service) => (
                                             <div
                                                 key={service.service_id}
-                                                className={`flex items-center justify-between gap-4 rounded-2xl border px-5 py-4 transition ${
+                                                className={`rounded-2xl border px-4 py-4 transition sm:px-5 ${
                                                     highlightedServiceId === Number(service.service_id)
                                                         ? 'border-[#d4af37] bg-[#fffdf5] shadow-md'
                                                         : 'border-gray-100 bg-[#faf9f6]'
                                                 }`}
                                             >
-                                                <div>
+                                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                                <div className="min-w-0">
                                                     <p className="text-base font-bold text-gray-800">{service.service_name}</p>
                                                     <p className="text-sm text-gray-500">PHP {Number(service.base_price || 0).toLocaleString()} - Order {service.sort_order}</p>
                                                 </div>
-                                                <div className="flex items-center gap-3">
+                                                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
                                                     <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-[0.18em] ${Number(service.is_active) === 1 ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
                                                         {Number(service.is_active) === 1 ? 'Active' : 'Inactive'}
                                                     </span>
-                                                    <button onClick={() => setServiceForm({ ...service, base_price: service.base_price || '', is_active: Number(service.is_active) === 1 })} className="px-4 py-2 rounded-xl border border-gray-200 text-xs font-bold uppercase tracking-[0.18em] text-gray-600">Edit</button>
+                                                    <button onClick={() => setServiceForm({ ...service, base_price: service.base_price || '', is_active: Number(service.is_active) === 1 })} className="rounded-xl border border-gray-200 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-gray-600">Edit</button>
                                                     {Number(service.is_active) === 1 ? (
-                                                        <button onClick={() => toggleServiceStatus(service, 0)} className="px-4 py-2 rounded-xl bg-[#555555] text-[#c4ba9d] text-xs font-bold uppercase tracking-[0.18em]">
+                                                        <button onClick={() => toggleServiceStatus(service, 0)} className="rounded-xl bg-[#555555] px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[#c4ba9d]">
                                                             Archive
                                                         </button>
                                                     ) : (
-                                                        <button onClick={() => toggleServiceStatus(service, 1)} className="px-4 py-2 rounded-xl bg-emerald-100 text-emerald-700 text-xs font-bold uppercase tracking-[0.18em]">
+                                                        <button onClick={() => toggleServiceStatus(service, 1)} className="rounded-xl bg-emerald-100 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-emerald-700">
                                                             Restore
                                                         </button>
                                                     )}
+                                                </div>
                                                 </div>
                                             </div>
                                         ))}

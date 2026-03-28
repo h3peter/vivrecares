@@ -2,8 +2,6 @@ import { useState } from 'react';
 import axios from 'axios';
 import { getStoredUser } from '../utils/session';
 
-const BASE_URL = 'http://localhost/vivrecares';
-
 const PasswordChangePanel = ({ roleLabel = 'Account' }) => {
     const user = getStoredUser();
     const [verificationCode, setVerificationCode] = useState('');
@@ -32,7 +30,7 @@ const PasswordChangePanel = ({ roleLabel = 'Account' }) => {
         resetFeedback();
 
         try {
-            const res = await axios.post(`${BASE_URL}/vivrecares-api/send_password_change_code.php`, {
+            const res = await axios.post('/send_password_change_code.php', {
                 user_id: user.id,
             });
 
@@ -59,7 +57,7 @@ const PasswordChangePanel = ({ roleLabel = 'Account' }) => {
         resetFeedback();
 
         try {
-            const res = await axios.post(`${BASE_URL}/vivrecares-api/verify_password_change_code.php`, {
+            const res = await axios.post('/verify_password_change_code.php', {
                 user_id: user.id,
                 code: verificationCode,
             });
@@ -97,7 +95,7 @@ const PasswordChangePanel = ({ roleLabel = 'Account' }) => {
         resetFeedback();
 
         try {
-            const res = await axios.post(`${BASE_URL}/vivrecares-api/change_password.php`, {
+            const res = await axios.post('/change_password.php', {
                 user_id: user.id,
                 verification_token: verificationToken,
                 new_password: newPassword,

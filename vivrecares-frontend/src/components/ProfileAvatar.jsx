@@ -10,10 +10,11 @@
  *   textSize   — Tailwind text size for initials, default "text-sm"
  */
 
-const BASE_URL = 'http://localhost/vivrecares';
+import { assetUrl } from '../utils/api';
 
 const ProfileAvatar = ({ user = {}, className = 'w-10 h-10 rounded-full', textSize = 'text-sm' }) => {
-    const { first_name = '', last_name = '', profile_photo } = user;
+    const safeUser = user && typeof user === 'object' ? user : {};
+    const { first_name = '', last_name = '', profile_photo } = safeUser;
     const initials = `${first_name?.[0] ?? ''}${last_name?.[0] ?? ''}`.toUpperCase();
 
     const hasPhoto =
@@ -24,7 +25,7 @@ const ProfileAvatar = ({ user = {}, className = 'w-10 h-10 rounded-full', textSi
     if (hasPhoto) {
         return (
             <img
-                src={`${BASE_URL}/assets/uploads/${profile_photo}`}
+                src={assetUrl(`assets/uploads/${profile_photo}`)}
                 alt={`${first_name} ${last_name}`}
                 className={`object-cover ${className}`}
                 onError={(e) => {

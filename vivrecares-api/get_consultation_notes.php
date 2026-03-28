@@ -1,7 +1,8 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json");
+require_once 'auth.php';
 require_once 'config.php';
+
+init_api_auth();
 
 $patientId = $_GET['patient_id'] ?? null;
 
@@ -9,6 +10,17 @@ if (!$patientId) {
     echo json_encode(["status" => "error", "message" => "Patient ID is required."]);
     exit;
 }
+
+$patientUserStmt = $conn->prepare("SELECT user_id FROM patients WHERE patient_id = ? LIMIT 1");
+$patientUserStmt->execute([$patientId]);
+$patientUserId = $patientUserStmt->fetchColumn();
+
+if (!$patientUserId) {
+    echo json_encode(["status" => "error", "message" => "Patient not found."]);
+    exit;
+}
+
+require_same_user_or_roles($patientUserId, ['Admin', 'Doctor']);
 
 try {
     $sql = "SELECT cn.note_id, cn.patient_id, cn.doctor_user_id, cn.appointment_id,

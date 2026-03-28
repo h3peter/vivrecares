@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProfileAvatar from '../../components/ProfileAvatar';
@@ -29,7 +29,7 @@ const ManagePatients = () => {
 
     const refreshTable = async () => {
         try {
-            const res = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_all_patients.php?archived=${showArchived ? 1 : 0}`);
+            const res = await axios.get(`/get_all_patients.php?archived=${showArchived ? 1 : 0}`);
             setPatients(Array.isArray(res.data) ? res.data : []);
         } catch (error) {
             console.error('Error refreshing patients', error);
@@ -39,7 +39,7 @@ const ManagePatients = () => {
     useEffect(() => {
         const fetchPatients = async () => {
             try {
-                const res = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_all_patients.php?archived=${showArchived ? 1 : 0}`);
+                const res = await axios.get(`/get_all_patients.php?archived=${showArchived ? 1 : 0}`);
                 setPatients(Array.isArray(res.data) ? res.data : []);
             } catch (error) {
                 console.error('Error fetching patients', error);
@@ -97,7 +97,7 @@ const ManagePatients = () => {
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
     const currentRows = filteredPatients.slice(indexOfFirstRow, indexOfLastRow);
-    const totalPages = Math.ceil(filteredPatients.length / rowsPerPage);
+    const totalPages = Math.max(1, Math.ceil(filteredPatients.length / rowsPerPage));
 
     const handleSelectAll = (e) => {
         if (e.target.checked) {
@@ -120,7 +120,7 @@ const ManagePatients = () => {
         if (!window.confirm(confirmMessage)) return;
 
         try {
-            const res = await axios.post('http://localhost/vivrecares/vivrecares-api/archive_patient.php', {
+            const res = await axios.post('/archive_patient.php', {
                 action,
                 user_ids: userIds,
             });
@@ -145,40 +145,43 @@ const ManagePatients = () => {
     };
 
     return (
-        <div className="p-8 lg:p-12 bg-[#f4f4f4] min-h-screen flex flex-col">
-            <div className="flex flex-col gap-5 lg:flex-row lg:justify-between lg:items-end mb-8">
+        <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
+            <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
                 <div>
-                    <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d] mb-2">Patient Registry</p>
-                    <h1 className="text-3xl lg:text-4xl font-bold text-gray-800 tracking-tight mb-3">Manage Patients</h1>
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6">
-                        <div className="relative max-w-xl w-full">
+                    <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d]">Patient Registry</p>
+                    <h1 className="mb-3 text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">Manage Patients</h1>
+                    <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:gap-6">
+                        <div className="relative w-full max-w-xl">
                             <input
                                 type="text"
                                 placeholder="Search by patient, phone, ID, address, or sex..."
-                                className="pl-11 pr-4 py-3.5 rounded-2xl border border-gray-200 w-full lg:w-[26rem] outline-none focus:border-[#d4af37] text-base text-gray-700 shadow-sm"
+                                className="w-full rounded-2xl border border-gray-200 py-3.5 pl-11 pr-4 text-base text-gray-700 shadow-sm outline-none focus:border-[#d4af37]"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
-                            <svg className="w-5 h-5 text-gray-400 absolute left-4 top-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                            <svg className="absolute left-4 top-4 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0 1 14 0z" />
+                            </svg>
                         </div>
 
-                        <div className="flex bg-gray-200 rounded-lg p-1">
+                        <div className="flex w-full rounded-lg bg-gray-200 p-1 sm:w-auto">
                             <button
                                 onClick={() => setShowArchived(false)}
-                                className={`px-5 py-2.5 text-sm font-bold uppercase tracking-[0.18em] rounded-md transition ${!showArchived ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`flex-1 rounded-md px-4 py-2.5 text-sm font-bold uppercase tracking-[0.18em] transition sm:flex-none ${!showArchived ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 Active
                             </button>
                             <button
                                 onClick={() => setShowArchived(true)}
-                                className={`px-5 py-2.5 text-sm font-bold uppercase tracking-[0.18em] rounded-md transition ${showArchived ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                className={`flex-1 rounded-md px-4 py-2.5 text-sm font-bold uppercase tracking-[0.18em] transition sm:flex-none ${showArchived ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 Archived
                             </button>
                         </div>
-                        <div>
+
+                        <div className="w-full sm:w-auto">
                             <select
-                                className="rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 outline-none focus:border-[#d4af37]"
+                                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 outline-none focus:border-[#d4af37] sm:w-auto"
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
                             >
@@ -198,28 +201,28 @@ const ManagePatients = () => {
                 {!showArchived && (
                     <button
                         onClick={() => navigate('/admin/add-patient')}
-                        className="bg-[#2d2a26] text-[#d4af37] px-6 py-3.5 rounded-2xl text-sm font-bold uppercase tracking-[0.18em] shadow-lg hover:bg-black transition duration-300"
+                        className="w-full rounded-2xl bg-[#555555] px-6 py-3.5 text-sm font-bold uppercase tracking-[0.18em] text-[#d4af37] shadow-lg transition duration-300 hover:bg-[#404040] sm:w-auto"
                     >
                         + Add Patient
                     </button>
                 )}
             </div>
 
-            <div className={`mb-5 flex items-center justify-between bg-white px-6 py-4 rounded-2xl border border-[#d4af37]/30 shadow-sm transition-all duration-300 ${selectedPatients.length > 0 ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'}`}>
+            <div className={`mb-5 flex flex-col gap-3 rounded-2xl border border-[#d4af37]/30 bg-white px-4 py-4 shadow-sm transition-all duration-300 sm:flex-row sm:items-center sm:justify-between sm:px-6 ${selectedPatients.length > 0 ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-4 opacity-0'}`}>
                 <span className="text-base font-semibold text-[#a8892d]">{selectedPatients.length} patient(s) selected</span>
                 <button
                     onClick={handleBulkArchive}
-                    className="text-sm text-red-600 font-bold uppercase tracking-[0.18em] hover:text-red-800 transition"
+                    className="text-left text-sm font-bold uppercase tracking-[0.18em] text-red-600 transition hover:text-red-800 sm:text-right"
                 >
                     {showArchived ? 'Restore Selected' : 'Archive Selected'}
                 </button>
             </div>
 
-            <div className="grid grid-cols-12 gap-4 px-6 mb-4 text-gray-400 text-sm font-bold uppercase tracking-[0.18em]">
+            <div className="mb-4 hidden grid-cols-12 gap-4 px-6 text-sm font-bold uppercase tracking-[0.18em] text-gray-400 lg:grid">
                 <div className="col-span-1 flex items-center gap-4">
                     <input
                         type="checkbox"
-                        className="w-4 h-4 accent-[#d4af37] cursor-pointer"
+                        className="h-4 w-4 cursor-pointer accent-[#d4af37]"
                         onChange={handleSelectAll}
                         checked={selectedPatients.length === currentRows.length && currentRows.length > 0}
                     />
@@ -231,67 +234,116 @@ const ManagePatients = () => {
                 <div className="col-span-2 text-center">Actions</div>
             </div>
 
-            <div className="space-y-3 flex-1">
+            <div className="space-y-3">
                 {currentRows.map((patient) => (
-                    <div key={patient.user_id} className={`grid grid-cols-12 gap-4 items-center bg-white p-5 rounded-[1.4rem] border transition-all ${selectedPatients.includes(patient.user_id) ? 'border-[#d4af37] shadow-md' : 'border-gray-100 shadow-sm hover:border-gray-200'}`}>
-                        <div className="col-span-1 flex items-center gap-4 pl-2">
-                            <input
-                                type="checkbox"
-                                className="w-4 h-4 accent-[#d4af37] cursor-pointer"
-                                checked={selectedPatients.includes(patient.user_id)}
-                                onChange={() => handleSelectPatient(patient.user_id)}
-                            />
-                            <span className="text-gray-500 font-semibold text-base">{String(patient.patient_id).padStart(3, '0')}</span>
-                        </div>
+                    <div key={patient.user_id}>
+                        <div className={`rounded-[1.4rem] border bg-white p-4 shadow-sm transition-all sm:p-5 lg:hidden ${selectedPatients.includes(patient.user_id) ? 'border-[#d4af37] shadow-md' : 'border-gray-100'}`}>
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <input
+                                        type="checkbox"
+                                        className="mt-1 h-4 w-4 cursor-pointer accent-[#d4af37]"
+                                        checked={selectedPatients.includes(patient.user_id)}
+                                        onChange={() => handleSelectPatient(patient.user_id)}
+                                    />
+                                    <ProfileAvatar user={patient} className="h-12 w-12 rounded-full border border-gray-100" textSize="text-base" />
+                                    <div className="min-w-0">
+                                        <p className="truncate text-base font-bold text-gray-800">{patient.first_name} {patient.last_name}</p>
+                                        <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-[#b2a58d]">
+                                            ID {String(patient.patient_id).padStart(3, '0')}
+                                        </p>
+                                    </div>
+                                </div>
 
-                        <div className="col-span-3 flex items-center gap-4">
-                            <ProfileAvatar user={patient} className="w-12 h-12 rounded-full border border-gray-100" textSize="text-base" />
-                            <div className="truncate">
-                                <p className="text-gray-800 font-bold text-base truncate">{patient.first_name} {patient.last_name}</p>
-                                <p className="text-xs text-gray-500 uppercase tracking-[0.18em] mt-1">
-                                    {patient.sex} | {patient.age} yrs | Added {formatCreatedAt(patient.created_at)}
-                                </p>
+                                <div className="flex items-center gap-3 text-gray-400">
+                                    <button onClick={() => navigate(`/admin/patient/${patient.user_id}`)} className="transition hover:text-blue-500" title="View Profile">
+                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 0 1 6 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                    </button>
+                                    <button
+                                        onClick={() => navigate(`/admin/edit-patient/${patient.user_id}`)}
+                                        className="transition hover:text-[#d4af37]"
+                                        title="Edit Patient"
+                                    >
+                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                    </button>
+                                    <button onClick={() => handleIndividualArchive(patient.user_id)} className="transition hover:text-red-500" title={showArchived ? 'Restore' : 'Archive'}>
+                                        {showArchived ? (
+                                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15" /></svg>
+                                        ) : (
+                                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16" /></svg>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl bg-[#faf9f6] p-4 sm:grid-cols-2">
+                                <InfoBlock label="Profile" value={`${patient.sex || 'Unknown'} | ${patient.age || 'N/A'} yrs`} />
+                                <InfoBlock label="Phone" value={patient.phone || 'No phone on file'} />
+                                <InfoBlock label="Address" value={patient.address || 'No address on file'} />
+                                <InfoBlock label="Added" value={formatCreatedAt(patient.created_at)} />
                             </div>
                         </div>
 
-                        <div className="col-span-3 text-gray-600 text-base truncate pr-4">{patient.address || 'No address on file'}</div>
-                        <div className="col-span-3 text-gray-600 text-base">{patient.phone || 'No phone on file'}</div>
+                        <div className={`hidden grid-cols-12 gap-4 items-center rounded-[1.4rem] border bg-white p-5 transition-all lg:grid ${selectedPatients.includes(patient.user_id) ? 'border-[#d4af37] shadow-md' : 'border-gray-100 shadow-sm hover:border-gray-200'}`}>
+                            <div className="col-span-1 flex items-center gap-4 pl-2">
+                                <input
+                                    type="checkbox"
+                                    className="h-4 w-4 cursor-pointer accent-[#d4af37]"
+                                    checked={selectedPatients.includes(patient.user_id)}
+                                    onChange={() => handleSelectPatient(patient.user_id)}
+                                />
+                                <span className="text-base font-semibold text-gray-500">{String(patient.patient_id).padStart(3, '0')}</span>
+                            </div>
 
-                        <div className="col-span-2 flex justify-center gap-4 text-gray-400">
-                            <button onClick={() => navigate(`/admin/patient/${patient.user_id}`)} className="hover:text-blue-500 transition tooltip" title="View Profile">
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                            </button>
-                            <button
-                                onClick={() => navigate(`/admin/edit-patient/${patient.user_id}`)}
-                                className="hover:text-[#d4af37] transition"
-                                title="Edit Patient"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
-                            </button>
-                            <button onClick={() => handleIndividualArchive(patient.user_id)} className="hover:text-red-500 transition" title={showArchived ? 'Restore' : 'Archive'}>
-                                {showArchived ? (
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-                                ) : (
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                )}
-                            </button>
+                            <div className="col-span-3 flex items-center gap-4">
+                                <ProfileAvatar user={patient} className="h-12 w-12 rounded-full border border-gray-100" textSize="text-base" />
+                                <div className="truncate">
+                                    <p className="truncate text-base font-bold text-gray-800">{patient.first_name} {patient.last_name}</p>
+                                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-500">
+                                        {patient.sex} | {patient.age} yrs | Added {formatCreatedAt(patient.created_at)}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="col-span-3 truncate pr-4 text-base text-gray-600">{patient.address || 'No address on file'}</div>
+                            <div className="col-span-3 text-base text-gray-600">{patient.phone || 'No phone on file'}</div>
+
+                            <div className="col-span-2 flex justify-center gap-4 text-gray-400">
+                                <button onClick={() => navigate(`/admin/patient/${patient.user_id}`)} className="transition hover:text-blue-500" title="View Profile">
+                                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 0 1 6 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                </button>
+                                <button
+                                    onClick={() => navigate(`/admin/edit-patient/${patient.user_id}`)}
+                                    className="transition hover:text-[#d4af37]"
+                                    title="Edit Patient"
+                                >
+                                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-5m-1.414-9.414a2 2 0 1 1 2.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                </button>
+                                <button onClick={() => handleIndividualArchive(patient.user_id)} className="transition hover:text-red-500" title={showArchived ? 'Restore' : 'Archive'}>
+                                    {showArchived ? (
+                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 0 0 4.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 0 1-15.357-2m15.357 2H15" /></svg>
+                                    ) : (
+                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0 1 16.138 21H7.862a2 2 0 0 1-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v3M4 7h16" /></svg>
+                                    )}
+                                </button>
+                            </div>
                         </div>
                     </div>
                 ))}
 
                 {filteredPatients.length === 0 && (
-                    <div className="text-center p-12 text-base text-gray-400 italic bg-white rounded-3xl border border-gray-100">
+                    <div className="rounded-3xl border border-gray-100 bg-white p-12 text-center text-base italic text-gray-400">
                         No {showArchived ? 'archived' : 'active'} patients found.
                     </div>
                 )}
             </div>
 
             {filteredPatients.length > 0 && (
-                <div className="mt-8 flex justify-between items-center">
+                <div className="mt-8 flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                     <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
                         <span>Rows per page:</span>
                         <select
-                            className="bg-white border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-[#d4af37] text-sm text-gray-700"
+                            className="rounded border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-700 outline-none focus:border-[#d4af37]"
                             value={rowsPerPage}
                             onChange={(e) => {
                                 setRowsPerPage(Number(e.target.value));
@@ -304,15 +356,15 @@ const ManagePatients = () => {
                         </select>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
                         <span className="text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
                             Page {currentPage} of {totalPages}
                         </span>
                         <div className="flex gap-2">
-                            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg></button>
-                            <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg></button>
-                            <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg></button>
-                            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#d4af37] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg></button>
+                            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="rounded-lg bg-[#faf9f6] p-2 text-gray-500 shadow-sm transition hover:text-[#d4af37] disabled:opacity-50"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg></button>
+                            <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="rounded-lg bg-[#faf9f6] p-2 text-gray-500 shadow-sm transition hover:text-[#d4af37] disabled:opacity-50"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg></button>
+                            <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="rounded-lg bg-[#faf9f6] p-2 text-gray-500 shadow-sm transition hover:text-[#d4af37] disabled:opacity-50"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg></button>
+                            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="rounded-lg bg-[#faf9f6] p-2 text-gray-500 shadow-sm transition hover:text-[#d4af37] disabled:opacity-50"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg></button>
                         </div>
                     </div>
                 </div>
@@ -320,5 +372,12 @@ const ManagePatients = () => {
         </div>
     );
 };
+
+const InfoBlock = ({ label, value }) => (
+    <div>
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">{label}</p>
+        <p className="mt-1 text-sm text-gray-700">{value}</p>
+    </div>
+);
 
 export default ManagePatients;

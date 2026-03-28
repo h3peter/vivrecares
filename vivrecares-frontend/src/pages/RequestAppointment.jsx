@@ -32,8 +32,8 @@ const RequestAppointment = () => {
 
             try {
                 const [profileRes, settingsRes] = await Promise.all([
-                    axios.get(`http://localhost/vivrecares/vivrecares-api/get_profile.php?user_id=${user.id}`),
-                    axios.get('http://localhost/vivrecares/vivrecares-api/get_appointment_settings.php'),
+                    axios.get(`/get_profile.php?user_id=${user.id}`),
+                    axios.get('/get_appointment_settings.php'),
                 ]);
 
                 if (profileRes.data.status === 'success') {
@@ -113,7 +113,7 @@ const RequestAppointment = () => {
         setLoading(true);
 
         try {
-            const res = await axios.post('http://localhost/vivrecares/vivrecares-api/book_appointment.php', {
+            const res = await axios.post('/book_appointment.php', {
                 patientId,
                 branch,
                 type: appointmentType,
@@ -156,13 +156,13 @@ const RequestAppointment = () => {
                 <div className="mb-8">
                     <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d] mb-2">Patient Portal</p>
                     <h1 className="text-3xl lg:text-4xl font-bold text-gray-800 tracking-tight">Request Appointment</h1>
-                    <p className="text-sm text-gray-500 mt-2">Choose the purpose of your visit, then pick from the clinic&apos;s active schedule.</p>
+                    <p className="text-sm text-gray-500 mt-2">Choose the purpose of your visit, then submit your preferred branch, date, and clinic slot for review.</p>
                 </div>
 
                 <div className="w-full bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
                     <div className="bg-[#faf9f6] p-10 border-b border-gray-50">
-                        <h2 className="text-2xl font-bold text-gray-800">Book Appointment</h2>
-                        <p className="text-xs text-[#c4ba9d] font-bold uppercase tracking-[0.2em] mt-2">Schedule your clinic visit</p>
+                        <h2 className="text-2xl font-bold text-gray-800">Appointment Request</h2>
+                        <p className="text-xs text-[#c4ba9d] font-bold uppercase tracking-[0.2em] mt-2">Submit your preferred clinic schedule</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-10 space-y-8">
@@ -243,6 +243,9 @@ const RequestAppointment = () => {
                                 </select>
                                 {branch && branchSlots.length === 0 && (
                                     <p className="text-xs text-red-400 mt-2">No active time slots are configured for this branch yet.</p>
+                                )}
+                                {branch && branchSlots.length > 0 && (
+                                    <p className="text-xs text-gray-400 mt-2">Submitting this form sends a request. The clinic still needs to review and confirm it.</p>
                                 )}
                             </div>
                         </div>

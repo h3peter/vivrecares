@@ -1,7 +1,9 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json");
+require_once 'auth.php';
 require_once 'config.php';
+
+init_api_auth();
+require_roles(['Doctor', 'Admin']);
 
 try {
     $sql = "SELECT u.user_id, u.first_name, u.last_name, u.created_at,

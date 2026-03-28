@@ -1,13 +1,11 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Content-Type: application/json");
-
+require_once 'auth.php';
 require_once 'config.php';
+require_once 'appointment_validation.php';
 require_once 'mail_helper.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
+init_api_auth();
+require_roles(['Admin']);
 
 $data = json_decode(file_get_contents("php://input"), true);
 
@@ -25,13 +23,7 @@ try {
     $appointmentTime = trim((string) ($data['time'] ?? ''));
     $status = trim((string) ($data['status'] ?? ''));
 
-    $branchMap = [
-        'pasay branch' => 'Pasay Branch',
-        'valenzuela branch' => 'Valenzuela Branch',
-        'main branch' => 'Pasay Branch',
-    ];
-    $branchKey = strtolower($rawBranch);
-    $normalizedBranch = $branchMap[$branchKey] ?? $rawBranch;
+    $normalizedBranch = normalize_appointment_branch($rawBranch);
 
     if ($normalizedBranch === '' || $appointmentDate === '' || $appointmentTime === '' || $status === '') {
         echo json_encode(["status" => "error", "message" => "Date, time, branch, and status are required."]);
@@ -54,39 +46,11 @@ try {
         exit;
     }
 
+    $slotLabel = null;
     if ($status !== 'Cancelled') {
-        $weekday = (int) date('w', strtotime($appointmentDate));
-
-        $availabilityStmt = $conn->prepare("SELECT is_active FROM appointment_availability WHERE branch = ? AND weekday = ? LIMIT 1");
-        $availabilityStmt->execute([$normalizedBranch, $weekday]);
-        $isDayActive = $availabilityStmt->fetchColumn();
-
-        if ((int) $isDayActive !== 1) {
-            throw new Exception('The selected date is not available for this branch.');
-        }
-
-        $slotStmt = $conn->prepare("SELECT slot_label FROM appointment_slots WHERE branch = ? AND slot_time = ? AND is_active = 1 LIMIT 1");
-        $slotStmt->execute([$normalizedBranch, $appointmentTime]);
-        $slotLabel = $slotStmt->fetchColumn();
-
-        if (!$slotLabel) {
-            throw new Exception('The selected time slot is not available.');
-        }
-
-        $conflictStmt = $conn->prepare("
-            SELECT appointment_id
-            FROM appointments
-            WHERE branch = ?
-              AND appointment_date = ?
-              AND appointment_time = ?
-              AND status IN ('Pending', 'Confirmed')
-              AND appointment_id <> ?
-            LIMIT 1
-        ");
-        $conflictStmt->execute([$normalizedBranch, $appointmentDate, $appointmentTime, $data['appointment_id']]);
-        if ($conflictStmt->fetchColumn()) {
-            throw new Exception('The selected time slot is already reserved for that branch and day.');
-        }
+        $schedule = validate_appointment_schedule($conn, $normalizedBranch, $appointmentDate, $appointmentTime, $data['appointment_id'], ['Confirmed']);
+        $normalizedBranch = $schedule['branch'];
+        $slotLabel = $schedule['slot_label'];
     }
 
     // 1. Update the appointment (Your original working code)
@@ -105,6 +69,56 @@ try {
         $status,
         $data['appointment_id']
     ]);
+
+    if ($status === 'Confirmed') {
+        $competingStmt = $conn->prepare("
+            SELECT a.appointment_id, u.user_id, u.email, u.first_name,
+                   COALESCE(s.service_name, a.appointment_type) AS appointment_type
+            FROM appointments a
+            JOIN patients p ON a.patient_id = p.patient_id
+            JOIN users u ON p.user_id = u.user_id
+            LEFT JOIN services s ON a.service_id = s.service_id
+            WHERE a.branch = ?
+              AND a.appointment_date = ?
+              AND a.appointment_time = ?
+              AND a.status = 'Pending'
+              AND a.appointment_id <> ?
+        ");
+        $competingStmt->execute([$normalizedBranch, $appointmentDate, $appointmentTime, $data['appointment_id']]);
+        $competingAppointments = $competingStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($competingAppointments)) {
+            $cancelStmt = $conn->prepare("UPDATE appointments SET status = 'Cancelled' WHERE appointment_id = ?");
+            $cancelNotifStmt = $conn->prepare("INSERT INTO notifications (user_id, title, message, redirect_url) VALUES (?, ?, ?, ?)");
+            $appBaseUrl = rtrim((string) app_env('APP_BASE_URL', 'http://localhost:5173'), '/');
+
+            foreach ($competingAppointments as $competingAppointment) {
+                $cancelStmt->execute([$competingAppointment['appointment_id']]);
+
+                $cancelledLabel = $competingAppointment['appointment_type'] ?: 'appointment';
+                $cancelledMessage = "Your {$cancelledLabel} request for {$appointmentDate} at {$appointmentTime} in {$normalizedBranch} was cancelled because that slot has already been confirmed for another patient.";
+
+                $cancelNotifStmt->execute([
+                    $competingAppointment['user_id'],
+                    'Appointment Request Cancelled',
+                    $cancelledMessage,
+                    '/appointment-history',
+                ]);
+
+                if (!empty($competingAppointment['email'])) {
+                    send_vivre_email(
+                        $competingAppointment['email'],
+                        $competingAppointment['first_name'] ?? '',
+                        'Appointment Request Cancelled - Vivre Medical Group',
+                        'Appointment Request Cancelled',
+                        $cancelledMessage,
+                        $appBaseUrl . '/appointment-history',
+                        'View Appointment'
+                    );
+                }
+            }
+        }
+    }
 
     // 2. Find the patient's User ID linked to this specific appointment
     $userSql = "SELECT p.user_id, u.email, u.first_name

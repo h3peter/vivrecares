@@ -17,8 +17,8 @@ const AdminCreateInvoice = () => {
         const fetchPatients = async () => {
             try {
                 const [patientRes, serviceRes] = await Promise.all([
-                    axios.get('http://localhost/vivrecares/vivrecares-api/get_all_patients.php?archived=0'),
-                    axios.get('http://localhost/vivrecares/vivrecares-api/get_services.php?active_only=1'),
+                    axios.get('/get_all_patients.php?archived=0'),
+                    axios.get('/get_services.php?active_only=1'),
                 ]);
                 if (Array.isArray(patientRes.data)) {
                     setPatients(patientRes.data);
@@ -89,7 +89,7 @@ const AdminCreateInvoice = () => {
         setLoading(true);
 
         try {
-            const res = await axios.post('http://localhost/vivrecares/vivrecares-api/create_invoice.php', {
+            const res = await axios.post('/create_invoice.php', {
                 patient_id: selectedPatient,
                 total_amount: total,
                 payment_method: paymentMethod,

@@ -1,7 +1,9 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Content-Type: application/json");
+require_once 'auth.php';
 require_once 'config.php';
+
+init_api_auth();
+require_roles(['Admin', 'Doctor']);
 
 try {
     $totalVisits = (int) $conn->query("SELECT COUNT(*) FROM appointments")->fetchColumn();

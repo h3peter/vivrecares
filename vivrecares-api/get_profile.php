@@ -1,13 +1,11 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json");
 
 require_once 'config.php';
+require_once 'auth.php';
 require_once 'Encryption.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
+init_api_auth();
 
 $user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
 
@@ -15,6 +13,8 @@ if (!$user_id) {
     echo json_encode(["status" => "error", "message" => "No user ID provided."]);
     exit;
 }
+
+require_same_user_or_roles($user_id, ['Admin', 'Doctor']);
 
 // Fields in the patients table that are stored encrypted
 $encryptedFields = [

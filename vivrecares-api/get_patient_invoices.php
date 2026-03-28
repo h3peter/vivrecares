@@ -1,12 +1,30 @@
 <?php
-header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
 require_once 'config.php';
+require_once 'auth.php';
+
+init_api_auth();
 
 $id = $_GET['patient_id'] ?? null;
 
 if (!$id) {
     echo json_encode([]);
+    exit;
+}
+
+$authUser = require_auth();
+if (($authUser['role'] ?? '') === 'Patient') {
+    $patientStmt = $conn->prepare("SELECT patient_id FROM patients WHERE user_id = ? LIMIT 1");
+    $patientStmt->execute([$authUser['user_id']]);
+    $sessionPatientId = (int) $patientStmt->fetchColumn();
+    if ($sessionPatientId !== (int) $id) {
+        http_response_code(403);
+        echo json_encode(["status" => "error", "message" => "You are not allowed to access this invoice history."]);
+        exit;
+    }
+} elseif (!in_array($authUser['role'] ?? '', ['Admin', 'Doctor'], true)) {
+    http_response_code(403);
+    echo json_encode(["status" => "error", "message" => "You are not allowed to access this invoice history."]);
     exit;
 }
 

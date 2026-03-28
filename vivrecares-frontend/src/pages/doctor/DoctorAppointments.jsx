@@ -15,7 +15,7 @@ const DoctorAppointments = () => {
     useEffect(() => {
         const load = async () => {
             try {
-                const res = await axios.get('http://localhost/vivrecares/vivrecares-api/get_doctor_appointments.php');
+                const res = await axios.get('/get_doctor_appointments.php');
                 if (res.data.status === 'success') {
                     setAppointments(res.data.data || []);
                 }
@@ -69,35 +69,35 @@ const DoctorAppointments = () => {
     }, [search, viewMode, anchorDate, rowsPerPage]);
 
     return (
-        <div className="p-8 lg:p-12 bg-[#f4f4f4] min-h-screen">
+        <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
             <div className="mb-8">
-                <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d] mb-2">Doctor Workspace</p>
-                <h1 className="text-3xl lg:text-4xl font-bold text-gray-800 tracking-tight">Appointment Schedule</h1>
-                <p className="text-sm text-gray-500 mt-2">View your consultation queue by day, week, or month and open patient records quickly.</p>
+                <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d]">Doctor Workspace</p>
+                <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">Appointment Schedule</h1>
+                <p className="mt-2 text-sm text-gray-500">View your consultation queue by day, week, or month and open patient records quickly.</p>
             </div>
 
-            <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 lg:p-8 mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="mb-8 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm lg:p-8">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-4 md:items-end">
                     <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-[0.18em] mb-2 block">Anchor Date</label>
-                        <input type="date" value={anchorDate} onChange={(e) => setAnchorDate(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#c4ba9d] text-gray-700" />
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Anchor Date</label>
+                        <input type="date" value={anchorDate} onChange={(e) => setAnchorDate(e.target.value)} className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base text-gray-700 outline-none focus:border-[#c4ba9d]" />
                     </div>
                     <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-[0.18em] mb-2 block">View</label>
-                        <select value={viewMode} onChange={(e) => setViewMode(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#c4ba9d] bg-white text-gray-700">
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">View</label>
+                        <select value={viewMode} onChange={(e) => setViewMode(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-700 outline-none focus:border-[#c4ba9d]">
                             <option value="day">Daily</option>
                             <option value="week">Weekly</option>
                             <option value="month">Monthly</option>
                         </select>
                     </div>
                     <div className="md:col-span-2">
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-[0.18em] mb-2 block">Search</label>
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Search</label>
                         <input
                             type="text"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Patient, topic, or concern"
-                            className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#c4ba9d] text-gray-700"
+                            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base text-gray-700 outline-none focus:border-[#c4ba9d]"
                         />
                     </div>
                 </div>
@@ -106,8 +106,8 @@ const DoctorAppointments = () => {
                 </p>
             </div>
 
-            <div className="bg-white p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-100">
-                <div className="grid grid-cols-12 gap-4 mb-6 text-[#b2a58d] text-xs uppercase tracking-[0.18em] font-bold px-4 border-b border-gray-50 pb-4">
+            <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm lg:p-8">
+                <div className="mb-6 hidden grid-cols-12 gap-4 border-b border-gray-50 px-4 pb-4 text-xs font-bold uppercase tracking-[0.18em] text-[#b2a58d] lg:grid">
                     <div className="col-span-2">Date</div>
                     <div className="col-span-2">Time</div>
                     <div className="col-span-3">Patient</div>
@@ -118,32 +118,60 @@ const DoctorAppointments = () => {
 
                 <div className="space-y-3">
                     {currentRows.map((appt) => (
-                        <div key={appt.appointment_id} className="grid grid-cols-12 gap-4 items-center p-4 rounded-2xl border border-gray-100 bg-[#faf9f6]">
-                            <div className="col-span-2 text-sm text-gray-700">{appt.date}</div>
-                            <div className="col-span-2 text-sm text-gray-700">{appt.time}</div>
-                            <div className="col-span-3 text-base font-bold text-gray-800">{appt.first_name} {appt.last_name}</div>
-                            <div className="col-span-3">
-                                <p className="text-sm font-medium text-gray-700">{appt.appointment_type || 'Consultation'}</p>
-                                <p className="text-xs text-gray-400 truncate">{appt.concerns || 'No concerns supplied'}</p>
+                        <div key={appt.appointment_id}>
+                            <div className="rounded-2xl border border-gray-100 bg-[#faf9f6] p-4 lg:hidden">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="min-w-0">
+                                        <p className="text-base font-bold text-gray-800">{appt.first_name} {appt.last_name}</p>
+                                        <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-[#b2a58d]">
+                                            {appt.appointment_type || 'Consultation'}
+                                        </p>
+                                    </div>
+                                    <button onClick={() => setSelected(appt)} className="rounded-full border border-[#c4ba9d]/40 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#8f8167] transition hover:border-[#c4ba9d] hover:text-[#6f624c]">
+                                        View
+                                    </button>
+                                </div>
+
+                                <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl bg-white p-4 sm:grid-cols-2">
+                                    <InfoBlock label="Date" value={appt.date} />
+                                    <InfoBlock label="Time" value={appt.time} />
+                                    <InfoBlock label="Branch" value={appt.branch || 'N/A'} />
+                                    <InfoBlock label="Status" value={appt.status || 'Pending'} />
+                                </div>
+
+                                <div className="mt-4">
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">Concern</p>
+                                    <p className="mt-1 text-sm text-gray-600">{appt.concerns || 'No concerns supplied'}</p>
+                                </div>
                             </div>
-                            <div className="col-span-1 text-xs uppercase tracking-[0.18em] text-gray-500">{appt.branch || 'N/A'}</div>
-                            <div className="col-span-1 text-right">
-                                <button onClick={() => setSelected(appt)} className="text-[#b2a58d] text-xs font-bold uppercase tracking-[0.18em] hover:text-[#8f8167] transition">View</button>
+
+                            <div className="hidden grid-cols-12 items-center gap-4 rounded-2xl border border-gray-100 bg-[#faf9f6] p-4 lg:grid">
+                                <div className="col-span-2 text-sm text-gray-700">{appt.date}</div>
+                                <div className="col-span-2 text-sm text-gray-700">{appt.time}</div>
+                                <div className="col-span-3 text-base font-bold text-gray-800">{appt.first_name} {appt.last_name}</div>
+                                <div className="col-span-3">
+                                    <p className="text-sm font-medium text-gray-700">{appt.appointment_type || 'Consultation'}</p>
+                                    <p className="truncate text-xs text-gray-400">{appt.concerns || 'No concerns supplied'}</p>
+                                </div>
+                                <div className="col-span-1 text-xs uppercase tracking-[0.18em] text-gray-500">{appt.branch || 'N/A'}</div>
+                                <div className="col-span-1 text-right">
+                                    <button onClick={() => setSelected(appt)} className="text-xs font-bold uppercase tracking-[0.18em] text-[#b2a58d] transition hover:text-[#8f8167]">View</button>
+                                </div>
                             </div>
                         </div>
                     ))}
                     {scopedAppointments.length === 0 && (
-                        <p className="text-center text-gray-400 italic py-10">No appointments for this view.</p>
+                        <p className="py-10 text-center italic text-gray-400">No appointments for this view.</p>
                     )}
                 </div>
             </div>
 
             {scopedAppointments.length > 0 && (
-                <div className="mt-8 flex justify-between items-center">
+                <div className="mt-8 flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                     <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
                         <span>Rows per page:</span>
                         <select
-                            className="bg-white border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-[#c4ba9d] text-sm text-gray-700"
+                            className="rounded border border-gray-200 bg-white px-2 py-1.5 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]"
                             value={rowsPerPage}
                             onChange={(e) => setRowsPerPage(Number(e.target.value))}
                         >
@@ -153,29 +181,29 @@ const DoctorAppointments = () => {
                         </select>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
                         <span className="text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
                             Page {currentPage} of {totalPages}
                         </span>
                         <div className="flex gap-2">
-                            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#c4ba9d] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg></button>
-                            <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#c4ba9d] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg></button>
-                            <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#c4ba9d] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg></button>
-                            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="p-2 bg-white rounded-lg shadow-sm text-gray-500 hover:text-[#c4ba9d] disabled:opacity-50 transition"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg></button>
+                            <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="rounded-lg bg-[#faf9f6] p-2 text-gray-500 shadow-sm transition hover:text-[#c4ba9d] disabled:opacity-50"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg></button>
+                            <button onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))} disabled={currentPage === 1} className="rounded-lg bg-[#faf9f6] p-2 text-gray-500 shadow-sm transition hover:text-[#c4ba9d] disabled:opacity-50"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg></button>
+                            <button onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} className="rounded-lg bg-[#faf9f6] p-2 text-gray-500 shadow-sm transition hover:text-[#c4ba9d] disabled:opacity-50"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg></button>
+                            <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="rounded-lg bg-[#faf9f6] p-2 text-gray-500 shadow-sm transition hover:text-[#c4ba9d] disabled:opacity-50"><svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg></button>
                         </div>
                     </div>
                 </div>
             )}
 
             {selected && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white w-full max-w-xl rounded-[2rem] shadow-2xl p-10 relative">
-                        <button onClick={() => setSelected(null)} className="absolute top-6 right-6 text-gray-300 hover:text-[#555555] transition">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+                    <div className="relative w-full max-w-xl rounded-[2rem] bg-white p-6 shadow-2xl sm:p-8 lg:p-10">
+                        <button onClick={() => setSelected(null)} className="absolute right-5 top-5 text-gray-300 transition hover:text-[#555555] sm:right-6 sm:top-6">
+                            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
 
                         <h3 className="text-2xl font-bold text-gray-800">Consultation Intake</h3>
-                        <p className="text-xs uppercase tracking-[0.18em] text-[#b2a58d] font-bold mt-2">{selected.date} {selected.time}</p>
+                        <p className="mt-2 text-xs font-bold uppercase tracking-[0.18em] text-[#b2a58d]">{selected.date} {selected.time}</p>
 
                         <div className="mt-6 space-y-3 text-sm text-gray-700">
                             <p><span className="font-bold">Patient:</span> {selected.first_name} {selected.last_name}</p>
@@ -188,7 +216,7 @@ const DoctorAppointments = () => {
                         <div className="mt-8 flex justify-end">
                             <button
                                 onClick={() => navigate(`/doctor/patient/${selected.user_id}`)}
-                                className="px-6 py-3 rounded-xl bg-[#555555] text-[#c4ba9d] text-xs font-bold uppercase tracking-[0.18em] hover:bg-black transition"
+                                className="rounded-xl bg-[#555555] px-6 py-3 text-xs font-bold uppercase tracking-[0.18em] text-[#c4ba9d] transition hover:bg-black"
                             >
                                 Open Patient Record
                             </button>
@@ -199,5 +227,12 @@ const DoctorAppointments = () => {
         </div>
     );
 };
+
+const InfoBlock = ({ label, value }) => (
+    <div>
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">{label}</p>
+        <p className="mt-1 text-sm text-gray-700">{value}</p>
+    </div>
+);
 
 export default DoctorAppointments;

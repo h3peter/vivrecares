@@ -1,12 +1,10 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
 header("Content-Type: application/json");
 
 require_once 'config.php';
+require_once 'auth.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
+init_api_auth();
 
 $data = json_decode(file_get_contents("php://input"), true);
 
@@ -28,6 +26,7 @@ try {
 
     // Verify password against the hash
     if ($user && password_verify($data['password'], $user['password'])) {
+        set_authenticated_user($user);
         
         $displayName = !empty($user['nickname']) ? $user['nickname'] : $user['first_name'];
 

@@ -1,7 +1,9 @@
 <?php
-header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
 require_once 'config.php';
+require_once 'auth.php';
+
+init_api_auth();
 
 $user_id = $_GET['user_id'] ?? null;
 
@@ -9,6 +11,8 @@ if (!$user_id) {
     echo json_encode([]);
     exit;
 }
+
+require_same_user_or_roles($user_id, ['Admin', 'Doctor']);
 
 try {
     // We join the patients table so we can look them up by their login account (user_id)

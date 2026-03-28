@@ -1,7 +1,9 @@
 <?php
-header("Access-Control-Allow-Origin: *");
 header("Content-Type: application/json");
 require_once 'config.php';
+require_once 'auth.php';
+
+init_api_auth();
 
 $user_id = $_GET['user_id'] ?? null;
 
@@ -9,6 +11,8 @@ if (!$user_id) {
     echo json_encode(["status" => "error", "message" => "User ID is required"]);
     exit;
 }
+
+require_same_user_or_roles($user_id, ['Admin', 'Doctor']);
 
 try {
     $sql = "SELECT * FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 10";

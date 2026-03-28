@@ -15,7 +15,7 @@ const PatientDetails = () => {
         const fetchDetails = async () => {
             try {
                 // 1. Fetch Profile
-                const profileRes = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_profile.php?user_id=${userId}`);
+                const profileRes = await axios.get(`/get_profile.php?user_id=${userId}`);
                 
                 if (profileRes.data.status === 'success') {
                     const patientInfo = profileRes.data.data;
@@ -23,17 +23,17 @@ const PatientDetails = () => {
 
                     if (patientInfo && patientInfo.patient_id) {
                         // 2. Fetch their Appointment History
-                        const aptRes = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_appointments.php?patient_id=${patientInfo.patient_id}`);
+                        const aptRes = await axios.get(`/get_appointments.php?patient_id=${patientInfo.patient_id}`);
                         setAppointments(aptRes.data);
 
                         // 3. Fetch their Availed Treatments (Moved inside here!)
-                        const treatmentRes = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_patient_treatments.php?patient_id=${patientInfo.patient_id}`);
+                        const treatmentRes = await axios.get(`/get_patient_treatments.php?patient_id=${patientInfo.patient_id}`);
                         if (treatmentRes.data.status === 'success') {
                             setTreatments(treatmentRes.data.data);
                         }
 
                         // 4. Fetch doctor-entered consultation notes
-                        const notesRes = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_consultation_notes.php?patient_id=${patientInfo.patient_id}`);
+                        const notesRes = await axios.get(`/get_consultation_notes.php?patient_id=${patientInfo.patient_id}`);
                         if (notesRes.data.status === 'success') {
                             setConsultationNotes(notesRes.data.data || []);
                         }

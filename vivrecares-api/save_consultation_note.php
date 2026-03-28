@@ -1,12 +1,10 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Content-Type: application/json");
+require_once 'auth.php';
 require_once 'config.php';
 require_once 'mail_helper.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
+init_api_auth();
+$authenticatedUser = require_roles(['Doctor', 'Admin']);
 
 $data = json_decode(file_get_contents("php://input"), true);
 
@@ -21,6 +19,10 @@ if (
 }
 
 try {
+    if ((int) $authenticatedUser['user_id'] !== (int) $data['doctor_user_id'] && $authenticatedUser['role'] !== 'Admin') {
+        throw new Exception('You cannot save consultation notes on behalf of another doctor.');
+    }
+
     $doctorStmt = $conn->prepare("SELECT role, first_name FROM users WHERE user_id = ? AND deleted_at IS NULL LIMIT 1");
     $doctorStmt->execute([$data['doctor_user_id']]);
     $doctor = $doctorStmt->fetch(PDO::FETCH_ASSOC);

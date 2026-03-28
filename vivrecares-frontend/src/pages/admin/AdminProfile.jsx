@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import PasswordChangePanel from '../../components/PasswordChangePanel';
-
-const BASE_URL = 'http://localhost/vivrecares';
+import { assetUrl } from '../../utils/api';
 
 const AdminProfile = () => {
     const [formData, setFormData] = useState({
@@ -24,7 +23,7 @@ const AdminProfile = () => {
             if (!user) return;
             try {
                 const res = await axios.get(
-                    `${BASE_URL}/vivrecares-api/get_profile.php?user_id=${user.id}`
+                    `/get_profile.php?user_id=${user.id}`
                 );
                 // ✅ Fix: unwrap the data envelope
                 const d = res.data.data ?? res.data;
@@ -38,7 +37,7 @@ const AdminProfile = () => {
 
                 const photo = d.profile_photo;
                 if (photo && photo !== 'default-avatar.png') {
-                    setPhotoUrl(`${BASE_URL}/assets/uploads/${photo}`);
+                    setPhotoUrl(assetUrl(`assets/uploads/${photo}`));
                 }
             } catch (error) {
                 console.error("Failed to fetch admin profile", error);
@@ -65,13 +64,13 @@ const AdminProfile = () => {
                 fd.append('photo', pendingPhoto);
                 fd.append('user_id', formData.user_id);
                 const photoRes = await axios.post(
-                    `${BASE_URL}/vivrecares-api/upload_profile_photo.php`,
+                    '/upload_profile_photo.php',
                     fd,
                     { headers: { 'Content-Type': 'multipart/form-data' } }
                 );
                 if (photoRes.data.status === 'success') {
                     const newFilename = photoRes.data.filename;
-                    setPhotoUrl(`${BASE_URL}/assets/uploads/${newFilename}`);
+                    setPhotoUrl(assetUrl(`assets/uploads/${newFilename}`));
                     setPendingPhoto(null);
                     const stored = JSON.parse(localStorage.getItem('user')) ?? {};
                     localStorage.setItem('user', JSON.stringify({ ...stored, profile_photo: newFilename }));
@@ -80,7 +79,7 @@ const AdminProfile = () => {
 
             // 2. Save text fields
             const res = await axios.post(
-                `${BASE_URL}/vivrecares-api/update_profile.php`,
+                '/update_profile.php',
                 formData
             );
 

@@ -24,7 +24,7 @@ const AddPatientModal = ({ onClose, onSuccess }) => {
         setError('');
 
         try {
-            const res = await axios.post('http://localhost/vivrecares/vivrecares-api/add_patient.php', formData);
+            const res = await axios.post('/add_patient.php', formData);
             if (res.data.status === 'success') {
                 onSuccess(); // Triggers the table to refresh
                 onClose();   // Closes the modal

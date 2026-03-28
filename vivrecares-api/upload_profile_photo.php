@@ -1,10 +1,11 @@
 <?php
 // upload_profile_photo.php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Headers: Content-Type");
 header("Content-Type: application/json");
 
 require_once 'config.php'; // matches the rest of the project
+require_once 'auth.php';
+
+init_api_auth();
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode(['status' => 'error', 'message' => 'Invalid request method.']);
@@ -17,6 +18,8 @@ if (!$user_id) {
     echo json_encode(['status' => 'error', 'message' => 'Missing user_id.']);
     exit;
 }
+
+require_same_user_or_roles($user_id, ['Admin']);
 
 if (!isset($_FILES['photo']) || $_FILES['photo']['error'] !== UPLOAD_ERR_OK) {
     echo json_encode(['status' => 'error', 'message' => 'No file uploaded or upload error.']);

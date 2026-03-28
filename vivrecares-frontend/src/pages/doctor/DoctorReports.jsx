@@ -11,8 +11,8 @@ const DoctorReports = () => {
     const loadAnalytics = async () => {
         try {
             const [analyticsRes, patientsRes] = await Promise.all([
-                axios.get('http://localhost/vivrecares/vivrecares-api/get_clinical_analytics.php'),
-                axios.get('http://localhost/vivrecares/vivrecares-api/get_doctor_patients.php'),
+                axios.get('/get_clinical_analytics.php'),
+                axios.get('/get_doctor_patients.php'),
             ]);
             if (analyticsRes.data.status === 'success') setAnalytics(analyticsRes.data);
             if (patientsRes.data.status === 'success') setPatients(patientsRes.data.data || []);
@@ -32,7 +32,7 @@ const DoctorReports = () => {
                 return;
             }
             try {
-                const res = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_patient_visit_summary.php?patient_id=${selectedPatientId}`);
+                const res = await axios.get(`/get_patient_visit_summary.php?patient_id=${selectedPatientId}`);
                 if (res.data.status === 'success') {
                     setVisitSummary(res.data.data || []);
                 }

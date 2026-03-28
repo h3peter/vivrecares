@@ -1,13 +1,11 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Content-Type: application/json");
-
+require_once 'auth.php';
 require_once 'config.php';
+require_once 'appointment_validation.php';
 require_once 'mail_helper.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
+init_api_auth();
+$authenticatedUser = require_roles(['Patient', 'Admin']);
 
 $data = json_decode(file_get_contents("php://input"), true);
 
@@ -23,20 +21,30 @@ try {
     $serviceId = !empty($data['service_id']) ? (int) $data['service_id'] : null;
     $appointmentType = trim($data['type'] ?? '');
 
-    $branchMap = [
-        'pasay branch' => 'Pasay Branch',
-        'valenzuela branch' => 'Valenzuela Branch',
-        'main branch' => 'Pasay Branch',
-    ];
-    $branchKey = strtolower($rawBranch);
-    $branch = $branchMap[$branchKey] ?? '';
+    $branch = normalize_appointment_branch($rawBranch);
 
     if (!$branch || !$appointmentDate || !$appointmentTime) {
         throw new Exception('Branch, date, and time are required.');
     }
 
-    if (empty($data['patientId'])) {
+    $requestedPatientId = !empty($data['patientId']) ? (int) $data['patientId'] : 0;
+    if ($requestedPatientId <= 0) {
         throw new Exception('Patient profile is missing. Please refresh and try again.');
+    }
+
+    $patientScopeStmt = $conn->prepare("SELECT patient_id FROM patients WHERE user_id = ? LIMIT 1");
+    $patientScopeStmt->execute([(int) $authenticatedUser['user_id']]);
+    $sessionPatientId = (int) $patientScopeStmt->fetchColumn();
+
+    if ($authenticatedUser['role'] === 'Patient') {
+        if ($sessionPatientId <= 0) {
+            throw new Exception('No patient profile is linked to this account.');
+        }
+        if ($sessionPatientId !== $requestedPatientId) {
+            throw new Exception('You can only request appointments for your own account.');
+        }
+    } elseif ($authenticatedUser['role'] === 'Admin' && $requestedPatientId <= 0) {
+        throw new Exception('A valid patient profile is required.');
     }
 
     if ($serviceId) {
@@ -57,44 +65,16 @@ try {
         $appointmentType = 'General Inquiry';
     }
 
-    $weekday = (int) date('w', strtotime($appointmentDate));
-
-    $availabilityStmt = $conn->prepare("SELECT is_active FROM appointment_availability WHERE branch = ? AND weekday = ? LIMIT 1");
-    $availabilityStmt->execute([$branch, $weekday]);
-    $isDayActive = $availabilityStmt->fetchColumn();
-
-    if ((int) $isDayActive !== 1) {
-        throw new Exception('The selected date is not available for this branch.');
-    }
-
-    $slotStmt = $conn->prepare("SELECT slot_label FROM appointment_slots WHERE branch = ? AND slot_time = ? AND is_active = 1 LIMIT 1");
-    $slotStmt->execute([$branch, $appointmentTime]);
-    $slotLabel = $slotStmt->fetchColumn();
-
-    if (!$slotLabel) {
-        throw new Exception('The selected time slot is not available.');
-    }
-
-    $conflictStmt = $conn->prepare("
-        SELECT appointment_id
-        FROM appointments
-        WHERE branch = ?
-          AND appointment_date = ?
-          AND appointment_time = ?
-          AND status IN ('Pending', 'Confirmed')
-        LIMIT 1
-    ");
-    $conflictStmt->execute([$branch, $appointmentDate, $appointmentTime]);
-    if ($conflictStmt->fetchColumn()) {
-        throw new Exception('The selected time slot is already reserved for that branch and day.');
-    }
+    $schedule = validate_appointment_schedule($conn, $branch, $appointmentDate, $appointmentTime, null, ['Confirmed']);
+    $branch = $schedule['branch'];
+    $slotLabel = $schedule['slot_label'];
 
     $sql = "INSERT INTO appointments (patient_id, service_id, branch, appointment_date, appointment_time, appointment_type, concerns, status) 
             VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')";
             
     $stmt = $conn->prepare($sql);
     $stmt->execute([
-        $data['patientId'],
+        $requestedPatientId,
         $serviceId,
         $branch,
         $appointmentDate,
@@ -108,7 +88,7 @@ try {
                                        JOIN users u ON p.user_id = u.user_id
                                        WHERE p.patient_id = ?
                                        LIMIT 1");
-    $patientNameStmt->execute([$data['patientId']]);
+    $patientNameStmt->execute([$requestedPatientId]);
     $patientName = $patientNameStmt->fetch(PDO::FETCH_ASSOC);
     $fullName = trim(($patientName['first_name'] ?? 'Patient') . ' ' . ($patientName['last_name'] ?? ''));
     $patientUserId = $patientName['user_id'] ?? null;

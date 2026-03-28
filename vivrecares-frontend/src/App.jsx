@@ -28,7 +28,9 @@ import DoctorPatientRecord from './pages/doctor/DoctorPatientRecord';
 import DoctorAppointments from './pages/doctor/DoctorAppointments';
 import DoctorReports from './pages/doctor/DoctorReports';
 import DoctorProfile from './pages/doctor/DoctorProfile';
-import { getStoredUser } from './utils/session';
+import { clearStoredSession, getStoredUser, rememberStoredUser } from './utils/session';
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 // This acts as a security guard for your routes
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -49,126 +51,136 @@ const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
   return children;
 };
 
+const SessionBootstrap = ({ children }) => {
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const storedUser = getStoredUser();
+
+    if (!storedUser) {
+      setIsChecking(false);
+      return;
+    }
+
+    axios.get('/session_status.php')
+      .then((response) => {
+        if (!isMounted) return;
+        if (response?.data?.status === 'success' && response.data.user) {
+          rememberStoredUser(response.data.user);
+        } else {
+          clearStoredSession();
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        clearStoredSession();
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsChecking(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (isChecking) {
+    return null;
+  }
+
+  return children;
+};
+
 function App() {
   return (
     <Router>
+      <SessionBootstrap>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />          {/* This is the new front door */}
         <Route path="/login" element={<Login />} />            {/* Moved login to its own route */}
         <Route path="/register" element={<Register />} />
         {/* Protected Patient Route */}
-       <Route element={<PatientLayout />}>
-    <Route path="/profile" element={<ProtectedRoute allowedRole="Patient"><PatientProfile /></ProtectedRoute>} />
-    <Route path="/request-appointment" element={<ProtectedRoute allowedRole="Patient"><RequestAppointment /></ProtectedRoute>} />
-    <Route path="/appointment-history" element={<ProtectedRoute allowedRole="Patient"><AppointmentHistory /></ProtectedRoute>} />
-    <Route path="/account-settings" element={<ProtectedRoute allowedRole="Patient"><AccountSettings /></ProtectedRoute>} />
-    <Route path="/billing-history" element={<ProtectedRoute allowedRole="Patient"><PatientInvoices /></ProtectedRoute>} />
+       <Route element={<ProtectedRoute allowedRole="Patient"><PatientLayout /></ProtectedRoute>}>
+    <Route path="/dashboard" element={<PatientDashboard />} />
+    <Route path="/profile" element={<PatientProfile />} />
+    <Route path="/request-appointment" element={<RequestAppointment />} />
+    <Route path="/appointment-history" element={<AppointmentHistory />} />
+    <Route path="/account-settings" element={<AccountSettings />} />
+    <Route path="/billing-history" element={<PatientInvoices />} />
     </Route>
        {/* Protected Admin Routes */}
-  <Route element={<AdminLayout />}>
+  <Route element={<ProtectedRoute allowedRole="Admin"><AdminLayout /></ProtectedRoute>}>
       <Route 
           path="/admin/patients" 
-          element={
-              <ProtectedRoute allowedRole="Admin">
-                  <ManagePatients />
-              </ProtectedRoute>
-          } 
+          element={<ManagePatients />} 
       />
       <Route 
           path="/admin/patient/:userId" 
-          element={
-              <ProtectedRoute allowedRole="Admin">
-                  <PatientDetails />
-              </ProtectedRoute>
-          } 
+          element={<PatientDetails />} 
       />
       <Route 
       path="/admin/appointments" 
-      element={
-          <ProtectedRoute allowedRole="Admin">
-              <AppointmentLogs />
-          </ProtectedRoute>
-      } 
+      element={<AppointmentLogs />} 
   />
         <Route 
       path="/admin/billing" 
-      element={
-          <ProtectedRoute allowedRole="Admin">
-              <BillingAndPayments />
-          </ProtectedRoute>
-      } 
+      element={<BillingAndPayments />} 
   />
         <Route 
       path="/admin/profile" 
-      element={
-          <ProtectedRoute allowedRole="Admin">
-              <AdminProfile />
-          </ProtectedRoute>
-      } 
+      element={<AdminProfile />} 
   />
     <Route 
         path="/admin/add-patient" 
-        element={
-            <ProtectedRoute allowedRole="Admin">
-                <AdminAddPatient />
-            </ProtectedRoute>
-        } 
+        element={<AdminAddPatient />} 
     />
     <Route 
     path="/admin/edit-patient/:userId" 
-    element={<ProtectedRoute allowedRole="Admin">
-        <AdminEditPatient />
-    </ProtectedRoute>} />
+    element={<AdminEditPatient />} />
     <Route 
         path="/admin/patient/:id" 
-        element={
-            <ProtectedRoute allowedRole="Admin">
-                <AdminViewPatient />
-            </ProtectedRoute>
-        } 
+        element={<AdminViewPatient />} 
     />
     <Route 
     path="/admin/create-invoice" 
-    element={<ProtectedRoute allowedRole="Admin">
-        <AdminCreateInvoice />
-    </ProtectedRoute>} />
+    element={<AdminCreateInvoice />} />
     <Route 
     path="/admin/settings" 
-    element={<ProtectedRoute allowedRole="Admin">
-        <AdminSettings />
-    </ProtectedRoute>} />
+    element={<AdminSettings />} />
     <Route
     path="/admin/reports"
-    element={<ProtectedRoute allowedRole="Admin">
-        <AdminReports />
-    </ProtectedRoute>} />
+    element={<AdminReports />} />
   </Route>
 
-  <Route element={<DoctorLayout />}>
+  <Route element={<ProtectedRoute allowedRole="Doctor"><DoctorLayout /></ProtectedRoute>}>
     <Route
       path="/doctor/patients"
-      element={<ProtectedRoute allowedRole="Doctor"><DoctorPatients /></ProtectedRoute>}
+      element={<DoctorPatients />}
     />
     <Route
       path="/doctor/patient/:userId"
-      element={<ProtectedRoute allowedRole="Doctor"><DoctorPatientRecord /></ProtectedRoute>}
+      element={<DoctorPatientRecord />}
     />
     <Route
       path="/doctor/appointments"
-      element={<ProtectedRoute allowedRole="Doctor"><DoctorAppointments /></ProtectedRoute>}
+      element={<DoctorAppointments />}
     />
     <Route
       path="/doctor/reports"
-      element={<ProtectedRoute allowedRole="Doctor"><DoctorReports /></ProtectedRoute>}
+      element={<DoctorReports />}
     />
     <Route
       path="/doctor/profile"
-      element={<ProtectedRoute allowedRole="Doctor"><DoctorProfile /></ProtectedRoute>}
+      element={<DoctorProfile />}
     />
   </Route>
   <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </SessionBootstrap>
     </Router>
   );
 }

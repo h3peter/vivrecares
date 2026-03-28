@@ -13,7 +13,7 @@ const AdminViewPatient = () => {
     useEffect(() => {
         const fetchPatientDetails = async () => {
             try {
-                const res = await axios.get(`http://localhost/vivrecares/vivrecares-api/get_profile.php?user_id=${id}`);
+                const res = await axios.get(`/get_profile.php?user_id=${id}`);
                 if (res.data.status === 'success') {
                     setPatient(res.data.data);
                 } else {

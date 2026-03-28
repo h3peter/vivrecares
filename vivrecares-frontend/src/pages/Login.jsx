@@ -2,11 +2,15 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
+const REMEMBERED_EMAIL_KEY = 'rememberedLoginEmail';
+
 const Login = () => {
   const [credentials, setCredentials] = useState({
-    email: '',
+    email: localStorage.getItem(REMEMBERED_EMAIL_KEY) || '',
     password: ''
   });
+  const [rememberMe, setRememberMe] = useState(Boolean(localStorage.getItem(REMEMBERED_EMAIL_KEY)));
+  const [showPassword, setShowPassword] = useState(false);
   
   const navigate = useNavigate();
   const [message, setMessage] = useState('');
@@ -21,7 +25,7 @@ const Login = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost/vivrecares/vivrecares-api/login.php',
+        '/login.php',
         credentials,
         {
           headers: {
@@ -32,6 +36,12 @@ const Login = () => {
       );
 
       if (response.data.status === 'success') {
+        if (rememberMe && credentials.email.trim()) {
+          localStorage.setItem(REMEMBERED_EMAIL_KEY, credentials.email.trim());
+        } else {
+          localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+        }
+
         setMessage('Login Successful! Welcome back.');
         
         // Save the user data locally so React remembers they are logged in
@@ -45,10 +55,12 @@ const Login = () => {
         }
         
       } else {
+        setCredentials((prev) => ({ ...prev, password: '' }));
         setMessage('Login Failed: ' + response.data.message);
       }
     } catch (error) {
       console.error("System error during login:", error);
+      setCredentials((prev) => ({ ...prev, password: '' }));
       setMessage("Network Error. Please verify your backend server is running.");
     }
   };
@@ -68,18 +80,33 @@ const Login = () => {
           type="email" 
           name="email" 
           placeholder="Email Address" 
+          value={credentials.email}
           onChange={handleChange} 
           required 
           style={{ padding: '10px', width: '100%', boxSizing: 'border-box' }} 
         />
-        <input 
-          type="password" 
-          name="password" 
-          placeholder="Password" 
-          onChange={handleChange} 
-          required 
-          style={{ padding: '10px', width: '100%', boxSizing: 'border-box' }} 
-        />
+        <div style={{ position: 'relative' }}>
+          <input 
+            type={showPassword ? 'text' : 'password'} 
+            name="password" 
+            placeholder="Password" 
+            value={credentials.password}
+            onChange={handleChange} 
+            required 
+            style={{ padding: '10px', width: '100%', boxSizing: 'border-box', paddingRight: '70px' }} 
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: 'bold', color: '#8c7a2b' }}
+          >
+            {showPassword ? 'Hide' : 'Show'}
+          </button>
+        </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#555' }}>
+          <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+          <span>Remember Me</span>
+        </label>
         <button type="submit" style={{ padding: '12px', cursor: 'pointer', backgroundColor: '#333', color: 'white', border: 'none', fontWeight: 'bold' }}>
           Sign In
         </button>

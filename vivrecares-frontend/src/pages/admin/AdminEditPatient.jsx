@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 
-const BASE_URL = 'http://localhost/vivrecares';
-
 const AdminEditPatient = () => {
     const navigate = useNavigate();
     const { userId } = useParams();
@@ -63,7 +61,7 @@ const AdminEditPatient = () => {
     useEffect(() => {
         const fetchPatient = async () => {
             try {
-                const res = await axios.get(`${BASE_URL}/vivrecares-api/get_profile.php?user_id=${userId}`);
+                const res = await axios.get(`/get_profile.php?user_id=${userId}`);
                 const d   = res.data.data ?? res.data;
 
                 setFormData({
@@ -129,7 +127,7 @@ const AdminEditPatient = () => {
         }
 
         try {
-            const res = await axios.post(`${BASE_URL}/vivrecares-api/update_patient.php`, formData);
+            const res = await axios.post('/update_patient.php', formData);
             if (res.data.status === 'success') {
                 setSuccess(true);
                 setTimeout(() => navigate('/admin/patients'), 1500);

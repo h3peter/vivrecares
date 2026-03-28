@@ -18,3 +18,7 @@ export const getStoredUser = () => {
 export const clearStoredSession = () => {
     localStorage.removeItem('user');
 };
+
+export const rememberStoredUser = (user) => {
+    localStorage.setItem('user', JSON.stringify(user));
+};

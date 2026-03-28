@@ -1,14 +1,10 @@
 <?php
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type, Authorization");
-header("Content-Type: application/json");
-
+require_once 'auth.php';
 require_once 'config.php';
 require_once 'Encryption.php';
 require_once 'verification_helper.php';
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit(0);
+init_api_auth();
 
 $data = json_decode(file_get_contents("php://input"), true);
 
@@ -17,21 +13,41 @@ if (!$data || !isset($data['email']) || !isset($data['first_name']) || !isset($d
     exit;
 }
 
+$email = trim((string) $data['email']);
+$firstName = trim((string) $data['first_name']);
+$password = (string) $data['password'];
+$verificationToken = trim((string) $data['verification_token']);
+
+if ($email === '' || $firstName === '' || $verificationToken === '') {
+    echo json_encode(["status" => "error", "message" => "Missing required fields."]);
+    exit;
+}
+
+if (trim($password) === '') {
+    echo json_encode(["status" => "error", "message" => "Password is required."]);
+    exit;
+}
+
+if (strlen($password) < 8) {
+    echo json_encode(["status" => "error", "message" => "Password must be at least 8 characters long."]);
+    exit;
+}
+
 try {
     ensure_email_verification_schema($conn);
     $conn->beginTransaction();
 
     $stmt = $conn->prepare("SELECT user_id FROM users WHERE email = ? AND deleted_at IS NULL");
-    $stmt->execute([$data['email']]);
+    $stmt->execute([$email]);
     if ($stmt->fetch()) {
         echo json_encode(["status" => "error", "message" => "Email is already registered."]);
         $conn->rollBack();
         exit;
     }
 
-    consume_verified_email_token($conn, $data['email'], verification_purpose_patient_registration(), $data['verification_token']);
+    consume_verified_email_token($conn, $email, verification_purpose_patient_registration(), $verificationToken);
 
-    $hashedPassword = password_hash($data['password'], PASSWORD_DEFAULT);
+    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
     $sqlUser = "INSERT INTO users (first_name, middle_name, last_name, extension_name, nickname, email, email_verified_at, password, role) VALUES (?, ?, ?, ?, ?, ?, NOW(), ?, 'Patient')";
     $stmtUser = $conn->prepare($sqlUser);
@@ -41,7 +57,7 @@ try {
         $data['last_name'],
         isset($data['extension_name']) ? $data['extension_name'] : null,
         isset($data['nickname']) ? $data['nickname'] : null,
-        $data['email'],
+        $email,
         $hashedPassword
     ]);
 
