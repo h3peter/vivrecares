@@ -1,8 +1,14 @@
 ﻿import { useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import clinicImage from '../assets/VIVREFRONT (3).png';
-// TODO: move to src/assets/drjc.png and import drJCImage from '../assets/drjc.png'
+import drJCImage from '../assets/drjc.png';
 import logoBlack from '../assets/vivre-black.png';
+import igFacelift101 from '../assets/ig-facelift-101.png';
+import igPigmentation from '../assets/ig-pigmentation.png';
+import igStartWithTheBasics from '../assets/ig-start-with-the-basics.png';
+import igForeheadBotox from '../assets/ig-forehead-botox.png';
+import igPatientReview from '../assets/ig-patient-review.png';
+import igHikoNoselift from '../assets/ig-hiko-noselift.png';
 import LoginModal from '../components/LoginModal';
 import NotificationBell from '../components/NotificationBell';
 import ProfileAvatar from '../components/ProfileAvatar';
@@ -65,6 +71,22 @@ const LandingPage = () => {
     return () => document.removeEventListener('click', handler);
   }, [isMobileMenuOpen]);
 
+  /* ── Lock page scroll while mobile menu is open ─────────────── */
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    const previousTouchAction = document.body.style.touchAction;
+
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
+    }
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.body.style.touchAction = previousTouchAction;
+    };
+  }, [isMobileMenuOpen]);
+
   /* ── Booking logic (unchanged) ───────────────────────────────── */
   const handleBookingClick = () => {
     if (user) {
@@ -94,6 +116,51 @@ const LandingPage = () => {
   };
 
   const NAV_LINKS = [['home','Home'],['services','Services'],['clinics','Clinics'],['contact','Contact Us']];
+  const INSTAGRAM_PROFILE_URL = 'https://www.instagram.com/thevivreclinic/';
+  const INSTAGRAM_POSTS = [
+    {
+      title: 'Facelift 101',
+      description: 'A quick primer on facelift-focused care and what patients should know before treatment.',
+      accent: '#d9c8ef',
+      image: igFacelift101,
+      href: 'https://www.instagram.com/p/DVQFwJLkzGG/?img_index=1',
+    },
+    {
+      title: 'What Is Pigmentation?',
+      description: 'An easy-to-understand explainer on pigmentation and the common causes behind dark spots.',
+      accent: '#ead46b',
+      image: igPigmentation,
+      href: 'https://www.instagram.com/p/DV0onRcEyKB/?img_index=1',
+    },
+    {
+      title: 'Start With The Basics',
+      description: 'Simple essentials and foundational treatments that support a healthy natural glow.',
+      accent: '#d1b017',
+      image: igStartWithTheBasics,
+      href: 'https://www.instagram.com/p/DOfxPhyEpa4/?img_index=1',
+    },
+    {
+      title: 'Forehead Botox',
+      description: 'A short treatment highlight featuring professionally performed forehead botox care.',
+      accent: '#4f6377',
+      image: igForeheadBotox,
+      href: 'https://www.instagram.com/p/DNepXTMhm7T/',
+    },
+    {
+      title: 'Patient Review',
+      description: 'A testimonial post showcasing the patient experience and Vivre’s value-focused treatments.',
+      accent: '#e8d7aa',
+      image: igPatientReview,
+      href: 'https://www.instagram.com/p/DIiJM5rhRKL/?img_index=1',
+    },
+    {
+      title: 'HIKO Nose Lift',
+      description: 'A before-and-after look at Vivre’s non-surgical HIKO noselift results.',
+      accent: '#5f4f43',
+      image: igHikoNoselift,
+      href: 'https://www.instagram.com/p/DHk_UUyvtBn/',
+    },
+  ];
 
   /* ─────────────────────────────────────────────────────────────── */
   return (
@@ -202,7 +269,7 @@ const LandingPage = () => {
       {/* Mobile drawer */}
       {isMobileMenuOpen && (
         <div
-          className="md:hidden fixed top-16 left-0 right-0 z-40 px-6 py-6 flex flex-col gap-5"
+          className="md:hidden fixed top-16 left-0 right-0 bottom-0 z-40 px-6 py-6 flex flex-col gap-5 overflow-y-auto"
           style={{ background: 'rgba(250,249,246,0.98)', backdropFilter:'blur(16px)', borderBottom:`1px solid rgba(201,162,39,.15)`, animation:'vivreFadeDown .2s ease' }}
           onClick={e => e.stopPropagation()}
         >
@@ -344,7 +411,7 @@ const LandingPage = () => {
             <div className="absolute top-8 -left-3 md:-left-5 w-0.5 rounded-sm"
               style={{ height:'calc(100% - 64px)', background:`linear-gradient(to bottom, ${C.gold}, transparent)` }}/>
             <div className="overflow-hidden rounded-sm" style={{ boxShadow:`16px 16px 0 ${C.cream2}` }}>
-              <img src={DRJC_SRC} alt="Dr. JC Masangkay" className="w-full block object-cover object-top"/>
+              <img src={drJCImage} alt="Dr. JC Masangkay" className="w-full block object-cover object-top"/>
             </div>
             {/* Credential chip */}
             <div className="absolute -bottom-6 -right-4 md:-right-6 px-5 py-4"
@@ -496,6 +563,78 @@ const LandingPage = () => {
       </section>
 
       {/* ════════════════════════════════════════════════════
+          INSTAGRAM
+      ════════════════════════════════════════════════════ */}
+      <section className="px-5 py-16 sm:px-10 md:px-20 md:py-24" style={{ background:C.cream }}>
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10 md:mb-14">
+          <div>
+            <Eyebrow color={C.gold}>Latest On Instagram</Eyebrow>
+            <h2 className="font-light mb-3" style={{ fontFamily:C.serif, fontSize:'clamp(28px,4vw,40px)', color:C.charcoal }}>
+              Clinic Updates & Highlights
+            </h2>
+            <p className="text-[14px] md:text-[15px] font-light leading-relaxed max-w-2xl" style={{ color:C.muted }}>
+              Browse recent treatment highlights, skin education posts, and patient-centered updates from Vivre Medical.
+            </p>
+          </div>
+
+          <a
+            href={INSTAGRAM_PROFILE_URL}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center justify-center px-6 py-3 text-[10px] md:text-[11px] font-semibold tracking-[.18em] uppercase border-0 cursor-pointer transition-all duration-300"
+            style={{ background:C.charcoal, color:C.gold, fontFamily:C.sans }}
+          >
+            Follow @thevivreclinic
+          </a>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
+          {INSTAGRAM_POSTS.map(({ title, description, accent, image, href }) => (
+            <a
+              key={href}
+              href={href}
+              target="_blank"
+              rel="noreferrer"
+              className="group block transition-all duration-300"
+              style={{ textDecoration:'none' }}
+            >
+              <div
+                className="h-full flex flex-col justify-between p-6 md:p-7 rounded-[28px] border"
+                style={{
+                  background:`linear-gradient(160deg, ${accent} 0%, #ffffff 72%)`,
+                  borderColor:'rgba(201,162,39,.18)',
+                  boxShadow:'0 10px 30px rgba(45,42,38,.05)',
+                }}
+              >
+                <div className="mb-6 overflow-hidden rounded-[22px]" style={{ boxShadow:'0 10px 24px rgba(45,42,38,.08)' }}>
+                  <img
+                    src={image}
+                    alt={title}
+                    className="w-full aspect-[4/5] object-cover"
+                  />
+                </div>
+
+                <div>
+                  <div className="text-[11px] md:text-[12px] font-medium tracking-[.16em] uppercase mb-3" style={{ color:C.charcoal }}>
+                    Instagram Post
+                  </div>
+                  <div className="font-light mb-3 leading-tight" style={{ fontFamily:C.serif, fontSize:'clamp(26px,3vw,34px)', color:C.charcoal }}>
+                    {title}
+                  </div>
+                  <p className="text-[14px] md:text-[15px] font-light leading-relaxed mb-6" style={{ color:'rgba(45,42,38,.74)' }}>
+                    {description}
+                  </p>
+                  <div className="text-[11px] md:text-[12px] font-semibold tracking-[.14em] uppercase" style={{ color:C.charcoal }}>
+                    View on Instagram →
+                  </div>
+                </div>
+              </div>
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {/* ════════════════════════════════════════════════════
           CTA + FOOTER
       ════════════════════════════════════════════════════ */}
       <section id="contact" className="px-5 py-16 sm:px-10 md:px-20 md:py-24 text-center" style={{ background:C.cream2 }}>
@@ -520,7 +659,7 @@ const LandingPage = () => {
           {[
             { label:'Valenzuela', value:'(0917) 558 4873 · Closed Mon & Tue' },
             { label:'MOA Shore',  value:'(02) 8255 5010 / (0917) 148 4873 · Closed Mon' },
-            { label:'Email',     value:'hello@vivre.ph' },
+            { label:'Facebook',     value:'VIVRE by Dr. JC Masangkay' },
             { label:'Instagram', value:'@thevivreclinic' },
             { label:'Sunday Hours', value:'Open on Sunday · 10AM – 8PM' },
           ].map(({ label, value }) => (
