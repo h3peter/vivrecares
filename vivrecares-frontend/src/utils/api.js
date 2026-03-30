@@ -20,6 +20,7 @@ axios.defaults.withCredentials = true;
 
 export const apiUrl = (path) => `${API_BASE_URL}/${trimLeadingSlash(path)}`;
 export const assetUrl = (path) => `${APP_BASE_URL}/${trimLeadingSlash(path)}`;
+export const uploadAssetUrl = (path) => `${trimTrailingSlash(API_BASE_URL.replace(/\/vivrecares-api$/i, ''))}/${trimLeadingSlash(path)}`;
 
 axios.interceptors.request.use((config) => {
     if (typeof config.url === 'string' && config.url.startsWith('/')) {

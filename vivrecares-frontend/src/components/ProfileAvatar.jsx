@@ -10,7 +10,7 @@
  *   textSize   — Tailwind text size for initials, default "text-sm"
  */
 
-import { assetUrl } from '../utils/api';
+import { uploadAssetUrl } from '../utils/api';
 
 const ProfileAvatar = ({ user = {}, className = 'w-10 h-10 rounded-full', textSize = 'text-sm' }) => {
     const safeUser = user && typeof user === 'object' ? user : {};
@@ -25,7 +25,7 @@ const ProfileAvatar = ({ user = {}, className = 'w-10 h-10 rounded-full', textSi
     if (hasPhoto) {
         return (
             <img
-                src={assetUrl(`assets/uploads/${profile_photo}`)}
+                src={uploadAssetUrl(`assets/uploads/${profile_photo}`)}
                 alt={`${first_name} ${last_name}`}
                 className={`object-cover ${className}`}
                 onError={(e) => {
