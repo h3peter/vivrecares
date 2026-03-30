@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import PasswordChangePanel from '../../components/PasswordChangePanel';
-import { uploadAssetUrl } from '../../utils/api';
+import { profilePhotoUrl } from '../../utils/api';
 
 const DoctorProfile = () => {
     const [formData, setFormData] = useState({
@@ -33,7 +33,7 @@ const DoctorProfile = () => {
 
                 const photo = d.profile_photo;
                 if (photo && photo !== 'default-avatar.png') {
-                    setPhotoUrl(uploadAssetUrl(`assets/uploads/${photo}`));
+                    setPhotoUrl(profilePhotoUrl(photo));
                 }
             } catch (error) {
                 console.error('Failed to fetch doctor profile', error);
@@ -70,7 +70,7 @@ const DoctorProfile = () => {
                     throw new Error('Profile photo upload did not return a filename.');
                 }
 
-                setPhotoUrl(uploadAssetUrl(`assets/uploads/${newFilename}`));
+                setPhotoUrl(profilePhotoUrl(newFilename));
                 setPendingPhoto(null);
                 const stored = JSON.parse(localStorage.getItem('user')) ?? {};
                 localStorage.setItem('user', JSON.stringify({ ...stored, profile_photo: newFilename }));

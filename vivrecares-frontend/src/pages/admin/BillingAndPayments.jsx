@@ -344,7 +344,7 @@ const BillingAndPayments = () => {
             </div>
 
             <div className="bg-white p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-100">
-                <div className="hidden grid-cols-14 gap-4 mb-6 text-[#b2a58d] text-xs uppercase tracking-[0.18em] font-bold px-4 border-b border-gray-50 pb-6 lg:grid">
+                <div className="hidden grid-cols-14 gap-4 mb-6 text-[#b2a58d] text-xs uppercase tracking-[0.18em] font-bold px-4 border-b border-gray-50 pb-6 xl:grid">
                     <div className="col-span-2">ID</div>
                     <div className="col-span-2">Patient</div>
                     <div className="col-span-3">Context & Date</div>
@@ -358,7 +358,7 @@ const BillingAndPayments = () => {
                 <div className="space-y-3">
                     {paginatedBillings.map((billing) => (
                         <div key={billing.invoice_id}>
-                            <div className="rounded-2xl border border-gray-100 bg-[#faf9f6] p-4 sm:p-5 lg:hidden">
+                            <div className="rounded-2xl border border-gray-100 bg-[#faf9f6] p-4 sm:p-5 xl:hidden">
                                 <div className="flex items-start justify-between gap-4">
                                     <div className="min-w-0">
                                         <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400">
@@ -398,7 +398,7 @@ const BillingAndPayments = () => {
                                 </button>
                             </div>
 
-                            <div className="hidden grid-cols-14 gap-4 items-center text-base text-gray-700 p-4 hover:bg-[#faf9f6] rounded-2xl transition border border-transparent hover:border-gray-100 lg:grid">
+                            <div className="hidden grid-cols-14 gap-4 items-center text-base text-gray-700 p-4 hover:bg-[#faf9f6] rounded-2xl transition border border-transparent hover:border-gray-100 xl:grid">
                                 <div className="col-span-2 uppercase text-xs font-bold tracking-[0.18em] text-gray-400">
                                     INV-{String(billing.invoice_id).padStart(4, '0')}
                                 </div>

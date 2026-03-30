@@ -215,7 +215,7 @@ const ManagePatients = () => {
                 </button>
             </div>
 
-            <div className="mb-4 hidden grid-cols-12 gap-4 px-6 text-sm font-bold uppercase tracking-[0.18em] text-gray-400 lg:grid">
+            <div className="mb-4 hidden grid-cols-12 gap-4 px-6 text-sm font-bold uppercase tracking-[0.18em] text-gray-400 xl:grid">
                 <div className="col-span-1 flex items-center gap-4">
                     <input
                         type="checkbox"
@@ -234,7 +234,7 @@ const ManagePatients = () => {
             <div className="space-y-3">
                 {currentRows.map((patient) => (
                     <div key={patient.user_id}>
-                        <div className={`rounded-[1.4rem] border bg-white p-4 shadow-sm transition-all sm:p-5 lg:hidden ${selectedPatients.includes(patient.user_id) ? 'border-[#d4af37] shadow-md' : 'border-gray-100'}`}>
+                        <div className={`rounded-[1.4rem] border bg-white p-4 shadow-sm transition-all sm:p-5 xl:hidden ${selectedPatients.includes(patient.user_id) ? 'border-[#d4af37] shadow-md' : 'border-gray-100'}`}>
                             <div className="flex items-start justify-between gap-3">
                                 <div className="flex min-w-0 items-center gap-3">
                                     <input
@@ -281,7 +281,7 @@ const ManagePatients = () => {
                             </div>
                         </div>
 
-                        <div className={`hidden grid-cols-12 gap-4 items-center rounded-[1.4rem] border bg-white p-5 transition-all lg:grid ${selectedPatients.includes(patient.user_id) ? 'border-[#d4af37] shadow-md' : 'border-gray-100 shadow-sm hover:border-gray-200'}`}>
+                        <div className={`hidden grid-cols-12 gap-4 items-center rounded-[1.4rem] border bg-white p-5 transition-all xl:grid ${selectedPatients.includes(patient.user_id) ? 'border-[#d4af37] shadow-md' : 'border-gray-100 shadow-sm hover:border-gray-200'}`}>
                             <div className="col-span-1 flex items-center gap-4 pl-2">
                                 <input
                                     type="checkbox"

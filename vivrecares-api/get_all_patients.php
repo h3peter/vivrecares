@@ -9,13 +9,13 @@ $isArchived = isset($_GET['archived']) && $_GET['archived'] == '1';
 
 try {
     if ($isArchived) {
-        $sql = "SELECT u.user_id, u.first_name, u.last_name, u.created_at, p.patient_id, p.age, p.sex, p.address, p.phone
+        $sql = "SELECT u.user_id, u.first_name, u.last_name, u.profile_photo, u.created_at, p.patient_id, p.age, p.sex, p.address, p.phone
                 FROM users u
                 JOIN patients p ON u.user_id = p.user_id
                 WHERE u.role = 'Patient' AND u.deleted_at IS NOT NULL
                 ORDER BY u.created_at DESC, u.user_id DESC";
     } else {
-        $sql = "SELECT u.user_id, u.first_name, u.last_name, u.created_at, p.patient_id, p.age, p.sex, p.address, p.phone
+        $sql = "SELECT u.user_id, u.first_name, u.last_name, u.profile_photo, u.created_at, p.patient_id, p.age, p.sex, p.address, p.phone
                 FROM users u
                 JOIN patients p ON u.user_id = p.user_id
                 WHERE u.role = 'Patient' AND u.deleted_at IS NULL

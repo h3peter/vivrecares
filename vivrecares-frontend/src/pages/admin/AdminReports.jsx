@@ -375,6 +375,29 @@ const AdminReports = () => {
                             <div className="text-right font-bold text-gray-800">{row.total_amount}</div>
                         </>
                     )}
+                    renderCard={(row) => (
+                        <>
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400">{row.invoice_number}</p>
+                                    <p className="mt-2 text-base font-bold text-gray-800">{row.patient_name}</p>
+                                    <p className="mt-1 text-sm text-gray-500">{row.service}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-lg font-bold text-gray-800">{row.total_amount}</p>
+                                    <div className="mt-2">
+                                        <StatusBadge value={row.payment_status} />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="mt-4 grid grid-cols-2 gap-4">
+                                <InfoBlock label="Branch" value={row.branch} />
+                                <InfoBlock label="Date" value={row.payment_date} />
+                                <InfoBlock label="Method" value={row.payment_method} />
+                                <InfoBlock label="Reference" value={row.reference_number} />
+                            </div>
+                        </>
+                    )}
                     emptyMessage="No transactions match the current report filters."
                     gridClassName="grid-cols-9"
                 />
@@ -457,6 +480,23 @@ const AdminReports = () => {
                             <div>{row.concern}</div>
                         </>
                     )}
+                    renderCard={(row) => (
+                        <>
+                            <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                    <p className="text-base font-bold text-gray-800">{row.patient_name}</p>
+                                    <p className="mt-1 text-sm text-gray-500">{row.service}</p>
+                                </div>
+                                <StatusBadge value={row.status} />
+                            </div>
+                            <div className="mt-4 grid grid-cols-2 gap-4">
+                                <InfoBlock label="Branch" value={row.branch} />
+                                <InfoBlock label="Date" value={row.visit_date} />
+                                <InfoBlock label="Time" value={row.visit_time} />
+                                <InfoBlock label="Concern" value={row.concern} />
+                            </div>
+                        </>
+                    )}
                     emptyMessage="No visits match the current report filters."
                     gridClassName="grid-cols-7"
                 />
@@ -524,7 +564,7 @@ const MobileFilterToggle = ({ label, description, isOpen, onToggle }) => (
     </button>
 );
 
-const PreviewTable = ({ title, description, count, columns, rows, rowKey, renderRow, emptyMessage, gridClassName }) => (
+const PreviewTable = ({ title, description, count, columns, rows, rowKey, renderRow, renderCard, emptyMessage, gridClassName }) => (
     <PaginatedPreviewTable
         title={title}
         description={description}
@@ -533,12 +573,13 @@ const PreviewTable = ({ title, description, count, columns, rows, rowKey, render
         rows={rows}
         rowKey={rowKey}
         renderRow={renderRow}
+        renderCard={renderCard}
         emptyMessage={emptyMessage}
         gridClassName={gridClassName}
     />
 );
 
-const PaginatedPreviewTable = ({ title, description, count, columns, rows, rowKey, renderRow, emptyMessage, gridClassName }) => {
+const PaginatedPreviewTable = ({ title, description, count, columns, rows, rowKey, renderRow, renderCard, emptyMessage, gridClassName }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -553,7 +594,7 @@ const PaginatedPreviewTable = ({ title, description, count, columns, rows, rowKe
 
     return (
         <div className="mt-8 border border-gray-100 rounded-3xl overflow-hidden">
-            <div className="flex items-center justify-between gap-4 bg-white px-6 py-5 border-b border-gray-50">
+            <div className="flex flex-col gap-3 bg-white px-6 py-5 border-b border-gray-50 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h3 className="text-xl font-bold text-gray-800">{title}</h3>
                     <p className="text-sm text-gray-500 mt-1">{description}</p>
@@ -563,7 +604,18 @@ const PaginatedPreviewTable = ({ title, description, count, columns, rows, rowKe
                 </p>
             </div>
 
-            <div className="overflow-x-auto bg-white">
+            <div className="bg-white p-4 sm:p-6 xl:hidden">
+                <div className="space-y-3">
+                    {paginatedRows.map((row) => (
+                        <div key={rowKey(row)} className="rounded-2xl border border-gray-100 bg-[#faf9f6] px-4 py-4 text-sm text-gray-700">
+                            {renderCard ? renderCard(row) : renderRow(row)}
+                        </div>
+                    ))}
+                    {rows.length === 0 && <p className="py-8 text-center text-sm italic text-gray-400">{emptyMessage}</p>}
+                </div>
+            </div>
+
+            <div className="hidden overflow-x-auto bg-white xl:block">
                 <div className="min-w-[980px] p-6">
                     <div className={`grid ${gridClassName} gap-4 mb-4 text-[#b2a58d] text-xs uppercase tracking-[0.18em] font-bold px-4`}>
                         {columns.map((column) => (
@@ -584,7 +636,7 @@ const PaginatedPreviewTable = ({ title, description, count, columns, rows, rowKe
             </div>
 
             {rows.length > 0 && (
-                <div className="px-6 pb-6 flex justify-between items-center bg-white">
+                <div className="flex flex-col gap-4 bg-white px-6 pb-6 pt-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
                         <span>Rows per page:</span>
                         <select
@@ -601,7 +653,7 @@ const PaginatedPreviewTable = ({ title, description, count, columns, rows, rowKe
                         </select>
                     </div>
 
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
                         <span className="text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
                             Page {currentPage} of {totalPages}
                         </span>
@@ -617,5 +669,12 @@ const PaginatedPreviewTable = ({ title, description, count, columns, rows, rowKe
         </div>
     );
 };
+
+const InfoBlock = ({ label, value }) => (
+    <div className="min-w-0">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">{label}</p>
+        <p className="mt-1 break-words text-sm text-gray-700">{value}</p>
+    </div>
+);
 
 export default AdminReports;

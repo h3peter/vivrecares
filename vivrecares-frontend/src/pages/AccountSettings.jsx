@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import PasswordChangePanel from '../components/PasswordChangePanel';
-import { uploadAssetUrl } from '../utils/api';
+import { profilePhotoUrl } from '../utils/api';
 
 const AccountSettings = () => {
     const [formData, setFormData] = useState({
@@ -37,7 +37,7 @@ const AccountSettings = () => {
 
                 const photo = data.profile_photo;
                 if (photo && photo !== 'default-avatar.png') {
-                    setPhotoUrl(uploadAssetUrl(`assets/uploads/${photo}`));
+                    setPhotoUrl(profilePhotoUrl(photo));
                 } else {
                     setPhotoUrl(null);
                 }
@@ -80,7 +80,7 @@ const AccountSettings = () => {
                     throw new Error('Profile photo upload did not return a filename.');
                 }
 
-                setPhotoUrl(uploadAssetUrl(`assets/uploads/${newFilename}`));
+                setPhotoUrl(profilePhotoUrl(newFilename));
                 setPendingPhoto(null);
 
                 const stored = JSON.parse(localStorage.getItem('user')) ?? {};

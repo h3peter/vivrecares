@@ -10,11 +10,13 @@
  *   textSize   — Tailwind text size for initials, default "text-sm"
  */
 
-import { uploadAssetUrl } from '../utils/api';
+import { useEffect, useState } from 'react';
+import { profilePhotoUrl } from '../utils/api';
 
 const ProfileAvatar = ({ user = {}, className = 'w-10 h-10 rounded-full', textSize = 'text-sm' }) => {
     const safeUser = user && typeof user === 'object' ? user : {};
     const { first_name = '', last_name = '', profile_photo } = safeUser;
+    const [hasLoadError, setHasLoadError] = useState(false);
     const initials = `${first_name?.[0] ?? ''}${last_name?.[0] ?? ''}`.toUpperCase();
 
     const hasPhoto =
@@ -22,15 +24,17 @@ const ProfileAvatar = ({ user = {}, className = 'w-10 h-10 rounded-full', textSi
         profile_photo !== 'default-avatar.png' &&
         profile_photo !== '';
 
-    if (hasPhoto) {
+    useEffect(() => {
+        setHasLoadError(false);
+    }, [profile_photo]);
+
+    if (hasPhoto && !hasLoadError) {
         return (
             <img
-                src={uploadAssetUrl(`assets/uploads/${profile_photo}`)}
+                src={profilePhotoUrl(profile_photo)}
                 alt={`${first_name} ${last_name}`}
                 className={`object-cover ${className}`}
-                onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                }}
+                onError={() => setHasLoadError(true)}
             />
         );
     }
