@@ -1,22 +1,47 @@
 <?php
 
+if (!function_exists('get_allowed_api_origins')) {
+    function get_allowed_api_origins()
+    {
+        $origins = [];
+        $rawValues = [
+            app_env('FRONTEND_ORIGIN', ''),
+            app_env('APP_BASE_URL', ''),
+        ];
+
+        foreach ($rawValues as $rawValue) {
+            foreach (explode(',', (string) $rawValue) as $origin) {
+                $origin = rtrim(trim($origin), '/');
+                if ($origin !== '') {
+                    $origins[$origin] = true;
+                }
+            }
+        }
+
+        if (empty($origins)) {
+            $origins['http://localhost:5173'] = true;
+            $origins['http://127.0.0.1:5173'] = true;
+        }
+
+        return array_keys($origins);
+    }
+}
+
 if (!function_exists('send_api_cors_headers')) {
     function send_api_cors_headers()
     {
-        $allowedOrigin = app_env('FRONTEND_ORIGIN', 'http://localhost:5173');
-        $requestOrigin = $_SERVER['HTTP_ORIGIN'] ?? '';
+        $requestOrigin = rtrim((string) ($_SERVER['HTTP_ORIGIN'] ?? ''), '/');
+        $allowedOrigins = get_allowed_api_origins();
 
-        if ($requestOrigin !== '' && $requestOrigin === $allowedOrigin) {
-            header("Access-Control-Allow-Origin: {$allowedOrigin}");
-            header('Access-Control-Allow-Credentials: true');
-        } else {
-            header("Access-Control-Allow-Origin: {$allowedOrigin}");
+        if ($requestOrigin !== '' && in_array($requestOrigin, $allowedOrigins, true)) {
+            header("Access-Control-Allow-Origin: {$requestOrigin}");
             header('Access-Control-Allow-Credentials: true');
         }
 
         header('Vary: Origin');
         header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With');
+        header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Requested-With, Accept, Origin');
+        header('Access-Control-Max-Age: 86400');
     }
 }
 
@@ -27,12 +52,21 @@ if (!function_exists('start_api_session')) {
             return;
         }
 
-        $secure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+        $requestOrigin = rtrim((string) ($_SERVER['HTTP_ORIGIN'] ?? ''), '/');
+        $allowedOrigins = get_allowed_api_origins();
+        $isCrossSiteRequest = $requestOrigin !== '' && in_array($requestOrigin, $allowedOrigins, true);
+        $forwardedProto = strtolower((string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? ''));
+        $secure = (
+            (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+            $forwardedProto === 'https' ||
+            ($requestOrigin !== '' && stripos($requestOrigin, 'https://') === 0)
+        );
+
         session_set_cookie_params([
             'lifetime' => 0,
             'path' => '/',
             'httponly' => true,
-            'samesite' => 'Lax',
+            'samesite' => $isCrossSiteRequest ? 'None' : 'Lax',
             'secure' => $secure,
         ]);
 
@@ -44,12 +78,13 @@ if (!function_exists('init_api_auth')) {
     function init_api_auth()
     {
         send_api_cors_headers();
-        start_api_session();
 
         if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
-            http_response_code(200);
+            http_response_code(204);
             exit;
         }
+
+        start_api_session();
     }
 }
 
@@ -126,4 +161,3 @@ if (!function_exists('require_same_user_or_roles')) {
         exit;
     }
 }
-
