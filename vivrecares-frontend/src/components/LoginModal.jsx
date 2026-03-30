@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import logoBlack from '../assets/vivre-black.png';
 import PasswordInput from './PasswordInput';
-import { clearStoredSession, rememberStoredUser } from '../utils/session';
+import { clearStoredSession, rememberStoredToken, rememberStoredUser } from '../utils/session';
 
 const REMEMBERED_EMAIL_KEY = 'rememberedLoginEmail';
 
@@ -53,11 +53,18 @@ const LoginModal = ({ onClose }) => {
     try {
       const response = await axios.post('/login.php', credentials);
       if (response.data.status === 'success') {
+        const authToken = response.data?.token;
         if (rememberMe && credentials.email.trim()) {
           localStorage.setItem(REMEMBERED_EMAIL_KEY, credentials.email.trim());
         } else {
           localStorage.removeItem(REMEMBERED_EMAIL_KEY);
         }
+
+        if (!authToken) {
+          throw new Error('Login succeeded, but no authentication token was returned.');
+        }
+
+        rememberStoredToken(authToken);
 
         const sessionStatusResponse = await axios.get('/session_status.php');
         const confirmedUser = sessionStatusResponse?.data?.status === 'success'
@@ -71,7 +78,7 @@ const LoginModal = ({ onClose }) => {
           return;
         }
 
-        rememberStoredUser(confirmedUser);
+        rememberStoredUser(confirmedUser, authToken);
 
         if (confirmedUser.role === 'Admin') {
           navigate('/admin/patients');

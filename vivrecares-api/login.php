@@ -27,11 +27,13 @@ try {
     // Verify password against the hash
     if ($user && password_verify($data['password'], $user['password'])) {
         set_authenticated_user($user);
+        $token = create_auth_token($user);
         
         $displayName = !empty($user['nickname']) ? $user['nickname'] : $user['first_name'];
 
         echo json_encode([
             "status" => "success",
+            "token" => $token,
             "user" => [
                 "id" => $user['user_id'],
                 "patient_id" => $user['patient_id'],

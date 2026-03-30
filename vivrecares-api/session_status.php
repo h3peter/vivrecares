@@ -4,7 +4,7 @@ require_once 'config.php';
 
 init_api_auth();
 
-$authUser = get_authenticated_user();
+$authUser = require_auth();
 
 if (!$authUser || empty($authUser['user_id'])) {
     http_response_code(401);

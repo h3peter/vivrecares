@@ -27,7 +27,7 @@ import DoctorPatientRecord from './pages/doctor/DoctorPatientRecord';
 import DoctorAppointments from './pages/doctor/DoctorAppointments';
 import DoctorReports from './pages/doctor/DoctorReports';
 import DoctorProfile from './pages/doctor/DoctorProfile';
-import { clearStoredSession, getStoredUser, rememberStoredUser } from './utils/session';
+import { clearStoredSession, getStoredToken, getStoredUser, rememberStoredUser } from './utils/session';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import AppLoadingScreen from './components/AppLoadingScreen';
@@ -57,8 +57,10 @@ const SessionBootstrap = ({ children }) => {
   useEffect(() => {
     let isMounted = true;
     const storedUser = getStoredUser();
+    const storedToken = getStoredToken();
 
-    if (!storedUser) {
+    if (!storedUser || !storedToken) {
+      clearStoredSession();
       setIsChecking(false);
       return;
     }
@@ -67,7 +69,7 @@ const SessionBootstrap = ({ children }) => {
       .then((response) => {
         if (!isMounted) return;
         if (response?.data?.status === 'success' && response.data.user) {
-          rememberStoredUser(response.data.user);
+          rememberStoredUser(response.data.user, storedToken);
         } else {
           clearStoredSession();
         }

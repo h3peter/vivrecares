@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { clearStoredSession } from './session';
+import { clearStoredSession, getStoredToken } from './session';
 
 const trimTrailingSlash = (value) => String(value || '').replace(/\/+$/, '');
 const trimLeadingSlash = (value) => String(value || '').replace(/^\/+/, '');
@@ -29,6 +29,15 @@ axios.interceptors.request.use((config) => {
     if (typeof config.withCredentials === 'undefined') {
         config.withCredentials = true;
     }
+
+    const token = getStoredToken();
+    if (token) {
+        config.headers = config.headers || {};
+        if (!config.headers.Authorization) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+    }
+
     return config;
 });
 

@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom';
+import { clearStoredSession } from '../utils/session';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
+    clearStoredSession();
     navigate('/');
   };
 

@@ -74,17 +74,110 @@ if (!function_exists('start_api_session')) {
     }
 }
 
-if (!function_exists('init_api_auth')) {
-    function init_api_auth()
+if (!function_exists('base64url_encode')) {
+    function base64url_encode($value)
     {
-        send_api_cors_headers();
+        return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');
+    }
+}
 
-        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
-            http_response_code(204);
-            exit;
+if (!function_exists('base64url_decode')) {
+    function base64url_decode($value)
+    {
+        $remainder = strlen($value) % 4;
+        if ($remainder !== 0) {
+            $value .= str_repeat('=', 4 - $remainder);
         }
 
-        start_api_session();
+        return base64_decode(strtr($value, '-_', '+/'));
+    }
+}
+
+if (!function_exists('get_jwt_secret')) {
+    function get_jwt_secret()
+    {
+        return (string) app_env('JWT_SECRET', app_env('APP_KEY', 'vivrecares-dev-jwt-secret'));
+    }
+}
+
+if (!function_exists('get_jwt_ttl_seconds')) {
+    function get_jwt_ttl_seconds()
+    {
+        return (int) app_env('JWT_TTL', 86400 * 7);
+    }
+}
+
+if (!function_exists('read_bearer_token')) {
+    function read_bearer_token()
+    {
+        $header = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['Authorization'] ?? '';
+        if ($header === '' && function_exists('getallheaders')) {
+            $headers = getallheaders();
+            $header = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+        }
+
+        if (preg_match('/Bearer\s+(.+)/i', (string) $header, $matches)) {
+            return trim($matches[1]);
+        }
+
+        return null;
+    }
+}
+
+if (!function_exists('create_auth_token')) {
+    function create_auth_token(array $user)
+    {
+        $now = time();
+        $payload = [
+            'sub' => (int) ($user['user_id'] ?? 0),
+            'role' => (string) ($user['role'] ?? ''),
+            'patient_id' => isset($user['patient_id']) ? (int) $user['patient_id'] : null,
+            'iat' => $now,
+            'exp' => $now + get_jwt_ttl_seconds(),
+        ];
+
+        $header = ['alg' => 'HS256', 'typ' => 'JWT'];
+        $headerEncoded = base64url_encode(json_encode($header));
+        $payloadEncoded = base64url_encode(json_encode($payload));
+        $signature = hash_hmac('sha256', "{$headerEncoded}.{$payloadEncoded}", get_jwt_secret(), true);
+
+        return "{$headerEncoded}.{$payloadEncoded}." . base64url_encode($signature);
+    }
+}
+
+if (!function_exists('verify_auth_token')) {
+    function verify_auth_token($token)
+    {
+        if (!$token || substr_count($token, '.') !== 2) {
+            return null;
+        }
+
+        [$headerEncoded, $payloadEncoded, $signatureEncoded] = explode('.', $token, 3);
+        $expectedSignature = hash_hmac('sha256', "{$headerEncoded}.{$payloadEncoded}", get_jwt_secret(), true);
+        $providedSignature = base64url_decode($signatureEncoded);
+
+        if (!$providedSignature || !hash_equals($expectedSignature, $providedSignature)) {
+            return null;
+        }
+
+        $payload = json_decode((string) base64url_decode($payloadEncoded), true);
+        if (!is_array($payload)) {
+            return null;
+        }
+
+        if (empty($payload['sub']) || empty($payload['role'])) {
+            return null;
+        }
+
+        if (!empty($payload['exp']) && time() >= (int) $payload['exp']) {
+            return null;
+        }
+
+        return [
+            'user_id' => (int) $payload['sub'],
+            'role' => (string) $payload['role'],
+            'patient_id' => isset($payload['patient_id']) ? (int) $payload['patient_id'] : null,
+        ];
     }
 }
 
@@ -102,6 +195,11 @@ if (!function_exists('set_authenticated_user')) {
 if (!function_exists('get_authenticated_user')) {
     function get_authenticated_user()
     {
+        $tokenUser = verify_auth_token(read_bearer_token());
+        if ($tokenUser) {
+            return $tokenUser;
+        }
+
         return $_SESSION['auth_user'] ?? null;
     }
 }
@@ -110,6 +208,20 @@ if (!function_exists('clear_authenticated_user')) {
     function clear_authenticated_user()
     {
         unset($_SESSION['auth_user']);
+    }
+}
+
+if (!function_exists('init_api_auth')) {
+    function init_api_auth()
+    {
+        send_api_cors_headers();
+
+        if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+            http_response_code(204);
+            exit;
+        }
+
+        start_api_session();
     }
 }
 

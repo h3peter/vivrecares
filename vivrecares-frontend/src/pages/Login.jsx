@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import PasswordInput from '../components/PasswordInput';
+import { clearStoredSession, rememberStoredToken, rememberStoredUser } from '../utils/session';
 
 const REMEMBERED_EMAIL_KEY = 'rememberedLoginEmail';
 
@@ -37,22 +38,39 @@ const Login = () => {
       );
 
       if (response.data.status === 'success') {
+        const authToken = response.data?.token;
         if (rememberMe && credentials.email.trim()) {
           localStorage.setItem(REMEMBERED_EMAIL_KEY, credentials.email.trim());
         } else {
           localStorage.removeItem(REMEMBERED_EMAIL_KEY);
         }
 
+        if (!authToken) {
+          throw new Error('Login succeeded, but no authentication token was returned.');
+        }
+
+        rememberStoredToken(authToken);
+
+        const sessionStatusResponse = await axios.get('/session_status.php');
+        const confirmedUser = sessionStatusResponse?.data?.status === 'success'
+          ? sessionStatusResponse.data.user
+          : null;
+
+        if (!confirmedUser) {
+          clearStoredSession();
+          throw new Error('Login succeeded, but the session could not be restored on this browser.');
+        }
+
         setMessage('Login Successful! Welcome back.');
-        
-        // Save the user data locally so React remembers they are logged in
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        rememberStoredUser(confirmedUser, authToken);
         
         // The Traffic Cop Logic: Check the role and redirect
-        if (response.data.user.role === 'Admin') {
-          navigate('/admin-dashboard');
+        if (confirmedUser.role === 'Admin') {
+          navigate('/admin/patients');
+        } else if (confirmedUser.role === 'Doctor') {
+          navigate('/doctor/appointments');
         } else {
-          navigate('/patient-dashboard');
+          navigate('/profile');
         }
         
       } else {
