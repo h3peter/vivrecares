@@ -11,10 +11,45 @@ const NotificationBell = ({ isOpen: controlledIsOpen, onOpenChange, onOpen, onCl
     const [isLoading, setIsLoading] = useState(false);
     const dropdownRef = useRef(null);
     const pollingStoppedRef = useRef(false);
+    const hasLoadedOnceRef = useRef(false);
 
     const user = getStoredUser();
     const isControlled = typeof controlledIsOpen === 'boolean';
     const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
+
+    const fetchNotifications = async ({ showLoader = false } = {}) => {
+        if (!user || pollingStoppedRef.current) {
+            return;
+        }
+
+        try {
+            if (showLoader) {
+                setIsLoading(true);
+            }
+
+            const res = await axios.get(`/get_notifications.php?user_id=${user.id}`);
+            if (res.data.status === 'success') {
+                setNotifications(res.data.data);
+                setUnreadCount(res.data.unread_count);
+                hasLoadedOnceRef.current = true;
+            }
+        } catch (error) {
+            if (error?.response?.status === 401) {
+                pollingStoppedRef.current = true;
+                setNotifications([]);
+                setUnreadCount(0);
+                setOpenState(false);
+                clearStoredSession();
+                return;
+            }
+
+            console.error("Notification error:", error);
+        } finally {
+            if (showLoader) {
+                setIsLoading(false);
+            }
+        }
+    };
 
     const setOpenState = (nextOpen) => {
         if (!isControlled) {
@@ -35,35 +70,7 @@ const NotificationBell = ({ isOpen: controlledIsOpen, onOpenChange, onOpen, onCl
 
         pollingStoppedRef.current = false;
 
-        const fetchNotifications = async () => {
-            if (pollingStoppedRef.current) {
-                return;
-            }
-
-            try {
-                setIsLoading(true);
-                const res = await axios.get(`/get_notifications.php?user_id=${user.id}`);
-                if (res.data.status === 'success') {
-                    setNotifications(res.data.data);
-                    setUnreadCount(res.data.unread_count);
-                }
-            } catch (error) {
-                if (error?.response?.status === 401) {
-                    pollingStoppedRef.current = true;
-                    setNotifications([]);
-                    setUnreadCount(0);
-                    setOpenState(false);
-                    clearStoredSession();
-                    return;
-                }
-
-                console.error("Notification error:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchNotifications();
+        fetchNotifications({ showLoader: !hasLoadedOnceRef.current });
         const interval = setInterval(fetchNotifications, 10000);
         return () => clearInterval(interval);
     }, [user]);
@@ -117,6 +124,10 @@ const NotificationBell = ({ isOpen: controlledIsOpen, onOpenChange, onOpen, onCl
     const handleOpenDropdown = async () => {
         const nextOpen = !isOpen;
         setOpenState(nextOpen);
+
+        if (nextOpen && !isLoading) {
+            await fetchNotifications({ showLoader: !hasLoadedOnceRef.current || notifications.length === 0 });
+        }
 
         if (nextOpen && unreadCount > 0 && user?.id) {
             setUnreadCount(0);

@@ -193,9 +193,6 @@ const ManagePatients = () => {
                             </select>
                         </div>
                     </div>
-                    <p className="mt-3 text-sm text-gray-500">
-                        Showing {filteredPatients.length} {showArchived ? 'archived' : 'active'} patients, newest records first.
-                    </p>
                 </div>
 
                 {!showArchived && (

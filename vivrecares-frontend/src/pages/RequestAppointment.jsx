@@ -83,14 +83,7 @@ const RequestAppointment = () => {
         return validWeekdays.includes(getWeekday(selectedDate));
     };
 
-    const handleDateChange = (value) => {
-        if (value && branch && !validateSelectedDate(value)) {
-            alert('That day is not available for the selected branch.');
-            setDate('');
-            return;
-        }
-        setDate(value);
-    };
+    const isDateUnavailable = Boolean(date && branch && !validateSelectedDate(date));
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -213,11 +206,19 @@ const RequestAppointment = () => {
                                     type="date"
                                     min={minDate}
                                     required
-                                    className="w-full p-4 bg-[#faf9f6] border border-gray-100 rounded-xl text-base outline-none focus:border-[#c4ba9d] transition text-gray-700"
+                                    className={`w-full rounded-xl border p-4 text-base text-gray-700 outline-none transition ${isDateUnavailable ? 'border-red-300 bg-red-50 focus:border-red-400' : 'border-gray-100 bg-[#faf9f6] focus:border-[#c4ba9d]'}`}
                                     value={date}
-                                    onChange={(e) => handleDateChange(e.target.value)}
+                                    onChange={(e) => {
+                                        setDate(e.target.value);
+                                        setTime('');
+                                    }}
                                     disabled={!branch || initialLoading}
                                 />
+                                {isDateUnavailable && (
+                                    <p className="mt-2 text-xs text-red-500">
+                                        That day is not available for the selected branch. Please finish selecting and choose one of the valid clinic days below.
+                                    </p>
+                                )}
                                 {branch && (
                                     <p className="text-xs text-gray-400 mt-2">
                                         Valid weekdays: {branchAvailability.map((day) => day.weekday_name).join(', ') || 'No active weekdays configured'}
@@ -232,7 +233,7 @@ const RequestAppointment = () => {
                                     className="w-full p-4 bg-[#faf9f6] border border-gray-100 rounded-xl text-base outline-none focus:border-[#c4ba9d] transition text-gray-700"
                                     value={time}
                                     onChange={(e) => setTime(e.target.value)}
-                                    disabled={!branch || branchSlots.length === 0 || initialLoading}
+                                    disabled={!branch || branchSlots.length === 0 || initialLoading || isDateUnavailable}
                                 >
                                     <option value="">Select a time slot</option>
                                     {branchSlots.map((slot) => (
