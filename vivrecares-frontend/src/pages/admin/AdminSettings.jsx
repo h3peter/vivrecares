@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import PasswordInput from '../../components/PasswordInput';
 
 const defaultServiceForm = {
     service_id: null,
@@ -534,16 +535,31 @@ const AdminSettings = () => {
     );
 };
 
-const Input = ({ label, value, onChange, type = 'text' }) => (
-    <div>
-        <label className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400 block mb-2">{label}</label>
-        <input
-            type={type}
-            value={value ?? ''}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]"
-        />
-    </div>
-);
+const Input = ({ label, value, onChange, type = 'text' }) => {
+    const [passwordVisible, setPasswordVisible] = useState(false);
+
+    return (
+        <div>
+            <label className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400 block mb-2">{label}</label>
+            {type === 'password' ? (
+                <PasswordInput
+                    value={value ?? ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    visible={passwordVisible}
+                    onToggleVisibility={() => setPasswordVisible((prev) => !prev)}
+                    inputClassName="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 pr-14 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]"
+                    buttonClassName="absolute inset-y-0 right-0 px-4 text-gray-400 hover:text-[#b59635] transition"
+                />
+            ) : (
+                <input
+                    type={type}
+                    value={value ?? ''}
+                    onChange={(e) => onChange(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]"
+                />
+            )}
+        </div>
+    );
+};
 
 export default AdminSettings;

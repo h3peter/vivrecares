@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import logoBlack from '../assets/vivre-black.png';
+import PasswordInput from '../components/PasswordInput';
 
 const Register = () => {
   const navigate = useNavigate();
@@ -13,6 +14,8 @@ const Register = () => {
   const [verificationError, setVerificationError] = useState('');
   const [sendingCode, setSendingCode] = useState(false);
   const [verifyingCode, setVerifyingCode] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   const [formData, setFormData] = useState({
     first_name: '', middle_name: '', last_name: '', extension_name: '', nickname: '',
@@ -180,7 +183,16 @@ const Register = () => {
               />
             )}
             {step === 2 && <StepTwo formData={formData} handleChange={handleChange} />}
-            {step === 3 && <StepThree formData={formData} handleChange={handleChange} />}
+            {step === 3 && (
+              <StepThree
+                formData={formData}
+                handleChange={handleChange}
+                showPassword={showPassword}
+                showConfirmPassword={showConfirmPassword}
+                onTogglePassword={() => setShowPassword((prev) => !prev)}
+                onToggleConfirmPassword={() => setShowConfirmPassword((prev) => !prev)}
+              />
+            )}
 
             <div className="mt-16 flex flex-col items-center gap-8">
               <button 
@@ -366,11 +378,32 @@ const StepTwo = ({ formData, handleChange }) => {
   );
 };
 
-const StepThree = ({ formData, handleChange }) => (
+const StepThree = ({
+  formData,
+  handleChange,
+  showPassword,
+  showConfirmPassword,
+  onTogglePassword,
+  onToggleConfirmPassword,
+}) => (
   <div className="flex flex-col items-center space-y-10 animate-fadeIn max-w-md mx-auto">
     <div className="w-full space-y-6">
-        <Input label="Password" name="password" type="password" value={formData.password} onChange={handleChange} minLength={8} required />
-        <Input label="Confirm Password" name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} minLength={8} required />
+        <PasswordField
+          label="Password"
+          name="password"
+          value={formData.password}
+          onChange={handleChange}
+          visible={showPassword}
+          onToggleVisibility={onTogglePassword}
+        />
+        <PasswordField
+          label="Confirm Password"
+          name="confirmPassword"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          visible={showConfirmPassword}
+          onToggleVisibility={onToggleConfirmPassword}
+        />
     </div>
     <p className="text-[10px] text-center text-gray-400 tracking-widest uppercase">Use at least 8 characters. By clicking done, you agree to clinic policies.</p>
   </div>
@@ -380,6 +413,21 @@ const Input = ({ label, className = "", ...props }) => (
   <div className={`flex flex-col gap-2 ${className}`}>
     <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">{label}</label>
     <input {...props} className="w-full px-4 py-3 bg-[#f9f8f4] border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-[#d4af37] transition-all" />
+  </div>
+);
+
+const PasswordField = ({ label, visible, onToggleVisibility, ...props }) => (
+  <div className="flex flex-col gap-2">
+    <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">{label}</label>
+    <PasswordInput
+      {...props}
+      visible={visible}
+      onToggleVisibility={onToggleVisibility}
+      minLength={8}
+      required
+      inputClassName="w-full px-4 py-3 pr-14 bg-[#f9f8f4] border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-[#d4af37] transition-all"
+      buttonClassName="absolute inset-y-0 right-0 px-4 text-gray-400 hover:text-[#b59635] transition"
+    />
   </div>
 );
 

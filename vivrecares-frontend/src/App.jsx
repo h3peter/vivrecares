@@ -11,7 +11,6 @@ import AccountSettings from './pages/AccountSettings';
 import AdminLayout from './components/AdminLayout';
 import PatientLayout from './components/PatientLayout';
 import ManagePatients from './pages/admin/ManagePatients';
-import PatientDetails from './pages/admin/PatientDetails';
 import AppointmentLogs from './pages/admin/AppointmentLogs';
 import BillingAndPayments from './pages/admin/BillingAndPayments';
 import AdminProfile from './pages/admin/AdminProfile';
@@ -117,10 +116,6 @@ function App() {
       <Route 
           path="/admin/patients" 
           element={<ManagePatients />} 
-      />
-      <Route 
-          path="/admin/patient/:userId" 
-          element={<PatientDetails />} 
       />
       <Route 
       path="/admin/appointments" 

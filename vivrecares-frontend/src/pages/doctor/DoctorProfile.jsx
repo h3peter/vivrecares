@@ -61,13 +61,19 @@ const DoctorProfile = () => {
                 const photoRes = await axios.post('/upload_profile_photo.php', fd, {
                     headers: { 'Content-Type': 'multipart/form-data' }
                 });
-                if (photoRes.data.status === 'success') {
-                    const newFilename = photoRes.data.filename;
-                    setPhotoUrl(assetUrl(`assets/uploads/${newFilename}`));
-                    setPendingPhoto(null);
-                    const stored = JSON.parse(localStorage.getItem('user')) ?? {};
-                    localStorage.setItem('user', JSON.stringify({ ...stored, profile_photo: newFilename }));
+                if (photoRes.data?.status !== 'success') {
+                    throw new Error(photoRes.data?.message || 'Profile photo upload failed.');
                 }
+
+                const newFilename = photoRes.data?.filename;
+                if (!newFilename) {
+                    throw new Error('Profile photo upload did not return a filename.');
+                }
+
+                setPhotoUrl(assetUrl(`assets/uploads/${newFilename}`));
+                setPendingPhoto(null);
+                const stored = JSON.parse(localStorage.getItem('user')) ?? {};
+                localStorage.setItem('user', JSON.stringify({ ...stored, profile_photo: newFilename }));
             }
 
             const res = await axios.post('/update_profile.php', formData);
@@ -95,8 +101,12 @@ const DoctorProfile = () => {
     const initials = `${formData.first_name?.[0] ?? ''}${formData.last_name?.[0] ?? ''}`.toUpperCase();
 
     return (
-        <div className="p-12 bg-[#f4f4f4] min-h-screen">
-            <h2 className="text-3xl font-light text-[#b2a58d] mb-12">My Profile</h2>
+        <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
+            <div className="mx-auto mb-8 max-w-6xl">
+                <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d]">Doctor Workspace</p>
+                <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">My Profile</h1>
+                <p className="mt-2 text-sm text-gray-500">Manage your account details, profile photo, and password from one place.</p>
+            </div>
 
             <div className="max-w-6xl mx-auto flex flex-col md:flex-row gap-8">
                 <div className="w-full md:w-1/3 bg-white p-12 rounded-xl shadow-sm flex flex-col items-center text-center border border-gray-100">

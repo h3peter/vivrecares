@@ -90,14 +90,14 @@ const AdminAddPatient = () => {
     };
 
     return (
-        <div className="p-12 bg-[#f4f4f4] min-h-screen">
-            <div className="flex items-center justify-between mb-8">
+        <div className="bg-[#f4f4f4] min-h-screen p-4 sm:p-6 lg:p-12">
+            <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800 tracking-wide">Register Walk-in Patient</h1>
                 </div>
                 <button 
                     onClick={() => navigate('/admin/patients')}
-                    className="text-gray-500 hover:text-[#b2a58d] transition flex items-center gap-2 text-sm font-medium"
+                    className="inline-flex w-fit items-center gap-2 text-sm font-medium text-gray-500 transition hover:text-[#b2a58d]"
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
                     Back to List
@@ -106,10 +106,10 @@ const AdminAddPatient = () => {
 
             {error && <div className="mb-6 p-4 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">{error}</div>}
 
-            <form onSubmit={handleSubmit} className="space-y-8 bg-white p-10 rounded-3xl shadow-sm border border-gray-100 w-full">
+            <form onSubmit={handleSubmit} className="w-full space-y-8 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-7 lg:p-10">
                 
                 {/* ACCOUNT INFO */}
-                <div className="grid grid-cols-4 gap-6 mb-4">
+                <div className="mb-4 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
                     <div>
                         <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">First Name</label>
                         <input type="text" name="first_name" required onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
@@ -128,7 +128,7 @@ const AdminAddPatient = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-6 mb-4">
+                <div className="mb-4 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
                     <div>
                         <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Nickname</label>
                         <input type="text" name="nickname" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
@@ -151,19 +151,19 @@ const AdminAddPatient = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-4 gap-6 mb-12">
-                    <div className="col-span-1">
+                <div className="mb-12 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+                    <div className="sm:col-span-1">
                         <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Email</label>
                         <input type="email" name="email" required onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                     </div>
-                    <div className="col-span-1">
+                    <div className="sm:col-span-1">
                         <div className="flex justify-between items-end mb-2">
                             <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block">Temp. Password</label>
                             <span className="text-[10px] text-[#d4af37] italic">Editable</span>
                         </div>
                         <input type="text" name="password" value={formData.password} required onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-[#d4af37]/30 rounded-lg focus:outline-none focus:border-[#d4af37] transition text-gray-600" />
                     </div>
-                    <div className="col-span-2">
+                    <div className="sm:col-span-2 xl:col-span-2">
                         <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Address</label>
                         <input type="text" name="address" required onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                     </div>
@@ -174,7 +174,7 @@ const AdminAddPatient = () => {
                     <h2 className="text-sm font-bold text-[#d4af37] tracking-widest uppercase mb-8 text-center">Initial Disclosure</h2>
                     
                     {/* Row 1: 3 columns, all top-aligned */}
-                    <div className="grid grid-cols-3 gap-8 mt-6">
+                    <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-8">
                         <div>
                             <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Previous Aesthetic Procedures</label>
                             <input type="text" name="aesthetic_procedures" placeholder="(if any)" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
@@ -190,7 +190,7 @@ const AdminAddPatient = () => {
                     </div>
 
                     {/* Row 2: Aesthetic Procedures + Pregnant side by side */}
-                        <div className="grid grid-cols-3 gap-8 mt-6">
+                        <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-8">
                         <div>
                             <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Recent Tooth Extraction?</label>
                             {/* Matches the input height so all 3 cells are visually equal */}
@@ -199,9 +199,9 @@ const AdminAddPatient = () => {
                                 <span className="text-sm text-gray-600">Yes</span>
                             </div>
                         </div>
-                        <div className="col-span-2">
+                        <div className="md:col-span-2">
                             <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Pregnant / Breastfeeding / Planning?</label>
-                            <div className="w-full p-3 rounded-lg flex items-center gap-8">
+                            <div className="flex w-full flex-col gap-3 rounded-lg p-3 sm:flex-row sm:items-center sm:gap-8">
                                 <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
                                     <input type="radio" name="pregnant" value="Yes" onChange={handleChange} className="w-4 h-4 accent-[#d4af37]" /> Yes
                                 </label>
@@ -224,7 +224,7 @@ const AdminAddPatient = () => {
                     <h2 className="text-sm font-bold text-[#d4af37] tracking-widest uppercase mb-2 text-center">Medical History Disclosure</h2>
                     <p className="text-xs text-gray-400 italic text-center mb-8">Acute or Chronic Illnesses: Have you had or is/ are suffering from any medical condition/s (Check any that apply)</p>
 
-                    <div className="grid grid-cols-3 gap-y-4 gap-x-8 mb-8 px-8">
+                    <div className="mb-8 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 lg:px-8">
                         {illnessOptions.map((illness) => (
                             <div key={illness.id} className="flex items-center gap-3">
                                 <input type="checkbox" name={illness.id} onChange={handleChange} className="w-4 h-4 text-[#d4af37] bg-gray-100 border-gray-300 rounded focus:ring-[#d4af37]" />

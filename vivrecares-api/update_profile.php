@@ -20,11 +20,18 @@ try {
 
     // 1. Update basic user info
     $stmt1 = $conn->prepare("UPDATE users SET first_name = ?, last_name = ?, email = ? WHERE user_id = ?");
-    $stmt1->execute([$data['first_name'], $data['last_name'], $data['email'], $data['user_id']]);
+    $stmt1->execute([
+        $data['first_name'] ?? '',
+        $data['last_name'] ?? '',
+        $data['email'] ?? '',
+        $data['user_id']
+    ]);
 
-    // 2. Update patient-specific contact info
-    $stmt2 = $conn->prepare("UPDATE patients SET phone = ? WHERE user_id = ?");
-    $stmt2->execute([$data['phone'], $data['user_id']]);
+    // 2. Update patient-specific contact info only when that field is present.
+    if (array_key_exists('phone', $data)) {
+        $stmt2 = $conn->prepare("UPDATE patients SET phone = ? WHERE user_id = ?");
+        $stmt2->execute([$data['phone'] ?? '', $data['user_id']]);
+    }
 
     $conn->commit();
     echo json_encode(["status" => "success", "message" => "Profile updated!"]);

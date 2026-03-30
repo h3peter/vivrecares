@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { getStoredUser } from '../utils/session';
+import PasswordInput from './PasswordInput';
 
 const PasswordChangePanel = ({ roleLabel = 'Account' }) => {
     const user = getStoredUser();
@@ -9,6 +10,8 @@ const PasswordChangePanel = ({ roleLabel = 'Account' }) => {
     const [developmentCode, setDevelopmentCode] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [showNewPassword, setShowNewPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [statusMessage, setStatusMessage] = useState('');
     const [errorMessage, setErrorMessage] = useState('');
     const [sending, setSending] = useState(false);
@@ -169,8 +172,20 @@ const PasswordChangePanel = ({ roleLabel = 'Account' }) => {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-                <PasswordField label="New Password" value={newPassword} onChange={setNewPassword} />
-                <PasswordField label="Confirm Password" value={confirmPassword} onChange={setConfirmPassword} />
+                <PasswordField
+                    label="New Password"
+                    value={newPassword}
+                    onChange={setNewPassword}
+                    visible={showNewPassword}
+                    onToggleVisibility={() => setShowNewPassword((prev) => !prev)}
+                />
+                <PasswordField
+                    label="Confirm Password"
+                    value={confirmPassword}
+                    onChange={setConfirmPassword}
+                    visible={showConfirmPassword}
+                    onToggleVisibility={() => setShowConfirmPassword((prev) => !prev)}
+                />
             </div>
 
             <div className="mt-8 flex justify-end">
@@ -187,14 +202,16 @@ const PasswordChangePanel = ({ roleLabel = 'Account' }) => {
     );
 };
 
-const PasswordField = ({ label, value, onChange }) => (
+const PasswordField = ({ label, value, onChange, visible, onToggleVisibility }) => (
     <div className="space-y-2">
         <label className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold">{label}</label>
-        <input
-            type="password"
+        <PasswordInput
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:border-[#b2a58d] outline-none text-base text-gray-700 bg-[#faf9f6]"
+            visible={visible}
+            onToggleVisibility={onToggleVisibility}
+            inputClassName="w-full border border-gray-200 rounded-xl px-4 py-3 pr-14 focus:border-[#b2a58d] outline-none text-base text-gray-700 bg-[#faf9f6]"
+            buttonClassName="absolute inset-y-0 right-0 px-4 text-gray-400 hover:text-[#b59635] transition"
         />
     </div>
 );

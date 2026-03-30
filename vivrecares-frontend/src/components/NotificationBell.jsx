@@ -109,11 +109,11 @@ const NotificationBell = () => {
             </button>
 
             {isOpen && (
-                <div className="absolute right-0 mt-2 w-[min(20rem,calc(100vw-2rem))] sm:w-80 max-w-[calc(100vw-1rem)] bg-white rounded-2xl shadow-xl border border-gray-100 z-50 overflow-hidden animate-fadeIn">
+                <div className="fixed left-4 right-4 top-20 z-[70] overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-xl animate-fadeIn sm:absolute sm:left-auto sm:right-0 sm:top-full sm:mt-2 sm:w-80 sm:max-w-[calc(100vw-1rem)]">
                     <div className="bg-[#faf9f6] px-6 py-4 border-b border-gray-50">
                         <h4 className="text-[10px] uppercase tracking-widest text-[#b2a58d] font-bold">Notifications</h4>
                     </div>
-                    <div className="max-h-72 overflow-y-auto custom-scrollbar p-2">
+                    <div className="max-h-[min(70vh,28rem)] overflow-y-auto custom-scrollbar p-2">
                         {notifications.length > 0 ? notifications.map((notif) => (
                             <button
                                 key={notif.notification_id}

@@ -63,15 +63,20 @@ if (!function_exists('app_env')) {
 
 load_app_env(__DIR__ . DIRECTORY_SEPARATOR . '.env');
 
-$host = app_env('DB_HOST', "127.0.0.1");
-$db_name = app_env('DB_NAME', "db_vivre");
-$username = app_env('DB_USER', "root");
-$password = app_env('DB_PASS', "");
+$host = app_env('DB_HOST', '127.0.0.1');
+$username = app_env('DB_USER', 'root');
+$password = app_env('DB_PASSWORD', app_env('DB_PASS', ''));
+$db_name = app_env('DB_NAME', 'db_vivre');
+$port = app_env('DB_PORT', '3306');
+$charset = app_env('DB_CHARSET', 'utf8mb4');
 
 try {
-    $conn = new PDO("mysql:host=" . $host . ";dbname=" . $db_name, $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $dsn = "mysql:host={$host};port={$port};dbname={$db_name};charset={$charset}";
+    $conn = new PDO($dsn, $username, $password, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+    ]);
 } catch (PDOException $exception) {
-    echo "Connection error: " . $exception->getMessage();
+    die("Connection failed: " . $exception->getMessage());
 }
 ?>

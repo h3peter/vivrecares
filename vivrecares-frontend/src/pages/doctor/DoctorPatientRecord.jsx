@@ -131,6 +131,45 @@ const DoctorPatientRecord = () => {
                     </div>
 
                     <div className="mt-8 border-t border-gray-100 pt-6">
+                        <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#b2a58d] mb-4">Medical History Disclosure</h3>
+                        <div className="space-y-6">
+                            <div>
+                                <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Initial Disclosure</p>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                    <Info label="Recent Tooth Extraction" value={toYesNo(patient.tooth_extraction)} />
+                                    <Info label="Pregnant / Breastfeeding" value={patient.pregnant || 'No'} />
+                                    <Info label="Untoward Reactions" value={patient.untoward_reactions || 'None stated'} />
+                                    <Info label="Current Skin Treatment" value={patient.current_skin_treatment || 'None stated'} />
+                                </div>
+                            </div>
+
+                            <div className="border-t border-gray-100 pt-6">
+                                <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Declared Conditions</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <ConditionBadge label="Heart Disease" active={patient.heart_disease} />
+                                    <ConditionBadge label="Hypertension" active={patient.hypertension} />
+                                    <ConditionBadge label="Diabetes" active={patient.diabetes} />
+                                    <ConditionBadge label="Hyperthyroidism" active={patient.hyperthyroidism} />
+                                    <ConditionBadge label="Autoimmune Disease" active={patient.autoimmune_disease} />
+                                    <ConditionBadge label="Cancer" active={patient.cancer} />
+                                    <ConditionBadge label="Renal Failure" active={patient.renal_failure} />
+                                    <ConditionBadge label="Liver Disease" active={patient.liver_disease} />
+                                    <ConditionBadge label="Bronchial Asthma" active={patient.bronchial_asthma} />
+                                    <ConditionBadge label="Pulmonary Disease" active={patient.pulmonary_disease} />
+                                    <ConditionBadge label="Infectious Disease" active={patient.infectious_disease} />
+                                </div>
+                            </div>
+
+                            <div className="border-t border-gray-100 pt-6">
+                                <p className="mb-3 text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Other Notes</p>
+                                <div className="grid grid-cols-1 gap-4 text-sm">
+                                    <Info label="Other Conditions" value={patient.others || 'None stated'} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 border-t border-gray-100 pt-6">
                         <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#b2a58d] mb-4">Recent Treatment Entries</h3>
                         <div className="space-y-2 max-h-64 overflow-y-auto">
                             {treatments.length > 0 ? treatments.map((item, index) => (
@@ -213,6 +252,18 @@ const Info = ({ label, value }) => (
         <p className="text-sm text-gray-700 mt-1">{value}</p>
     </div>
 );
+
+const ConditionBadge = ({ label, active }) => {
+    const isActive = active === 1 || active === '1' || active === true;
+    return (
+        <div className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${isActive ? 'border-red-100 bg-red-50 text-red-600' : 'border-gray-100 bg-[#faf9f6] text-gray-400'}`}>
+            <div className={`h-2 w-2 rounded-full ${isActive ? 'bg-red-500' : 'bg-gray-300'}`}></div>
+            <span>{label}</span>
+        </div>
+    );
+};
+
+const toYesNo = (value) => (value === 1 || value === '1' || value === true ? 'Yes' : 'No');
 
 const TextArea = ({ label, value, onChange }) => (
     <div>

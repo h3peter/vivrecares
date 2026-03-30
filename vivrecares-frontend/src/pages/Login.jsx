@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import PasswordInput from '../components/PasswordInput';
 
 const REMEMBERED_EMAIL_KEY = 'rememberedLoginEmail';
 
@@ -85,24 +86,17 @@ const Login = () => {
           required 
           style={{ padding: '10px', width: '100%', boxSizing: 'border-box' }} 
         />
-        <div style={{ position: 'relative' }}>
-          <input 
-            type={showPassword ? 'text' : 'password'} 
-            name="password" 
-            placeholder="Password" 
-            value={credentials.password}
-            onChange={handleChange} 
-            required 
-            style={{ padding: '10px', width: '100%', boxSizing: 'border-box', paddingRight: '70px' }} 
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword((prev) => !prev)}
-            style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', cursor: 'pointer', fontWeight: 'bold', color: '#8c7a2b' }}
-          >
-            {showPassword ? 'Hide' : 'Show'}
-          </button>
-        </div>
+        <PasswordInput
+          name="password"
+          placeholder="Password"
+          value={credentials.password}
+          onChange={handleChange}
+          visible={showPassword}
+          onToggleVisibility={() => setShowPassword((prev) => !prev)}
+          required
+          inputStyle={{ padding: '10px', width: '100%', boxSizing: 'border-box', paddingRight: '48px' }}
+          buttonStyle={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', border: 'none', background: 'transparent', cursor: 'pointer', color: '#8c7a2b', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}
+        />
         <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#555' }}>
           <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
           <span>Remember Me</span>

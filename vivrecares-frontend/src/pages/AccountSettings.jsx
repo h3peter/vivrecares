@@ -71,14 +71,20 @@ const AccountSettings = () => {
                     { headers: { 'Content-Type': 'multipart/form-data' } }
                 );
 
-                if (photoRes.data.status === 'success') {
-                    const newFilename = photoRes.data.filename;
-                    setPhotoUrl(assetUrl(`assets/uploads/${newFilename}`));
-                    setPendingPhoto(null);
-
-                    const stored = JSON.parse(localStorage.getItem('user')) ?? {};
-                    localStorage.setItem('user', JSON.stringify({ ...stored, profile_photo: newFilename }));
+                if (photoRes.data?.status !== 'success') {
+                    throw new Error(photoRes.data?.message || 'Profile photo upload failed.');
                 }
+
+                const newFilename = photoRes.data?.filename;
+                if (!newFilename) {
+                    throw new Error('Profile photo upload did not return a filename.');
+                }
+
+                setPhotoUrl(assetUrl(`assets/uploads/${newFilename}`));
+                setPendingPhoto(null);
+
+                const stored = JSON.parse(localStorage.getItem('user')) ?? {};
+                localStorage.setItem('user', JSON.stringify({ ...stored, profile_photo: newFilename }));
             }
 
             const res = await axios.post('/update_profile.php', formData);

@@ -16,7 +16,7 @@
         .invoice-title { font-size: 32px; font-weight: bold; color: #b8a16b; text-transform: uppercase; letter-spacing: 2px; }
         
         /* Mini table for invoice details on the right */
-        .details-table { width: 100%; border-collapse: collapse; margin-top: 15px; table-layout: fixed; }
+        .details-table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-left: auto; table-layout: fixed; }
         .details-table th { background-color: #faf9f6; color: #b8a16b; padding: 8px 10px; font-size: 11px; text-transform: uppercase; text-align: center; border: 1px solid #eee; }
         .details-table td { background-color: #ffffff; padding: 8px 10px; font-size: 12px; text-align: center; border: 1px solid #eee; font-weight: bold; color: #555; word-wrap: break-word; overflow-wrap: break-word; }
         .details-table .wide-value { text-align: left; font-size: 11px; padding: 10px 12px; }
@@ -63,7 +63,7 @@
             <td style="width: 50%; text-align: right;">
                 <div class="invoice-title">Invoice</div>
                 
-                <table class="details-table" style="float: right; width: 85%;">
+                <table class="details-table" style="width: 85%;">
                     <tr>
                         <th>Invoice #</th>
                         <th>Date</th>
@@ -86,19 +86,18 @@
                         <td><?php echo htmlspecialchars($payment_method); ?></td>
                         <td><?php echo htmlspecialchars($payment_status); ?></td>
                     </tr>
+                    <?php if (!empty($reference_number)): ?>
+                    <tr>
+                        <th colspan="2">Reference #</th>
+                    </tr>
+                    <tr>
+                        <td colspan="2" class="wide-value" style="text-align: center;"><?php echo htmlspecialchars($reference_number); ?></td>
+                    </tr>
+                    <?php endif; ?>
                 </table>
             </td>
         </tr>
     </table>
-
-    <?php if (!empty($reference_number)): ?>
-    <table class="details-table" style="width: 40%; margin-left: auto; margin-top: -18px; margin-bottom: 20px;">
-        <tr>
-            <th style="width: 35%;">Reference #</th>
-            <td class="wide-value"><?php echo htmlspecialchars($reference_number); ?></td>
-        </tr>
-    </table>
-    <?php endif; ?>
 
     <table class="items-table">
         <thead>

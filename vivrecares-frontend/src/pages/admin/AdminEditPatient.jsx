@@ -144,7 +144,7 @@ const AdminEditPatient = () => {
     // ── Loading state while fetching ──
     if (fetching) {
         return (
-            <div className="p-12 bg-[#f4f4f4] min-h-screen flex items-center justify-center">
+            <div className="bg-[#f4f4f4] min-h-screen flex items-center justify-center p-6 sm:p-8 lg:p-12">
                 <div className="text-center space-y-4">
                     <div className="w-12 h-12 border-4 border-[#d4af37] border-t-transparent rounded-full animate-spin mx-auto" />
                     <p className="text-xs uppercase tracking-widest text-gray-400">Loading patient data...</p>
@@ -154,9 +154,9 @@ const AdminEditPatient = () => {
     }
 
     return (
-        <div className="p-12 bg-[#f4f4f4] min-h-screen">
+        <div className="bg-[#f4f4f4] min-h-screen p-4 sm:p-6 lg:p-12">
             {/* Header */}
-            <div className="flex items-center justify-between mb-8">
+            <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-800 tracking-wide">Edit Patient</h1>
                     <p className="text-xs text-gray-400 uppercase tracking-widest mt-1">
@@ -165,7 +165,7 @@ const AdminEditPatient = () => {
                 </div>
                 <button
                     onClick={() => navigate('/admin/patients')}
-                    className="text-gray-500 hover:text-[#b2a58d] transition flex items-center gap-2 text-sm font-medium"
+                    className="inline-flex w-fit items-center gap-2 text-sm font-medium text-gray-500 transition hover:text-[#b2a58d]"
                 >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
@@ -181,10 +181,10 @@ const AdminEditPatient = () => {
                 Patient updated! Redirecting...
             </div>}
 
-            <form onSubmit={handleSubmit} className="space-y-8 bg-white p-10 rounded-3xl shadow-sm border border-gray-100 w-full">
+            <form onSubmit={handleSubmit} className="w-full space-y-8 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-7 lg:p-10">
 
                 {/* ── ACCOUNT INFO ── */}
-                <div className="grid grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
                     <Field label="First Name"   name="first_name"      value={formData.first_name}      onChange={handleChange} required />
                     <Field label="Middle Name"  name="middle_name"     value={formData.middle_name}     onChange={handleChange} />
                     <Field label="Last Name"    name="last_name"       value={formData.last_name}       onChange={handleChange} required />
@@ -207,10 +207,10 @@ const AdminEditPatient = () => {
                     <Field label="Phone Number" name="phone"  value={formData.phone}  onChange={handleChange} required />
                 </div>
 
-                <div className="grid grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
                     <Field label="Email"   name="email"   value={formData.email}   onChange={handleChange} type="email" required />
                     {/* No password field on edit — admin shouldn't reset password here */}
-                    <div className="col-span-2">
+                    <div className="sm:col-span-2 xl:col-span-2">
                         <Field label="Address" name="address" value={formData.address} onChange={handleChange} required />
                     </div>
                 </div>
@@ -220,14 +220,14 @@ const AdminEditPatient = () => {
                     <h2 className="text-sm font-bold text-[#d4af37] tracking-widest uppercase mb-8 text-center">Initial Disclosure</h2>
 
                     {/* Row 1 — all top-aligned */}
-                    <div className="grid grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-8">
                         <Field label="Previous Aesthetic Procedures" name="aesthetic_procedures" value={formData.aesthetic_procedures} onChange={handleChange} placeholder="(if any)" />
                         <Field label="Previous Surgical Procedures" name="surgical_procedures" value={formData.surgical_procedures} onChange={handleChange} placeholder="(if any)" />
                         <Field label="Allergies" name="allergies" value={formData.allergies} onChange={handleChange} />
                     </div>
 
                     {/* Row 2 */}
-                    <div className="grid grid-cols-3 gap-8 mt-6">
+                    <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-8">
                         <div>
                             <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Recent Tooth Extraction?</label>
                             <div className="w-full p-3  rounded-lg flex items-center gap-3">
@@ -241,9 +241,9 @@ const AdminEditPatient = () => {
                                 <span className="text-sm text-gray-600">Yes</span>
                             </div>
                         </div>
-                        <div className="col-span-2">
+                        <div className="md:col-span-2">
                             <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Pregnant / Breastfeeding / Planning?</label>
-                            <div className="w-full p-3  rounded-lg flex items-center gap-8">
+                            <div className="flex w-full flex-col gap-3 rounded-lg p-3 sm:flex-row sm:items-center sm:gap-8">
                                 <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
                                     <input type="radio" name="pregnant" value="Yes" checked={formData.pregnant === 'Yes'} onChange={handleChange} className="w-4 h-4 accent-[#d4af37]" /> Yes
                                 </label>
@@ -265,7 +265,7 @@ const AdminEditPatient = () => {
                     <h2 className="text-sm font-bold text-[#d4af37] tracking-widest uppercase mb-2 text-center">Medical History Disclosure</h2>
                     <p className="text-xs text-gray-400 italic text-center mb-8">Acute or Chronic Illnesses: Have you had or is/ are suffering from any medical condition/s (Check any that apply)</p>
 
-                    <div className="grid grid-cols-3 gap-y-4 gap-x-8 mb-8 px-8">
+                    <div className="mb-8 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-3 lg:px-8">
                         {illnessOptions.map(({ id, label }) => (
                             <div key={id} className="flex items-center gap-3">
                                 <input

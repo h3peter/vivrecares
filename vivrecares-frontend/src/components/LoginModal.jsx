@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import logoBlack from '../assets/vivre-black.png';
+import PasswordInput from './PasswordInput';
 
 const REMEMBERED_EMAIL_KEY = 'rememberedLoginEmail';
 
@@ -195,16 +196,16 @@ const LoginModal = ({ onClose }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white w-full max-w-xl rounded-sm shadow-2xl overflow-hidden relative p-12">
+      <div className="relative w-full max-w-xl overflow-y-auto rounded-sm bg-white p-6 shadow-2xl max-h-[calc(100vh-2rem)] sm:p-8 lg:p-12">
         
         {/* Close Button */}
-        <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-black transition">
+        <button onClick={onClose} className="absolute right-4 top-4 text-gray-400 transition hover:text-black sm:right-6 sm:top-6">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
         </button>
 
         <div className="flex flex-col items-center">
           {/* Logo matches wireframe scale */}
-          <img src={logoBlack} alt="Vivre" className="h-28 mb-12 object-contain" />
+          <img src={logoBlack} alt="Vivre" className="mb-6 h-16 object-contain sm:mb-8 sm:h-20 lg:mb-12 lg:h-28" />
 
           {mode === 'login' ? (
             <form onSubmit={handleSubmit} className="w-full space-y-6">
@@ -224,10 +225,13 @@ const LoginModal = ({ onClose }) => {
                 <label className="text-sm font-medium text-gray-700">Password</label>
                 <PasswordInput
                   value={credentials.password}
-                  onChange={(value) => setCredentials({ ...credentials, password: value })}
+                  onChange={(e) => setCredentials({ ...credentials, password: e.target.value })}
                   visible={showLoginPassword}
                   onToggleVisibility={() => setShowLoginPassword((prev) => !prev)}
                   placeholder="Password"
+                  required
+                  inputClassName="w-full px-4 py-3 pr-14 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#d4af37] transition"
+                  buttonClassName="absolute inset-y-0 right-0 px-4 text-gray-400 hover:text-[#b59635] transition"
                 />
               </div>
 
@@ -269,10 +273,10 @@ const LoginModal = ({ onClose }) => {
               </div>
             </form>
           ) : (
-            <form onSubmit={handleResetPassword} className="w-full space-y-5">
-              <div className="text-center mb-2">
-                <h2 className="text-2xl font-light tracking-[0.18em] text-gray-800 uppercase">Forgot Password</h2>
-                <p className="text-sm text-gray-500 mt-3">Verify your email first, then set a new password for your account.</p>
+            <form onSubmit={handleResetPassword} className="w-full space-y-4 sm:space-y-5">
+              <div className="mb-1 text-center sm:mb-2">
+                <h2 className="text-xl font-light uppercase tracking-[0.16em] text-gray-800 sm:text-2xl sm:tracking-[0.18em]">Forgot Password</h2>
+                <p className="mt-2 text-sm text-gray-500 sm:mt-3">Verify your email first, then set a new password for your account.</p>
               </div>
 
               <div className="space-y-2">
@@ -287,12 +291,12 @@ const LoginModal = ({ onClose }) => {
                 />
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-stretch sm:justify-end">
                 <button
                   type="button"
                   onClick={handleSendResetCode}
                   disabled={sendingCode}
-                  className="px-4 py-2 rounded-full border border-gray-200 text-xs font-bold uppercase tracking-[0.18em] text-gray-600 hover:border-[#d4af37] hover:text-[#a8892d] transition disabled:opacity-50"
+                  className="w-full rounded-full border border-gray-200 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-gray-600 transition hover:border-[#d4af37] hover:text-[#a8892d] disabled:opacity-50 sm:w-auto"
                 >
                   {sendingCode ? 'Sending...' : 'Send Code'}
                 </button>
@@ -300,7 +304,7 @@ const LoginModal = ({ onClose }) => {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Verification Code</label>
-                <div className="flex gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row">
                   <input
                     type="text"
                     placeholder="Enter verification code"
@@ -312,7 +316,7 @@ const LoginModal = ({ onClose }) => {
                     type="button"
                     onClick={handleVerifyResetCode}
                     disabled={verifyingCode}
-                    className="px-4 py-3 rounded-md bg-[#555555] text-[#c4ba9d] text-xs font-bold uppercase tracking-[0.18em] shadow-lg hover:bg-[#404040] transition disabled:opacity-50"
+                    className="w-full rounded-md bg-[#555555] px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-[#c4ba9d] shadow-lg transition hover:bg-[#404040] disabled:opacity-50 sm:w-auto"
                   >
                     {verifyingCode ? 'Verifying...' : 'Verify'}
                   </button>
@@ -331,25 +335,31 @@ const LoginModal = ({ onClose }) => {
                 </p>
               )}
 
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-1 gap-3 sm:gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">New Password</label>
                   <PasswordInput
                     value={newPassword}
-                    onChange={setNewPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
                     visible={showNewPassword}
                     onToggleVisibility={() => setShowNewPassword((prev) => !prev)}
                     placeholder="New password"
+                    required
+                    inputClassName="w-full px-4 py-3 pr-14 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#d4af37] transition"
+                    buttonClassName="absolute inset-y-0 right-0 px-4 text-gray-400 hover:text-[#b59635] transition"
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-700">Confirm Password</label>
                   <PasswordInput
                     value={confirmPassword}
-                    onChange={setConfirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
                     visible={showConfirmPassword}
                     onToggleVisibility={() => setShowConfirmPassword((prev) => !prev)}
                     placeholder="Confirm password"
+                    required
+                    inputClassName="w-full px-4 py-3 pr-14 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#d4af37] transition"
+                    buttonClassName="absolute inset-y-0 right-0 px-4 text-gray-400 hover:text-[#b59635] transition"
                   />
                 </div>
               </div>
@@ -360,7 +370,7 @@ const LoginModal = ({ onClose }) => {
                 </p>
               )}
 
-              <div className="flex items-center justify-between pt-2">
+              <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
                 <button
                   type="button"
                   onClick={() => {
@@ -368,14 +378,14 @@ const LoginModal = ({ onClose }) => {
                     setDevelopmentCode('');
                     setMode('login');
                   }}
-                  className="text-sm text-gray-500 hover:text-gray-700 transition"
+                  className="text-left text-sm text-gray-500 transition hover:text-gray-700"
                 >
                   Back to login
                 </button>
                 <button
                   type="submit"
                   disabled={resettingPassword}
-                  className="px-8 py-3 bg-[#d4af37] hover:bg-[#c4a030] text-white rounded-full transition duration-300 shadow-lg disabled:opacity-50"
+                  className="w-full rounded-full bg-[#d4af37] px-8 py-3 text-white shadow-lg transition duration-300 hover:bg-[#c4a030] disabled:opacity-50 sm:w-auto"
                 >
                   {resettingPassword ? 'Updating...' : 'Reset Password'}
                 </button>
@@ -387,25 +397,5 @@ const LoginModal = ({ onClose }) => {
     </div>
   );
 };
-
-const PasswordInput = ({ value, onChange, visible, onToggleVisibility, placeholder }) => (
-  <div className="relative">
-    <input
-      type={visible ? 'text' : 'password'}
-      placeholder={placeholder}
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="w-full px-4 py-3 pr-14 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#d4af37] transition"
-      required
-    />
-    <button
-      type="button"
-      onClick={onToggleVisibility}
-      className="absolute inset-y-0 right-0 px-4 text-xs font-bold uppercase tracking-[0.18em] text-gray-400 hover:text-[#b59635] transition"
-    >
-      {visible ? 'Hide' : 'Show'}
-    </button>
-  </div>
-);
 
 export default LoginModal;
