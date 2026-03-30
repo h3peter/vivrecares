@@ -35,6 +35,7 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const [isLoginOpen,    setIsLoginOpen]    = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection,  setActiveSection]  = useState('home');
 
@@ -102,6 +103,8 @@ const LandingPage = () => {
   const handleLogout = () => {
     clearStoredSession();
     setIsDropdownOpen(false);
+    setIsNotificationsOpen(false);
+    setIsMobileMenuOpen(false);
     window.location.reload();
   };
 
@@ -113,6 +116,8 @@ const LandingPage = () => {
   const scrollTo = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
     setIsMobileMenuOpen(false);
+    setIsDropdownOpen(false);
+    setIsNotificationsOpen(false);
   };
 
   const NAV_LINKS = [['home','Home'],['services','Services'],['clinics','Clinics'],['contact','Contact Us']];
@@ -212,7 +217,16 @@ const LandingPage = () => {
 
         {/* Right side: icons + avatar */}
         <div className="flex items-center gap-2 md:gap-3">
-          {user ? <NotificationBell /> : (
+          {user ? (
+            <NotificationBell
+              isOpen={isNotificationsOpen}
+              onOpenChange={setIsNotificationsOpen}
+              onOpen={() => {
+                setIsDropdownOpen(false);
+                setIsMobileMenuOpen(false);
+              }}
+            />
+          ) : (
             <button onClick={() => setIsLoginOpen(true)} style={{...iconBtn}} title="Notifications">
               <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
@@ -228,7 +242,17 @@ const LandingPage = () => {
             </button>
           ) : (
             <div className="relative">
-              <button onClick={() => setIsDropdownOpen(!isDropdownOpen)} className="p-0 bg-transparent border-0 cursor-pointer">
+              <button
+                onClick={() => {
+                  const nextOpen = !isDropdownOpen;
+                  setIsDropdownOpen(nextOpen);
+                  if (nextOpen) {
+                    setIsNotificationsOpen(false);
+                    setIsMobileMenuOpen(false);
+                  }
+                }}
+                className="p-0 bg-transparent border-0 cursor-pointer"
+              >
                 <div className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center bg-gray-200"
                   style={{ border: `1.5px solid ${C.gold}` }}>
                   <ProfileAvatar user={user} className="w-full h-full" textSize="text-sm" />
@@ -253,7 +277,17 @@ const LandingPage = () => {
           {/* Hamburger — mobile only */}
           <button
             className="md:hidden flex flex-col justify-center items-center w-9 h-9 gap-1.5 bg-transparent border-0 cursor-pointer"
-            onClick={(e) => { e.stopPropagation(); setIsMobileMenuOpen(v => !v); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMobileMenuOpen((current) => {
+                const nextOpen = !current;
+                if (nextOpen) {
+                  setIsDropdownOpen(false);
+                  setIsNotificationsOpen(false);
+                }
+                return nextOpen;
+              });
+            }}
             aria-label="Menu"
           >
             <span className="block w-5 h-px transition-all duration-300"

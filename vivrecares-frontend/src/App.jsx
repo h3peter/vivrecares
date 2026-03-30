@@ -30,6 +30,7 @@ import DoctorProfile from './pages/doctor/DoctorProfile';
 import { clearStoredSession, getStoredUser, rememberStoredUser } from './utils/session';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import AppLoadingScreen from './components/AppLoadingScreen';
 
 // This acts as a security guard for your routes
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -87,7 +88,7 @@ const SessionBootstrap = ({ children }) => {
   }, []);
 
   if (isChecking) {
-    return null;
+    return <AppLoadingScreen label="Restoring session" />;
   }
 
   return children;

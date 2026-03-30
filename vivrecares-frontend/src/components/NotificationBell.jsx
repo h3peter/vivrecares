@@ -1,29 +1,65 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { getStoredUser } from '../utils/session';
+import { clearStoredSession, getStoredUser } from '../utils/session';
 
-const NotificationBell = () => {
+const NotificationBell = ({ isOpen: controlledIsOpen, onOpenChange, onOpen, onClose }) => {
     const navigate = useNavigate();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
-    const [isOpen, setIsOpen] = useState(false);
+    const [internalIsOpen, setInternalIsOpen] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const dropdownRef = useRef(null);
+    const pollingStoppedRef = useRef(false);
 
     const user = getStoredUser();
+    const isControlled = typeof controlledIsOpen === 'boolean';
+    const isOpen = isControlled ? controlledIsOpen : internalIsOpen;
+
+    const setOpenState = (nextOpen) => {
+        if (!isControlled) {
+            setInternalIsOpen(nextOpen);
+        }
+
+        onOpenChange?.(nextOpen);
+
+        if (nextOpen) {
+            onOpen?.();
+        } else {
+            onClose?.();
+        }
+    };
 
     useEffect(() => {
         if (!user) return;
 
+        pollingStoppedRef.current = false;
+
         const fetchNotifications = async () => {
+            if (pollingStoppedRef.current) {
+                return;
+            }
+
             try {
+                setIsLoading(true);
                 const res = await axios.get(`/get_notifications.php?user_id=${user.id}`);
                 if (res.data.status === 'success') {
                     setNotifications(res.data.data);
                     setUnreadCount(res.data.unread_count);
                 }
             } catch (error) {
+                if (error?.response?.status === 401) {
+                    pollingStoppedRef.current = true;
+                    setNotifications([]);
+                    setUnreadCount(0);
+                    setOpenState(false);
+                    clearStoredSession();
+                    return;
+                }
+
                 console.error("Notification error:", error);
+            } finally {
+                setIsLoading(false);
             }
         };
 
@@ -36,7 +72,7 @@ const NotificationBell = () => {
         const handleOutsideClick = (event) => {
             if (!isOpen) return;
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setIsOpen(false);
+                setOpenState(false);
             }
         };
 
@@ -74,13 +110,13 @@ const NotificationBell = () => {
 
     const handleNotificationClick = (notif) => {
         const targetRoute = notif?.redirect_url || resolveNotificationRoute(notif);
-        setIsOpen(false);
+        setOpenState(false);
         navigate(targetRoute);
     };
 
     const handleOpenDropdown = async () => {
         const nextOpen = !isOpen;
-        setIsOpen(nextOpen);
+        setOpenState(nextOpen);
 
         if (nextOpen && unreadCount > 0 && user?.id) {
             setUnreadCount(0);
@@ -114,7 +150,12 @@ const NotificationBell = () => {
                         <h4 className="text-[10px] uppercase tracking-widest text-[#b2a58d] font-bold">Notifications</h4>
                     </div>
                     <div className="max-h-[min(70vh,28rem)] overflow-y-auto custom-scrollbar p-2">
-                        {notifications.length > 0 ? notifications.map((notif) => (
+                        {isLoading ? (
+                            <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
+                                <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#d4af37]/25 border-t-[#d4af37]" />
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400">Loading</p>
+                            </div>
+                        ) : notifications.length > 0 ? notifications.map((notif) => (
                             <button
                                 key={notif.notification_id}
                                 type="button"

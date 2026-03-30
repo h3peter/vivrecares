@@ -10,9 +10,11 @@ const ResponsivePortalLayout = ({ user, displayName, navItems, homePath = '/' })
     const navigate = useNavigate();
     const location = useLocation();
     const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
     useEffect(() => {
         setIsMobileNavOpen(false);
+        setIsNotificationsOpen(false);
     }, [location.pathname]);
 
     useEffect(() => {
@@ -130,7 +132,10 @@ const ResponsivePortalLayout = ({ user, displayName, navItems, homePath = '/' })
                         <div className="flex min-w-0 items-center gap-3">
                             <button
                                 type="button"
-                                onClick={() => setIsMobileNavOpen(true)}
+                                onClick={() => {
+                                    setIsNotificationsOpen(false);
+                                    setIsMobileNavOpen(true);
+                                }}
                                 className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-200 text-gray-600 transition hover:border-[#d4af37] hover:text-[#8f8167] lg:hidden"
                                 aria-label="Open menu"
                             >
@@ -152,7 +157,11 @@ const ResponsivePortalLayout = ({ user, displayName, navItems, homePath = '/' })
                             <div className="hidden rounded-full border border-gray-200 bg-[#faf9f6] px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[#8f8167] sm:block lg:hidden">
                                 {displayName}
                             </div>
-                            <NotificationBell />
+                            <NotificationBell
+                                isOpen={isNotificationsOpen}
+                                onOpenChange={setIsNotificationsOpen}
+                                onOpen={() => setIsMobileNavOpen(false)}
+                            />
                         </div>
                     </div>
                 </header>

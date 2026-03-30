@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import logoBlack from '../assets/vivre-black.png';
 import PasswordInput from './PasswordInput';
+import { clearStoredSession, rememberStoredUser } from '../utils/session';
 
 const REMEMBERED_EMAIL_KEY = 'rememberedLoginEmail';
 
@@ -26,6 +27,7 @@ const LoginModal = ({ onClose }) => {
   const [sendingCode, setSendingCode] = useState(false);
   const [verifyingCode, setVerifyingCode] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
+  const [signingIn, setSigningIn] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('error');
 
@@ -47,6 +49,7 @@ const LoginModal = ({ onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     resetFeedback();
+    setSigningIn(true);
     try {
       const response = await axios.post('/login.php', credentials);
       if (response.data.status === 'success') {
@@ -56,22 +59,29 @@ const LoginModal = ({ onClose }) => {
           localStorage.removeItem(REMEMBERED_EMAIL_KEY);
         }
 
-        // Save the user data to browser storage
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        
-        // --- THIS IS THE PART WE CHANGED ---
-        // We now route them to the correct, existing pages
-        if (response.data.user.role === 'Admin') {
-            navigate('/admin/patients');
-        } else if (response.data.user.role === 'Doctor') {
-            navigate('/doctor/appointments');
-        } else {
-            navigate('/profile');
+        const sessionStatusResponse = await axios.get('/session_status.php');
+        const confirmedUser = sessionStatusResponse?.data?.status === 'success'
+          ? sessionStatusResponse.data.user
+          : null;
+
+        if (!confirmedUser) {
+          clearStoredSession();
+          setCredentials((prev) => ({ ...prev, password: '' }));
+          showError('Login succeeded, but your session could not be restored on this browser. Try again or use a browser that allows cookies.');
+          return;
         }
-        
-        // This forces the page to refresh so the layout updates properly
-        window.location.reload(); 
-        // -----------------------------------
+
+        rememberStoredUser(confirmedUser);
+
+        if (confirmedUser.role === 'Admin') {
+          navigate('/admin/patients');
+        } else if (confirmedUser.role === 'Doctor') {
+          navigate('/doctor/appointments');
+        } else {
+          navigate('/profile');
+        }
+
+        window.location.reload();
 
       } else {
         setCredentials((prev) => ({ ...prev, password: '' }));
@@ -79,7 +89,9 @@ const LoginModal = ({ onClose }) => {
       }
     } catch (error) {
       setCredentials((prev) => ({ ...prev, password: '' }));
-      showError("Network Error. Check your connection.");
+      showError(error.response?.data?.message || 'Network Error. Check your connection.');
+    } finally {
+      setSigningIn(false);
     }
   };
 
@@ -266,9 +278,17 @@ const LoginModal = ({ onClose }) => {
               <div className="flex justify-center pt-4">
                 <button 
                   type="submit" 
-                  className="w-2/3 py-4 bg-[#d4af37] hover:bg-[#c4a030] text-white text-2xl rounded-full transition duration-300 shadow-lg"
+                  disabled={signingIn}
+                  className="flex w-2/3 items-center justify-center gap-3 rounded-full bg-[#d4af37] py-4 text-2xl text-white shadow-lg transition duration-300 hover:bg-[#c4a030] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Login
+                  {signingIn ? (
+                    <>
+                      <span className="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                      <span>Logging in...</span>
+                    </>
+                  ) : (
+                    'Login'
+                  )}
                 </button>
               </div>
             </form>
