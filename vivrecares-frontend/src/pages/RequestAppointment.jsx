@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import ActionFeedbackModal from '../components/ActionFeedbackModal';
 
 const RequestAppointment = () => {
     const navigate = useNavigate();
@@ -13,6 +14,7 @@ const RequestAppointment = () => {
     const [initialLoading, setInitialLoading] = useState(true);
     const [patientId, setPatientId] = useState(null);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [feedback, setFeedback] = useState(null);
     const [availability, setAvailability] = useState([]);
     const [slots, setSlots] = useState([]);
 
@@ -89,17 +91,29 @@ const RequestAppointment = () => {
         e.preventDefault();
 
         if (!patientId) {
-            alert('Profile is still loading or invalid. Please try again.');
+            setFeedback({
+                tone: 'error',
+                title: 'Profile Still Loading',
+                message: 'Your profile is still loading or invalid. Please try again in a moment.',
+            });
             return;
         }
 
         if (!appointmentType) {
-            alert('Please select an appointment purpose first.');
+            setFeedback({
+                tone: 'info',
+                title: 'Purpose Required',
+                message: 'Please select an appointment purpose first.',
+            });
             return;
         }
 
         if (!validateSelectedDate(date)) {
-            alert('Please choose a valid available date for the selected branch.');
+            setFeedback({
+                tone: 'info',
+                title: 'Choose a Valid Date',
+                message: 'Please choose a valid available date for the selected branch.',
+            });
             return;
         }
 
@@ -122,10 +136,18 @@ const RequestAppointment = () => {
                     navigate('/appointment-history');
                 }, 3000);
             } else {
-                alert(res.data.message);
+                setFeedback({
+                    tone: 'error',
+                    title: 'Request Not Sent',
+                    message: res.data.message || 'Unable to submit the appointment request.',
+                });
             }
         } catch (error) {
-            alert('Connection error. Please try again later.');
+            setFeedback({
+                tone: 'error',
+                title: 'Connection Error',
+                message: 'Connection error. Please try again later.',
+            });
         } finally {
             setLoading(false);
         }
@@ -134,16 +156,23 @@ const RequestAppointment = () => {
     return (
         <div className="p-8 lg:p-12 bg-[#f4f4f4] min-h-screen flex justify-center items-start relative">
             {showSuccess && (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-300">
-                    <div className="bg-white p-12 rounded-[2rem] shadow-2xl flex flex-col items-center text-center transform scale-100 animate-fadeIn">
-                        <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-6">
-                            <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7" /></svg>
-                        </div>
-                        <h3 className="text-2xl font-bold text-gray-800 mb-2">Request Sent!</h3>
-                        <p className="text-sm text-gray-500 max-w-xs">Your appointment request has been forwarded to the clinic. Redirecting you to your history shortly...</p>
-                    </div>
-                </div>
+                <ActionFeedbackModal
+                    open={showSuccess}
+                    tone="success"
+                    title="Request Sent!"
+                    message="Your appointment request has been forwarded to the clinic. Redirecting you to your history shortly..."
+                    confirmLabel="Okay"
+                    onClose={() => setShowSuccess(false)}
+                />
             )}
+
+            <ActionFeedbackModal
+                open={Boolean(feedback)}
+                tone={feedback?.tone}
+                title={feedback?.title}
+                message={feedback?.message}
+                onClose={() => setFeedback(null)}
+            />
 
             <div className="w-full max-w-4xl">
                 <div className="mb-8">

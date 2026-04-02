@@ -1,19 +1,55 @@
 <?php
 require 'vendor/autoload.php';
 require_once 'config.php';
+require_once 'auth.php';
 require_once 'billing_branch.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
 
-$invoice_id = $_GET['id'] ?? null;
+init_api_auth();
 
-if (!$invoice_id) {
-    die("Invoice ID is required.");
+$invoice_id = (int) ($_GET['id'] ?? 0);
+$authUser = require_auth();
+
+if ($invoice_id <= 0) {
+    http_response_code(400);
+    echo json_encode(["status" => "error", "message" => "Invoice ID is required."]);
+    exit;
 }
 
 $invoiceBranch = 'Not set';
 ensure_billings_branch_column($conn);
+
+$accessSql = "SELECT b.invoice_id, COALESCE(b.patient_id, a.patient_id) AS patient_id, p.user_id
+              FROM billings b
+              LEFT JOIN appointments a ON b.appointment_id = a.appointment_id
+              LEFT JOIN patients p ON p.patient_id = COALESCE(b.patient_id, a.patient_id)
+              WHERE b.invoice_id = ?
+              LIMIT 1";
+$accessStmt = $conn->prepare($accessSql);
+$accessStmt->execute([$invoice_id]);
+$invoiceAccess = $accessStmt->fetch(PDO::FETCH_ASSOC);
+
+if (!$invoiceAccess) {
+    http_response_code(404);
+    echo json_encode(["status" => "error", "message" => "Invoice not found."]);
+    exit;
+}
+
+$authRole = $authUser['role'] ?? '';
+if ($authRole === 'Patient') {
+    $invoiceUserId = (int) ($invoiceAccess['user_id'] ?? 0);
+    if ($invoiceUserId !== (int) ($authUser['user_id'] ?? 0)) {
+        http_response_code(403);
+        echo json_encode(["status" => "error", "message" => "You are not allowed to access this invoice."]);
+        exit;
+    }
+} elseif (!in_array($authRole, ['Admin', 'Doctor'], true)) {
+    http_response_code(403);
+    echo json_encode(["status" => "error", "message" => "You are not allowed to access this invoice."]);
+    exit;
+}
 
 $sqlMaster = "SELECT b.total_amount, b.payment_date, b.payment_status, b.payment_method, b.reference_number, u.first_name, u.last_name,
                  CASE
@@ -32,7 +68,9 @@ $stmt1->execute([$invoice_id]);
 $master = $stmt1->fetch(PDO::FETCH_ASSOC);
 
 if (!$master) {
-    die("Invoice not found.");
+    http_response_code(404);
+    echo json_encode(["status" => "error", "message" => "Invoice not found."]);
+    exit;
 }
 
 $sqlItems = "SELECT * FROM billing_items WHERE invoice_id = ?";

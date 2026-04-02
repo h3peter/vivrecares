@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import ActionFeedbackModal from '../components/ActionFeedbackModal';
 
 const AppointmentHistory = () => {
     const [appointments, setAppointments] = useState([]);
@@ -7,6 +8,7 @@ const AppointmentHistory = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [actionAppointmentId, setActionAppointmentId] = useState(null);
+    const [feedback, setFeedback] = useState(null);
 
     const userData = localStorage.getItem('user');
     const user = userData ? JSON.parse(userData) : null;
@@ -81,13 +83,25 @@ const AppointmentHistory = () => {
 
             if (res.data.status === 'success') {
                 await fetchHistory();
-                alert(res.data.message || 'Appointment updated.');
+                setFeedback({
+                    tone: action === 'confirm' ? 'success' : 'info',
+                    title: action === 'confirm' ? 'Reschedule Confirmed' : 'Reschedule Declined',
+                    message: res.data.message || 'Appointment updated.',
+                });
             } else {
-                alert(res.data.message || 'Unable to process the reschedule request.');
+                setFeedback({
+                    tone: 'error',
+                    title: 'Action Failed',
+                    message: res.data.message || 'Unable to process the reschedule request.',
+                });
             }
         } catch (error) {
             console.error('Reschedule response error:', error);
-            alert('Unable to process the reschedule request right now.');
+            setFeedback({
+                tone: 'error',
+                title: 'Action Failed',
+                message: 'Unable to process the reschedule request right now.',
+            });
         } finally {
             setActionAppointmentId(null);
         }
@@ -104,6 +118,13 @@ const AppointmentHistory = () => {
 
     return (
         <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
+            <ActionFeedbackModal
+                open={Boolean(feedback)}
+                tone={feedback?.tone}
+                title={feedback?.title}
+                message={feedback?.message}
+                onClose={() => setFeedback(null)}
+            />
             <div className="mb-8">
                 <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d]">Patient Portal</p>
                 <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">Appointment History</h1>

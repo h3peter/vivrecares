@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import ActionFeedbackModal from '../../components/ActionFeedbackModal';
 
 const normalizeStatus = (status) => (status || '').toString().trim().toLowerCase();
 
@@ -54,6 +55,7 @@ const AppointmentLogs = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [showMobileFilters, setShowMobileFilters] = useState(false);
+    const [feedback, setFeedback] = useState(null);
 
     const fetchAppointments = async () => {
         try {
@@ -175,16 +177,38 @@ const AppointmentLogs = () => {
                 setIsModalOpen(false);
                 fetchAppointments();
                 if (res.data.mail_status === 'failed') {
-                    alert(res.data.message || 'The appointment was updated, but we could not send the email notification right now.');
+                    setFeedback({
+                        tone: 'info',
+                        title: 'Appointment Updated',
+                        message: res.data.message || 'The appointment was updated, but we could not send the email notification right now.',
+                    });
                 } else if (res.data.appointment_status === 'Rescheduled') {
-                    alert(res.data.message || 'The updated schedule is now waiting for patient confirmation.');
+                    setFeedback({
+                        tone: 'success',
+                        title: 'Reschedule Request Sent',
+                        message: res.data.message || 'The updated schedule is now waiting for patient confirmation.',
+                    });
+                } else {
+                    setFeedback({
+                        tone: 'success',
+                        title: 'Appointment Updated',
+                        message: res.data.message || 'The appointment has been updated successfully.',
+                    });
                 }
             } else {
-                alert(res.data.message || 'Unable to update appointment.');
+                setFeedback({
+                    tone: 'error',
+                    title: 'Update Failed',
+                    message: res.data.message || 'Unable to update appointment.',
+                });
             }
         } catch (error) {
             console.error('Update error:', error);
-            alert('Unable to update appointment right now.');
+            setFeedback({
+                tone: 'error',
+                title: 'Update Failed',
+                message: 'Unable to update appointment right now.',
+            });
         }
     };
 
@@ -225,6 +249,13 @@ const AppointmentLogs = () => {
 
     return (
         <div className="min-h-screen relative bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
+            <ActionFeedbackModal
+                open={Boolean(feedback)}
+                tone={feedback?.tone}
+                title={feedback?.title}
+                message={feedback?.message}
+                onClose={() => setFeedback(null)}
+            />
             <div className="mb-8">
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d] mb-2">Scheduling Desk</p>
                 <div className="flex flex-col gap-6 bg-white p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-100">

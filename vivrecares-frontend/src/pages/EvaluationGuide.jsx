@@ -59,7 +59,7 @@ const EvaluationGuide = () => {
               VIVRE System Evaluation Instructions
             </h1>
             <p className="max-w-2xl text-[15px] leading-8 text-[#6f6a63]">
-              Good day! This guide is for evaluators who will use the system first, then answer the same
+              Good day!This guide is for evaluators who will use the system first, then answer the same
               ISO/IEC 25010-based product quality survey. Respondents are grouped by profession or
               classification, but the survey instrument is shared across all groups. Thank you for taking the time to assess VIVRECARES!
             </p>
