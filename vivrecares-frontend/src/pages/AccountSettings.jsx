@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import PasswordChangePanel from '../components/PasswordChangePanel';
+import ActionFeedbackModal from '../components/ActionFeedbackModal';
 import { profilePhotoCandidates, profilePhotoUrl } from '../utils/api';
+import { prepareProfilePhotoUpload } from '../utils/imageUpload';
 
 const AccountSettings = () => {
     const [formData, setFormData] = useState({
@@ -17,6 +19,7 @@ const AccountSettings = () => {
     const [pendingPhoto, setPendingPhoto] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
+    const [feedback, setFeedback] = useState(null);
 
     const fileInputRef = useRef(null);
 
@@ -57,13 +60,25 @@ const AccountSettings = () => {
         fetchCurrentData();
     }, []);
 
-    const handlePhotoPick = (e) => {
+    const handlePhotoPick = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        setPendingPhoto(file);
-        setPhotoFilename('');
-        setHasRetriedPhoto(false);
-        setPhotoUrl(URL.createObjectURL(file));
+
+        try {
+            const preparedFile = await prepareProfilePhotoUpload(file);
+            setPendingPhoto(preparedFile);
+            setPhotoFilename('');
+            setHasRetriedPhoto(false);
+            setPhotoUrl(URL.createObjectURL(preparedFile));
+        } catch (err) {
+            console.error('Photo preparation failed:', err);
+            setFeedback({
+                tone: 'error',
+                title: 'Photo Not Accepted',
+                message: err.message || 'We could not prepare that photo for upload.',
+            });
+            e.target.value = '';
+        }
     };
 
     const handleUpdate = async (e) => {
@@ -114,7 +129,11 @@ const AccountSettings = () => {
             }
         } catch (err) {
             console.error('Update failed:', err);
-            alert('Something went wrong. Please try again.');
+            setFeedback({
+                tone: 'error',
+                title: 'Update Failed',
+                message: err.message || 'Something went wrong. Please try again.',
+            });
         } finally {
             setUploading(false);
         }
@@ -124,6 +143,13 @@ const AccountSettings = () => {
 
     return (
         <div className="flex-1 p-8 lg:p-12 bg-[#f4f4f4] min-h-screen">
+            <ActionFeedbackModal
+                open={Boolean(feedback)}
+                tone={feedback?.tone}
+                title={feedback?.title}
+                message={feedback?.message}
+                onClose={() => setFeedback(null)}
+            />
             <div className="max-w-6xl mx-auto">
                 <div className="mb-8">
                     <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d] mb-2">Patient Portal</p>
@@ -177,7 +203,7 @@ const AccountSettings = () => {
                         <input
                             ref={fileInputRef}
                             type="file"
-                            accept="image/jpeg,image/png,image/webp"
+                            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
                             className="hidden"
                             onChange={handlePhotoPick}
                         />

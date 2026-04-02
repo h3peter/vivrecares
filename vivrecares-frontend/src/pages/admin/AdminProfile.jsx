@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import ActionFeedbackModal from '../../components/ActionFeedbackModal';
 import PasswordChangePanel from '../../components/PasswordChangePanel';
 import { profilePhotoCandidates, profilePhotoUrl } from '../../utils/api';
+import { prepareProfilePhotoUpload } from '../../utils/imageUpload';
 
 const AdminProfile = () => {
     const [formData, setFormData] = useState({
@@ -17,6 +19,7 @@ const AdminProfile = () => {
     const [pendingPhoto, setPendingPhoto] = useState(null);
     const [uploading,    setUploading]    = useState(false);
     const [saveSuccess,  setSaveSuccess]  = useState(false);
+    const [feedback, setFeedback] = useState(null);
     const fileInputRef = useRef(null);
 
     const applyPersistedPhoto = (filename) => {
@@ -54,13 +57,25 @@ const AdminProfile = () => {
         fetchCurrentData();
     }, []);
 
-    const handlePhotoPick = (e) => {
+    const handlePhotoPick = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        setPendingPhoto(file);
-        setPhotoFilename('');
-        setHasRetriedPhoto(false);
-        setPhotoUrl(URL.createObjectURL(file));
+
+        try {
+            const preparedFile = await prepareProfilePhotoUpload(file);
+            setPendingPhoto(preparedFile);
+            setPhotoFilename('');
+            setHasRetriedPhoto(false);
+            setPhotoUrl(URL.createObjectURL(preparedFile));
+        } catch (err) {
+            console.error('Photo preparation failed:', err);
+            setFeedback({
+                tone: 'error',
+                title: 'Photo Not Accepted',
+                message: err.message || 'We could not prepare that photo for upload.',
+            });
+            e.target.value = '';
+        }
     };
 
     const handleUpdate = async (e) => {
@@ -110,11 +125,19 @@ const AdminProfile = () => {
                 setSaveSuccess(true);
                 setTimeout(() => setSaveSuccess(false), 2500);
             } else {
-                alert("Error: " + res.data.message);
+                setFeedback({
+                    tone: 'error',
+                    title: 'Update Failed',
+                    message: res.data.message ? `Error: ${res.data.message}` : 'Unable to update your profile.',
+                });
             }
         } catch (err) {
             console.error(err);
-            alert("Something went wrong. Please try again.");
+            setFeedback({
+                tone: 'error',
+                title: 'Update Failed',
+                message: err.message || 'Something went wrong. Please try again.',
+            });
         } finally {
             setUploading(false);
         }
@@ -124,6 +147,13 @@ const AdminProfile = () => {
 
     return (
         <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
+            <ActionFeedbackModal
+                open={Boolean(feedback)}
+                tone={feedback?.tone}
+                title={feedback?.title}
+                message={feedback?.message}
+                onClose={() => setFeedback(null)}
+            />
             <div className="mx-auto mb-8 max-w-6xl">
                 <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d]">Admin Workspace</p>
                 <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">My Profile</h1>
@@ -190,7 +220,7 @@ const AdminProfile = () => {
                     <input
                         ref={fileInputRef}
                         type="file"
-                        accept="image/jpeg,image/png,image/webp"
+                        accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
                         className="hidden"
                         onChange={handlePhotoPick}
                     />
