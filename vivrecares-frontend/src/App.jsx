@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
+import EvaluationGuide from './pages/EvaluationGuide';
 import Register from './pages/Register';
 import PatientDashboard from './pages/PatientDashboard';
 import AdminDashboard from './pages/AdminDashboard';
@@ -103,6 +104,7 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />          {/* This is the new front door */}
+        <Route path="/evaluation-guide" element={<EvaluationGuide />} />
         <Route path="/login" element={<Login />} />            {/* Moved login to its own route */}
         <Route path="/register" element={<Register />} />
         {/* Protected Patient Route */}
