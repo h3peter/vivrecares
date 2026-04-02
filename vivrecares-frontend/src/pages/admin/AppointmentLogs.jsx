@@ -56,6 +56,7 @@ const AppointmentLogs = () => {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [feedback, setFeedback] = useState(null);
+    const today = new Date().toISOString().split('T')[0];
 
     const fetchAppointments = async () => {
         try {
@@ -484,6 +485,7 @@ const AppointmentLogs = () => {
                                     <label className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold">Date</label>
                                     <input
                                         type="date"
+                                        min={today}
                                         value={selectedApt.date}
                                         onChange={(e) => setSelectedApt({ ...selectedApt, date: e.target.value })}
                                         className="w-full border-b border-gray-200 py-2 outline-none text-gray-700"

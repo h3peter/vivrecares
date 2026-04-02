@@ -80,8 +80,14 @@ const RequestAppointment = () => {
         return new Date(`${selectedDate}T12:00:00`).getDay();
     };
 
+    const isPastSelectableDate = (selectedDate) => {
+        if (!selectedDate) return false;
+        return selectedDate < minDate;
+    };
+
     const validateSelectedDate = (selectedDate) => {
         if (!selectedDate || !branch) return true;
+        if (isPastSelectableDate(selectedDate)) return false;
         return validWeekdays.includes(getWeekday(selectedDate));
     };
 
@@ -112,7 +118,9 @@ const RequestAppointment = () => {
             setFeedback({
                 tone: 'info',
                 title: 'Choose a Valid Date',
-                message: 'Please choose a valid available date for the selected branch.',
+                message: isPastSelectableDate(date)
+                    ? 'Please choose a future appointment date.'
+                    : 'Please choose a valid available date for the selected branch.',
             });
             return;
         }

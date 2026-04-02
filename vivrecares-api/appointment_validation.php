@@ -19,6 +19,34 @@ if (!function_exists('normalize_appointment_branch')) {
     }
 }
 
+if (!function_exists('validate_appointment_date_not_past')) {
+    function validate_appointment_date_not_past($appointmentDate)
+    {
+        $date = trim((string) $appointmentDate);
+        if ($date === '') {
+            throw new Exception('Appointment date is required.');
+        }
+
+        $parsed = DateTime::createFromFormat('Y-m-d', $date);
+        $formatErrors = DateTime::getLastErrors();
+        if (
+            !$parsed ||
+            !empty($formatErrors['warning_count']) ||
+            !empty($formatErrors['error_count']) ||
+            $parsed->format('Y-m-d') !== $date
+        ) {
+            throw new Exception('The selected appointment date is invalid.');
+        }
+
+        $today = new DateTime('today');
+        if ($parsed < $today) {
+            throw new Exception('Past appointment dates are not allowed.');
+        }
+
+        return $parsed;
+    }
+}
+
 if (!function_exists('validate_appointment_schedule')) {
     function validate_appointment_schedule(PDO $conn, $branch, $appointmentDate, $appointmentTime, $excludeAppointmentId = null, array $conflictStatuses = ['Pending', 'Confirmed'])
     {
@@ -30,7 +58,8 @@ if (!function_exists('validate_appointment_schedule')) {
             throw new Exception('Branch, date, and time are required.');
         }
 
-        $weekday = (int) date('w', strtotime($date));
+        $validatedDate = validate_appointment_date_not_past($date);
+        $weekday = (int) $validatedDate->format('w');
 
         $availabilityStmt = $conn->prepare("SELECT is_active FROM appointment_availability WHERE branch = ? AND weekday = ? LIMIT 1");
         $availabilityStmt->execute([$normalizedBranch, $weekday]);
