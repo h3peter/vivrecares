@@ -32,9 +32,17 @@ if (!function_exists('get_allowed_api_origins')) {
             }
         }
 
-        if (empty($origins)) {
-            $origins['http://localhost:5173'] = true;
-            $origins['http://127.0.0.1:5173'] = true;
+        $localOrigins = [
+            'http://localhost:5173',
+            'http://127.0.0.1:5173',
+            'http://localhost:4173',
+            'http://127.0.0.1:4173',
+            'http://localhost:3000',
+            'http://127.0.0.1:3000',
+        ];
+
+        foreach ($localOrigins as $origin) {
+            $origins[$origin] = true;
         }
 
         return array_keys($origins);
