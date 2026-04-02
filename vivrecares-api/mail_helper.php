@@ -2,10 +2,6 @@
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-use PHPMailer\PHPMailer\Exception;
-use PHPMailer\PHPMailer\PHPMailer;
-use PHPMailer\PHPMailer\SMTP;
-
 $GLOBALS['vivre_last_mail_error'] = null;
 
 if (!function_exists('is_mail_enabled')) {
@@ -16,13 +12,13 @@ if (!function_exists('is_mail_enabled')) {
 }
 
 if (!function_exists('build_mail_html')) {
-    function build_mail_html($title, $message, $actionUrl = null, $actionLabel = 'Open Dashboard')
+    function build_mail_html($title, $message, $actionUrl = null, $actionLabel = 'Open Dashboard', $logoSrc = null)
     {
-        $logoCid = 'vivre_logo';
         $safeTitle = htmlspecialchars((string) $title, ENT_QUOTES, 'UTF-8');
         $safeMessage = nl2br(htmlspecialchars((string) $message, ENT_QUOTES, 'UTF-8'));
         $safeActionLabel = htmlspecialchars((string) $actionLabel, ENT_QUOTES, 'UTF-8');
         $safeActionUrl = $actionUrl ? htmlspecialchars((string) $actionUrl, ENT_QUOTES, 'UTF-8') : null;
+        $safeLogoSrc = $logoSrc ? htmlspecialchars((string) $logoSrc, ENT_QUOTES, 'UTF-8') : null;
 
         $button = '';
         if ($safeActionUrl) {
@@ -31,13 +27,18 @@ if (!function_exists('build_mail_html')) {
             </p>';
         }
 
+        $logoHtml = '';
+        if ($safeLogoSrc) {
+            $logoHtml = '<img src="' . $safeLogoSrc . '" alt="Vivre Medical Group" style="height:44px;width:auto;">';
+        }
+
         return '<!doctype html>
 <html>
 <body style="margin:0;padding:24px;background:#f7f7f7;font-family:Arial,sans-serif;color:#1f2937;">
     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden;">
         <tr>
             <td style="padding:20px 24px;border-bottom:1px solid #e5e7eb;background:#ffffff;">
-                <img src="cid:' . $logoCid . '" alt="Vivre Medical Group" style="height:44px;width:auto;">
+                ' . $logoHtml . '
             </td>
         </tr>
         <tr>
@@ -58,6 +59,104 @@ if (!function_exists('build_mail_html')) {
     }
 }
 
+if (!function_exists('get_mail_logo_url')) {
+    function get_mail_logo_url()
+    {
+        $configured = trim((string) app_env('MAIL_LOGO_URL', ''));
+        if ($configured !== '') {
+            return $configured;
+        }
+
+        $appBaseUrl = rtrim((string) app_env('APP_BASE_URL', ''), '/');
+        if ($appBaseUrl === '') {
+            return null;
+        }
+
+        return $appBaseUrl . '/vivrecares-api/vivre-black.png';
+    }
+}
+
+if (!function_exists('send_via_resend_api')) {
+    function send_via_resend_api($toEmail, $toName, $subject, $title, $message, $actionUrl = null, $actionLabel = 'Open Dashboard')
+    {
+        $apiKey = trim((string) app_env('RESEND_API_KEY', ''));
+        $fromEmail = trim((string) app_env('MAIL_FROM_ADDRESS', app_env('RESEND_FROM_ADDRESS', '')));
+        $fromName = trim((string) app_env('MAIL_FROM_NAME', 'Vivre Medical Group'));
+        $timeout = max(3, (int) app_env('MAIL_TIMEOUT', '15'));
+
+        if ($apiKey === '') {
+            $GLOBALS['vivre_last_mail_error'] = 'RESEND_API_KEY is not configured.';
+            return false;
+        }
+
+        if ($fromEmail === '') {
+            $GLOBALS['vivre_last_mail_error'] = 'MAIL_FROM_ADDRESS or RESEND_FROM_ADDRESS is not configured.';
+            return false;
+        }
+
+        if (!$toEmail) {
+            $GLOBALS['vivre_last_mail_error'] = 'Recipient email is required.';
+            return false;
+        }
+
+        $recipient = trim((string) $toEmail);
+        if ($toName) {
+            $recipient = trim((string) $toName) . ' <' . $recipient . '>';
+        }
+
+        $html = build_mail_html($title, $message, $actionUrl, $actionLabel, get_mail_logo_url());
+        $text = trim((string) $title . "\n\n" . preg_replace('/\s+/', ' ', strip_tags((string) $message)));
+
+        $payload = [
+            'from' => $fromName !== '' ? ($fromName . ' <' . $fromEmail . '>') : $fromEmail,
+            'to' => [$recipient],
+            'subject' => (string) $subject,
+            'html' => $html,
+            'text' => $text,
+        ];
+
+        $ch = curl_init('https://api.resend.com/emails');
+        curl_setopt_array($ch, [
+            CURLOPT_POST => true,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'Authorization: Bearer ' . $apiKey,
+                'Content-Type: application/json',
+            ],
+            CURLOPT_POSTFIELDS => json_encode($payload),
+            CURLOPT_TIMEOUT => $timeout,
+            CURLOPT_CONNECTTIMEOUT => $timeout,
+        ]);
+
+        $responseBody = curl_exec($ch);
+        $curlError = curl_error($ch);
+        $httpCode = (int) curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+        curl_close($ch);
+
+        if ($responseBody === false) {
+            $GLOBALS['vivre_last_mail_error'] = $curlError !== '' ? $curlError : 'Failed to call Resend API.';
+            error_log('Resend API error: ' . $GLOBALS['vivre_last_mail_error']);
+            return false;
+        }
+
+        $decoded = json_decode($responseBody, true);
+        if ($httpCode < 200 || $httpCode >= 300) {
+            $apiMessage = '';
+            if (is_array($decoded)) {
+                $apiMessage = trim((string) ($decoded['message'] ?? $decoded['error'] ?? ''));
+            }
+
+            $GLOBALS['vivre_last_mail_error'] = $apiMessage !== ''
+                ? $apiMessage
+                : ('Resend API request failed with HTTP ' . $httpCode . '.');
+            error_log('Resend API error: ' . $GLOBALS['vivre_last_mail_error'] . ' Response: ' . $responseBody);
+            return false;
+        }
+
+        return true;
+    }
+}
+
 if (!function_exists('send_vivre_email')) {
     function send_vivre_email($toEmail, $toName, $subject, $title, $message, $actionUrl = null, $actionLabel = 'Open Dashboard')
     {
@@ -68,74 +167,7 @@ if (!function_exists('send_vivre_email')) {
             return false;
         }
 
-        $resendApiKey = app_env('RESEND_API_KEY', '');
-        $smtpHost = app_env('MAIL_HOST', $resendApiKey ? 'smtp.resend.com' : 'smtp.gmail.com');
-        $smtpUser = app_env('MAIL_USERNAME', $resendApiKey ? 'resend' : '');
-        $smtpPass = app_env('MAIL_PASSWORD', $resendApiKey);
-        $smtpPort = (int) app_env('MAIL_PORT', '587');
-        $smtpEncryption = strtolower((string) app_env('MAIL_ENCRYPTION', 'tls'));
-        $smtpTimeout = max(3, (int) app_env('MAIL_TIMEOUT', '15'));
-        $smtpDebugEnabled = filter_var(app_env('MAIL_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN);
-        $fromEmail = app_env('MAIL_FROM_ADDRESS', app_env('RESEND_FROM_ADDRESS', $smtpUser));
-        $fromName = app_env('MAIL_FROM_NAME', 'Vivre Medical Group');
-
-        if (!$toEmail || !$smtpUser || !$smtpPass || !$fromEmail) {
-            $GLOBALS['vivre_last_mail_error'] = 'Mail configuration is incomplete.';
-            return false;
-        }
-
-        $mail = new PHPMailer(true);
-
-        try {
-            $mail->isSMTP();
-            $mail->Host = $smtpHost;
-            $mail->SMTPAuth = true;
-            $mail->Username = $smtpUser;
-            $mail->Password = $smtpPass;
-            if ($smtpEncryption === 'ssl') {
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
-            } elseif ($smtpEncryption === 'none' || $smtpEncryption === '') {
-                $mail->SMTPSecure = false;
-            } else {
-                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-            }
-            $mail->Port = $smtpPort;
-            $mail->Timeout = $smtpTimeout;
-            $mail->SMTPKeepAlive = false;
-            $mail->CharSet = 'UTF-8';
-
-            if ($smtpDebugEnabled) {
-                $mail->SMTPDebug = SMTP::DEBUG_SERVER;
-                $mail->Debugoutput = static function ($debugMessage, $level) {
-                    error_log('Mailer debug [' . $level . ']: ' . $debugMessage);
-                };
-            }
-
-            $mail->setFrom($fromEmail, $fromName);
-            $mail->addAddress($toEmail, $toName ?: '');
-
-            $logoPath = __DIR__ . '/vivre-black.png';
-            if (is_file($logoPath)) {
-                $mail->addEmbeddedImage($logoPath, 'vivre_logo');
-            }
-
-            $mail->isHTML(true);
-            $mail->Subject = $subject;
-            $mail->Body = build_mail_html($title, $message, $actionUrl, $actionLabel);
-            $mail->AltBody = trim($title . "\n\n" . preg_replace('/\s+/', ' ', strip_tags((string) $message)));
-
-            $mail->send();
-            return true;
-        } catch (Exception $e) {
-            $errorMessage = trim((string) $e->getMessage());
-            if ($errorMessage === '') {
-                $errorMessage = 'Unknown mail transport error.';
-            }
-
-            $GLOBALS['vivre_last_mail_error'] = $errorMessage;
-            error_log('Mailer error: ' . $errorMessage);
-            return false;
-        }
+        return send_via_resend_api($toEmail, $toName, $subject, $title, $message, $actionUrl, $actionLabel);
     }
 }
 
