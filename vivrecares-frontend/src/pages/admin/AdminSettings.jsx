@@ -473,16 +473,16 @@ const AdminSettings = () => {
                 </div>
 
                 <div className="p-8 grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-8">
-                    <form onSubmit={handleCreateStaff} className="space-y-5">
+                    <form onSubmit={handleCreateStaff} autoComplete="off" className="space-y-5">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <Input label="First Name" value={staffForm.first_name} onChange={(value) => setStaffForm((prev) => ({ ...prev, first_name: value }))} />
-                            <Input label="Last Name" value={staffForm.last_name} onChange={(value) => setStaffForm((prev) => ({ ...prev, last_name: value }))} />
+                            <Input label="First Name" name="staff_first_name" autoComplete="off" value={staffForm.first_name} onChange={(value) => setStaffForm((prev) => ({ ...prev, first_name: value }))} />
+                            <Input label="Last Name" name="staff_last_name" autoComplete="off" value={staffForm.last_name} onChange={(value) => setStaffForm((prev) => ({ ...prev, last_name: value }))} />
                         </div>
-                        <Input label="Email" type="email" value={staffForm.email} onChange={(value) => setStaffForm((prev) => ({ ...prev, email: value }))} />
-                        <Input label="Temporary Password" type="password" value={staffForm.password} onChange={(value) => setStaffForm((prev) => ({ ...prev, password: value }))} />
+                        <Input label="Email" name="staff_email" type="email" autoComplete="off" value={staffForm.email} onChange={(value) => setStaffForm((prev) => ({ ...prev, email: value }))} />
+                        <Input label="Temporary Password" name="staff_temp_password" type="password" autoComplete="new-password" value={staffForm.password} onChange={(value) => setStaffForm((prev) => ({ ...prev, password: value }))} />
                         <div>
                             <label className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400 block mb-2">Role</label>
-                            <select value={staffForm.role} onChange={(e) => setStaffForm((prev) => ({ ...prev, role: e.target.value }))} className="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]">
+                            <select name="staff_role" autoComplete="off" value={staffForm.role} onChange={(e) => setStaffForm((prev) => ({ ...prev, role: e.target.value }))} className="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]">
                                 <option value="Doctor">Doctor</option>
                                 <option value="Admin">Admin</option>
                             </select>
@@ -535,7 +535,7 @@ const AdminSettings = () => {
     );
 };
 
-const Input = ({ label, value, onChange, type = 'text' }) => {
+const Input = ({ label, value, onChange, type = 'text', name, autoComplete = 'off' }) => {
     const [passwordVisible, setPasswordVisible] = useState(false);
 
     return (
@@ -543,8 +543,10 @@ const Input = ({ label, value, onChange, type = 'text' }) => {
             <label className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400 block mb-2">{label}</label>
             {type === 'password' ? (
                 <PasswordInput
+                    name={name}
                     value={value ?? ''}
                     onChange={(e) => onChange(e.target.value)}
+                    autoComplete={autoComplete}
                     visible={passwordVisible}
                     onToggleVisibility={() => setPasswordVisible((prev) => !prev)}
                     inputClassName="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 pr-14 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]"
@@ -552,9 +554,11 @@ const Input = ({ label, value, onChange, type = 'text' }) => {
                 />
             ) : (
                 <input
+                    name={name}
                     type={type}
                     value={value ?? ''}
                     onChange={(e) => onChange(e.target.value)}
+                    autoComplete={autoComplete}
                     className="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]"
                 />
             )}
