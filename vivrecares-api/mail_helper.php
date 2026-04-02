@@ -4,6 +4,7 @@ require_once __DIR__ . '/vendor/autoload.php';
 
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\SMTP;
 
 $GLOBALS['vivre_last_mail_error'] = null;
 
@@ -67,11 +68,15 @@ if (!function_exists('send_vivre_email')) {
             return false;
         }
 
-        $smtpHost = app_env('MAIL_HOST', 'smtp.gmail.com');
-        $smtpUser = app_env('MAIL_USERNAME', '');
-        $smtpPass = app_env('MAIL_PASSWORD', '');
+        $resendApiKey = app_env('RESEND_API_KEY', '');
+        $smtpHost = app_env('MAIL_HOST', $resendApiKey ? 'smtp.resend.com' : 'smtp.gmail.com');
+        $smtpUser = app_env('MAIL_USERNAME', $resendApiKey ? 'resend' : '');
+        $smtpPass = app_env('MAIL_PASSWORD', $resendApiKey);
         $smtpPort = (int) app_env('MAIL_PORT', '587');
-        $fromEmail = app_env('MAIL_FROM_ADDRESS', $smtpUser);
+        $smtpEncryption = strtolower((string) app_env('MAIL_ENCRYPTION', 'tls'));
+        $smtpTimeout = max(3, (int) app_env('MAIL_TIMEOUT', '15'));
+        $smtpDebugEnabled = filter_var(app_env('MAIL_DEBUG', 'false'), FILTER_VALIDATE_BOOLEAN);
+        $fromEmail = app_env('MAIL_FROM_ADDRESS', app_env('RESEND_FROM_ADDRESS', $smtpUser));
         $fromName = app_env('MAIL_FROM_NAME', 'Vivre Medical Group');
 
         if (!$toEmail || !$smtpUser || !$smtpPass || !$fromEmail) {
@@ -87,9 +92,24 @@ if (!function_exists('send_vivre_email')) {
             $mail->SMTPAuth = true;
             $mail->Username = $smtpUser;
             $mail->Password = $smtpPass;
-            $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            if ($smtpEncryption === 'ssl') {
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_SMTPS;
+            } elseif ($smtpEncryption === 'none' || $smtpEncryption === '') {
+                $mail->SMTPSecure = false;
+            } else {
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+            }
             $mail->Port = $smtpPort;
+            $mail->Timeout = $smtpTimeout;
+            $mail->SMTPKeepAlive = false;
             $mail->CharSet = 'UTF-8';
+
+            if ($smtpDebugEnabled) {
+                $mail->SMTPDebug = SMTP::DEBUG_SERVER;
+                $mail->Debugoutput = static function ($debugMessage, $level) {
+                    error_log('Mailer debug [' . $level . ']: ' . $debugMessage);
+                };
+            }
 
             $mail->setFrom($fromEmail, $fromName);
             $mail->addAddress($toEmail, $toName ?: '');
@@ -107,8 +127,13 @@ if (!function_exists('send_vivre_email')) {
             $mail->send();
             return true;
         } catch (Exception $e) {
-            $GLOBALS['vivre_last_mail_error'] = $e->getMessage();
-            error_log('Mailer error: ' . $e->getMessage());
+            $errorMessage = trim((string) $e->getMessage());
+            if ($errorMessage === '') {
+                $errorMessage = 'Unknown mail transport error.';
+            }
+
+            $GLOBALS['vivre_last_mail_error'] = $errorMessage;
+            error_log('Mailer error: ' . $errorMessage);
             return false;
         }
     }

@@ -123,6 +123,8 @@ const LoginModal = ({ onClose }) => {
     try {
       const response = await axios.post('/send_forgot_password_code.php', {
         email: resetEmail.trim(),
+      }, {
+        timeout: 20000,
       });
 
       if (response.data.status === 'success') {
@@ -132,7 +134,10 @@ const LoginModal = ({ onClose }) => {
         showError(response.data.mail_error ? `${response.data.message} (${response.data.mail_error})` : response.data.message);
       }
     } catch (error) {
-      showError(error.response?.data?.message || 'Unable to send a reset code right now.');
+      const timeoutMessage = error.code === 'ECONNABORTED'
+        ? 'Email sending timed out. Check the server mail configuration and try again.'
+        : null;
+      showError(timeoutMessage || error.response?.data?.message || 'Unable to send a reset code right now.');
     } finally {
       setSendingCode(false);
     }
