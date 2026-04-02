@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 const DoctorAppointments = () => {
     const navigate = useNavigate();
     const [appointments, setAppointments] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [viewMode, setViewMode] = useState('day');
     const [anchorDate, setAnchorDate] = useState(new Date().toISOString().split('T')[0]);
     const [selected, setSelected] = useState(null);
@@ -15,12 +16,15 @@ const DoctorAppointments = () => {
     useEffect(() => {
         const load = async () => {
             try {
+                setLoading(true);
                 const res = await axios.get('/get_doctor_appointments.php');
                 if (res.data.status === 'success') {
                     setAppointments(res.data.data || []);
                 }
             } catch (error) {
                 console.error('Error loading doctor appointments', error);
+            } finally {
+                setLoading(false);
             }
         };
         load();
@@ -102,7 +106,7 @@ const DoctorAppointments = () => {
                     </div>
                 </div>
                 <p className="mt-4 text-sm text-gray-500">
-                    Showing <span className="font-semibold text-gray-700">{scopedAppointments.length}</span> appointments in selected view.
+                    Showing <span className="font-semibold text-gray-700">{loading ? '...' : scopedAppointments.length}</span> appointments in selected view.
                 </p>
             </div>
 
@@ -117,7 +121,9 @@ const DoctorAppointments = () => {
                 </div>
 
                 <div className="space-y-3">
-                    {currentRows.map((appt) => (
+                    {loading ? Array.from({ length: Math.max(3, Math.min(rowsPerPage, 5)) }).map((_, index) => (
+                        <AppointmentRowSkeleton key={index} />
+                    )) : currentRows.map((appt) => (
                         <div key={appt.appointment_id}>
                             <div className="rounded-2xl border border-gray-100 bg-[#faf9f6] p-4 lg:hidden">
                                 <div className="flex items-start justify-between gap-4">
@@ -160,13 +166,13 @@ const DoctorAppointments = () => {
                             </div>
                         </div>
                     ))}
-                    {scopedAppointments.length === 0 && (
+                    {!loading && scopedAppointments.length === 0 && (
                         <p className="py-10 text-center italic text-gray-400">No appointments for this view.</p>
                     )}
                 </div>
             </div>
 
-            {scopedAppointments.length > 0 && (
+            {!loading && scopedAppointments.length > 0 && (
                 <div className="mt-8 flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                     <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
                         <span>Rows per page:</span>
@@ -232,6 +238,57 @@ const InfoBlock = ({ label, value }) => (
     <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">{label}</p>
         <p className="mt-1 text-sm text-gray-700">{value}</p>
+    </div>
+);
+
+const AppointmentRowSkeleton = () => (
+    <div>
+        <div className="rounded-2xl border border-gray-100 bg-[#faf9f6] p-4 lg:hidden animate-pulse">
+            <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0 space-y-2">
+                    <div className="h-4 w-40 rounded-full bg-gray-200" />
+                    <div className="h-3 w-28 rounded-full bg-gray-100" />
+                </div>
+                <div className="h-8 w-16 rounded-full bg-gray-200" />
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl bg-white p-4 sm:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index}>
+                        <div className="h-3 w-16 rounded-full bg-gray-200" />
+                        <div className="mt-2 h-4 w-24 rounded-full bg-gray-100" />
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-4 space-y-2">
+                <div className="h-3 w-20 rounded-full bg-gray-200" />
+                <div className="h-4 w-full rounded-full bg-gray-100" />
+                <div className="h-4 w-2/3 rounded-full bg-gray-100" />
+            </div>
+        </div>
+
+        <div className="hidden grid-cols-12 items-center gap-4 rounded-2xl border border-gray-100 bg-[#faf9f6] p-4 lg:grid animate-pulse">
+            <div className="col-span-2">
+                <div className="h-4 w-24 rounded-full bg-gray-100" />
+            </div>
+            <div className="col-span-2">
+                <div className="h-4 w-16 rounded-full bg-gray-100" />
+            </div>
+            <div className="col-span-3">
+                <div className="h-4 w-36 rounded-full bg-gray-200" />
+            </div>
+            <div className="col-span-3 space-y-2">
+                <div className="h-4 w-28 rounded-full bg-gray-200" />
+                <div className="h-3 w-full rounded-full bg-gray-100" />
+            </div>
+            <div className="col-span-1">
+                <div className="h-4 w-12 rounded-full bg-gray-100" />
+            </div>
+            <div className="col-span-1 flex justify-end">
+                <div className="h-4 w-10 rounded-full bg-gray-200" />
+            </div>
+        </div>
     </div>
 );
 

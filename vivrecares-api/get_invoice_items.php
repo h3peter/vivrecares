@@ -1,6 +1,7 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once 'billing_branch.php';
 
 init_api_auth();
 require_roles(['Admin']);
@@ -13,7 +14,15 @@ if (!$invoice_id) {
 }
 
 try {
-    $sqlMaster = "SELECT b.total_amount, b.payment_date, b.payment_status, b.payment_method, b.reference_number, u.first_name, u.last_name
+    ensure_billings_branch_column($conn);
+
+    $sqlMaster = "SELECT b.total_amount, b.payment_date, b.payment_status, b.payment_method, b.reference_number, u.first_name, u.last_name,
+                     CASE
+                         WHEN b.branch = 'Main Branch' THEN 'Pasay Branch'
+                         WHEN b.branch IS NOT NULL AND b.branch <> '' THEN b.branch
+                         WHEN a.branch = 'Main Branch' THEN 'Pasay Branch'
+                         ELSE a.branch
+                     END AS branch
               FROM billings b
               LEFT JOIN appointments a ON b.appointment_id = a.appointment_id
               LEFT JOIN patients p ON p.patient_id = COALESCE(b.patient_id, a.patient_id)
@@ -42,6 +51,7 @@ try {
         "patient_name" => $master['first_name'] . " " . $master['last_name'],
         "date" => $master['payment_date'],
         "total" => $master['total_amount'],
+        "branch" => $master['branch'],
         "payment_status" => $master['payment_status'],
         "payment_method" => $master['payment_method'],
         "reference_number" => $master['reference_number'],

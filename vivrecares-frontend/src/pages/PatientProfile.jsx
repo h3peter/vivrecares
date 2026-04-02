@@ -7,6 +7,7 @@ const PatientProfile = () => {
     const [patientData, setPatientData] = useState(null);
     const [consultationNotes, setConsultationNotes] = useState([]);
     const [visitSummary, setVisitSummary] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
@@ -46,6 +47,8 @@ const PatientProfile = () => {
             } catch (fetchError) {
                 console.error('Fetch error:', fetchError);
                 setError('Unable to load your profile right now.');
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -56,8 +59,12 @@ const PatientProfile = () => {
         return <div className="p-12 text-base text-red-600">{error}</div>;
     }
 
+    if (loading) {
+        return <PatientProfileSkeleton />;
+    }
+
     if (!patientData) {
-        return <div className="p-12 text-base text-gray-500 font-medium tracking-[0.18em] uppercase">Loading profile...</div>;
+        return <div className="p-12 text-base text-gray-500 font-medium tracking-[0.18em] uppercase">Profile unavailable.</div>;
     }
 
     return (
@@ -192,6 +199,90 @@ const MiniInfo = ({ label, value }) => (
     <div className="rounded-xl border border-gray-100 bg-white px-4 py-3">
         <p className="text-[11px] uppercase tracking-[0.18em] text-gray-400 font-bold">{label}</p>
         <p className="text-sm text-gray-700 font-medium mt-2 leading-relaxed">{value}</p>
+    </div>
+);
+
+const PatientProfileSkeleton = () => (
+    <div className="min-h-screen bg-[#f4f4f4] p-8 lg:p-12">
+        <div className="mx-auto max-w-6xl animate-pulse">
+            <div className="mb-8 space-y-3">
+                <div className="h-3 w-28 rounded-full bg-[#e8dfd2]" />
+                <div className="h-8 w-56 rounded-full bg-[#ddd2c2]" />
+                <div className="h-4 w-96 max-w-full rounded-full bg-[#ebe4d9]" />
+            </div>
+
+            <div className="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-3">
+                <div className="flex flex-col items-center rounded-[2rem] border border-gray-100 bg-white p-8 text-center shadow-sm">
+                    <div className="h-28 w-28 rounded-full bg-[#ebe4d9]" />
+                    <div className="mt-5 h-7 w-48 rounded-full bg-[#ddd2c2]" />
+                    <div className="mt-3 h-4 w-32 rounded-full bg-[#ebe4d9]" />
+                    <div className="mt-6 w-full space-y-3 border-t border-gray-50 pt-6">
+                        <div className="h-4 w-full rounded-full bg-[#ebe4d9]" />
+                        <div className="h-4 w-4/5 rounded-full bg-[#f1ece4]" />
+                        <div className="h-4 w-3/5 rounded-full bg-[#f1ece4]" />
+                    </div>
+                </div>
+
+                <div className="overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-sm lg:col-span-2">
+                    <div className="border-b border-gray-50 bg-[#faf9f6] px-8 py-5">
+                        <div className="h-3 w-32 rounded-full bg-[#e8dfd2]" />
+                    </div>
+                    <div className="grid grid-cols-1 gap-x-8 gap-y-8 p-8 md:grid-cols-2">
+                        {Array.from({ length: 6 }).map((_, index) => (
+                            <div key={index}>
+                                <div className="mb-2 h-3 w-24 rounded-full bg-[#e8dfd2]" />
+                                <div className="h-4 w-full rounded-full bg-[#ebe4d9]" />
+                                <div className="mt-2 h-4 w-4/5 rounded-full bg-[#f1ece4]" />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            <div className="overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-sm">
+                <div className="border-b border-gray-50 bg-[#faf9f6] px-8 py-5">
+                    <div className="h-3 w-32 rounded-full bg-[#e8dfd2]" />
+                </div>
+                <div className="space-y-2 p-8">
+                    <div className="h-4 w-full rounded-full bg-[#ebe4d9]" />
+                    <div className="h-4 w-11/12 rounded-full bg-[#f1ece4]" />
+                    <div className="h-4 w-2/3 rounded-full bg-[#f1ece4]" />
+                </div>
+            </div>
+
+            <div className="mt-8 overflow-hidden rounded-[2rem] border border-gray-100 bg-white shadow-sm">
+                <div className="flex items-center justify-between border-b border-gray-50 bg-[#faf9f6] px-8 py-5">
+                    <div className="h-3 w-44 rounded-full bg-[#e8dfd2]" />
+                    <div className="h-3 w-16 rounded-full bg-[#ebe4d9]" />
+                </div>
+                <div className="p-8">
+                    <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+                        {Array.from({ length: 3 }).map((_, index) => (
+                            <div key={index} className="rounded-xl border border-gray-100 bg-white px-4 py-3">
+                                <div className="h-3 w-24 rounded-full bg-[#e8dfd2]" />
+                                <div className="mt-2 h-4 w-full rounded-full bg-[#ebe4d9]" />
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="space-y-3">
+                        {Array.from({ length: 3 }).map((_, index) => (
+                            <div key={index} className="rounded-2xl border border-gray-100 bg-[#faf9f6] p-5">
+                                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                                    <div className="h-3 w-36 rounded-full bg-[#e8dfd2]" />
+                                    <div className="h-3 w-28 rounded-full bg-[#ebe4d9]" />
+                                </div>
+                                <div className="mt-3 space-y-2">
+                                    <div className="h-4 w-full rounded-full bg-[#ebe4d9]" />
+                                    <div className="h-4 w-11/12 rounded-full bg-[#f1ece4]" />
+                                    <div className="h-4 w-10/12 rounded-full bg-[#f1ece4]" />
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 );
 

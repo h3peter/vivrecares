@@ -1,17 +1,21 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once 'billing_branch.php';
 
 init_api_auth();
 require_roles(['Admin']);
 
 try {
+    ensure_billings_branch_column($conn);
+
     $sql = "SELECT
                 b.invoice_id, b.total_amount, b.payment_method, b.reference_number, b.payment_status, b.payment_date,
                 u.first_name, u.last_name,
                 CASE
+                    WHEN b.branch = 'Main Branch' THEN 'Pasay Branch'
+                    WHEN b.branch IS NOT NULL AND b.branch <> '' THEN b.branch
                     WHEN a.branch = 'Main Branch' THEN 'Pasay Branch'
-                    WHEN a.branch IS NULL OR a.branch = '' THEN 'Direct Billing'
                     ELSE a.branch
                 END AS branch,
                 (SELECT description FROM billing_items WHERE invoice_id = b.invoice_id ORDER BY item_id ASC LIMIT 1) as main_treatment,

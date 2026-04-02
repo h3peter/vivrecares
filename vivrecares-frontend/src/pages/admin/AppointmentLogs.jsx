@@ -203,8 +203,9 @@ const AppointmentLogs = () => {
                         </button>
                     </div>
 
-                    <div className={`${showMobileFilters ? 'grid' : 'hidden'} grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6 lg:grid`}>
-                        <div className="xl:col-span-2">
+                    <div className={`${showMobileFilters ? 'block' : 'hidden'} lg:block`}>
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[1.5fr_0.7fr_0.7fr_0.7fr]">
+                            <div>
                             <label className="text-xs text-gray-500 font-bold uppercase tracking-[0.18em] mb-2 block">Search Records</label>
                             <input
                                 type="text"
@@ -214,50 +215,53 @@ const AppointmentLogs = () => {
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
                         </div>
-                        <div>
-                            <label className="text-xs text-gray-500 font-bold uppercase tracking-[0.18em] mb-2 block">Status</label>
-                            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#b2a58d] bg-white text-gray-700">
-                                <option value="All">All statuses</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Confirmed">Confirmed</option>
-                                <option value="Completed">Completed</option>
-                                <option value="Cancelled">Cancelled</option>
-                            </select>
+                            <div>
+                                <label className="text-xs text-gray-500 font-bold uppercase tracking-[0.18em] mb-2 block">Status</label>
+                                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#b2a58d] bg-white text-gray-700">
+                                    <option value="All">All statuses</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Confirmed">Confirmed</option>
+                                    <option value="Completed">Completed</option>
+                                    <option value="Cancelled">Cancelled</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-500 font-bold uppercase tracking-[0.18em] mb-2 block">Branch</label>
+                                <select value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#b2a58d] bg-white text-gray-700">
+                                    {uniqueBranches.map((branch) => (
+                                        <option key={branch} value={branch}>
+                                            {branch === 'All' ? 'All branches' : branch}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-500 font-bold uppercase tracking-[0.18em] mb-2 block">Type</label>
+                                <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#b2a58d] bg-white text-gray-700">
+                                    {uniqueTypes.map((type) => (
+                                        <option key={type} value={type}>
+                                            {type === 'All' ? 'All types' : type}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
                         </div>
-                        <div>
-                            <label className="text-xs text-gray-500 font-bold uppercase tracking-[0.18em] mb-2 block">Branch</label>
-                            <select value={branchFilter} onChange={(e) => setBranchFilter(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#b2a58d] bg-white text-gray-700">
-                                {uniqueBranches.map((branch) => (
-                                    <option key={branch} value={branch}>
-                                        {branch === 'All' ? 'All branches' : branch}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-xs text-gray-500 font-bold uppercase tracking-[0.18em] mb-2 block">Type</label>
-                            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#b2a58d] bg-white text-gray-700">
-                                {uniqueTypes.map((type) => (
-                                    <option key={type} value={type}>
-                                        {type === 'All' ? 'All types' : type}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-xs text-gray-500 font-bold uppercase tracking-[0.18em] mb-2 block">From</label>
-                            <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#b2a58d] text-gray-700" />
-                        </div>
-                        <div>
-                            <label className="text-xs text-gray-500 font-bold uppercase tracking-[0.18em] mb-2 block">To</label>
-                            <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#b2a58d] text-gray-700" />
-                        </div>
-                    </div>
 
-                    <div className={`${showMobileFilters ? 'flex' : 'hidden'} justify-end lg:flex`}>
-                        <button onClick={clearFilters} className="px-5 py-3 rounded-xl border border-gray-200 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 hover:border-[#b2a58d] hover:text-[#8f8167] transition">
-                            Clear Filters
-                        </button>
+                        <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[0.7fr_0.7fr_auto] xl:items-end">
+                            <div>
+                                <label className="text-xs text-gray-500 font-bold uppercase tracking-[0.18em] mb-2 block">From</label>
+                                <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#b2a58d] text-gray-700" />
+                            </div>
+                            <div>
+                                <label className="text-xs text-gray-500 font-bold uppercase tracking-[0.18em] mb-2 block">To</label>
+                                <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#b2a58d] text-gray-700" />
+                            </div>
+                            <div className="flex justify-start xl:justify-end">
+                                <button onClick={clearFilters} className="w-full px-5 py-3 rounded-xl border border-gray-200 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 hover:border-[#b2a58d] hover:text-[#8f8167] transition md:w-auto">
+                                    Clear Filters
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

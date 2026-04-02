@@ -86,6 +86,12 @@
                         <td><?php echo htmlspecialchars($payment_method); ?></td>
                         <td><?php echo htmlspecialchars($payment_status); ?></td>
                     </tr>
+                    <tr>
+                        <th colspan="2">Branch</th>
+                    </tr>
+                    <tr>
+                        <td colspan="2"><?php echo htmlspecialchars($invoice_branch); ?></td>
+                    </tr>
                     <?php if (!empty($reference_number)): ?>
                     <tr>
                         <th colspan="2">Reference #</th>

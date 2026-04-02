@@ -93,7 +93,9 @@ const AppointmentHistory = () => {
 
                 <div className="space-y-3 px-0 lg:px-2">
                     {loading ? (
-                        <p className="py-10 text-center text-base italic text-gray-400">Loading records...</p>
+                        Array.from({ length: Math.max(3, Math.min(rowsPerPage, 5)) }).map((_, index) => (
+                            <AppointmentHistorySkeleton key={index} />
+                        ))
                     ) : appointments.length > 0 ? (
                         currentRows.map((apt) => (
                             <div key={apt.appointment_id}>
@@ -184,6 +186,53 @@ const InfoBlock = ({ label, value }) => (
     <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">{label}</p>
         <p className="mt-1 text-sm text-gray-700">{value}</p>
+    </div>
+);
+
+const AppointmentHistorySkeleton = () => (
+    <div>
+        <div className="rounded-[1.5rem] border border-gray-100 bg-[#faf9f6] p-4 sm:p-5 lg:hidden animate-pulse">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="min-w-0 space-y-2">
+                    <div className="h-4 w-40 rounded-full bg-gray-200" />
+                    <div className="h-3 w-24 rounded-full bg-gray-100" />
+                </div>
+                <div className="h-7 w-20 rounded-full bg-gray-200" />
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl bg-white p-4 sm:grid-cols-2">
+                {Array.from({ length: 2 }).map((_, index) => (
+                    <div key={index}>
+                        <div className="h-3 w-12 rounded-full bg-gray-200" />
+                        <div className="mt-2 h-4 w-24 rounded-full bg-gray-100" />
+                    </div>
+                ))}
+            </div>
+
+            <div className="mt-4 space-y-2">
+                <div className="h-3 w-24 rounded-full bg-gray-200" />
+                <div className="h-4 w-full rounded-full bg-gray-100" />
+                <div className="h-4 w-5/6 rounded-full bg-gray-100" />
+            </div>
+        </div>
+
+        <div className="hidden grid-cols-12 items-center gap-4 rounded-[1.5rem] border border-gray-50 bg-[#faf9f6] p-5 lg:grid animate-pulse">
+            <div className="col-span-3 space-y-2">
+                <div className="h-4 w-36 rounded-full bg-gray-200" />
+                <div className="h-3 w-20 rounded-full bg-gray-100" />
+            </div>
+            <div className="col-span-3 space-y-2">
+                <div className="h-4 w-24 rounded-full bg-gray-100" />
+                <div className="h-3 w-20 rounded-full bg-gray-100" />
+            </div>
+            <div className="col-span-4 space-y-2 pr-4">
+                <div className="h-4 w-full rounded-full bg-gray-100" />
+                <div className="h-4 w-4/5 rounded-full bg-gray-100" />
+            </div>
+            <div className="col-span-2 flex justify-end">
+                <div className="h-4 w-16 rounded-full bg-gray-200" />
+            </div>
+        </div>
     </div>
 );
 

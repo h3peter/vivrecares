@@ -1,6 +1,7 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once 'billing_branch.php';
 
 init_api_auth();
 require_roles(['Admin']);
@@ -13,11 +14,18 @@ if (!$data || !isset($data['patient_id'])) {
 }
 
 try {
+    ensure_billings_branch_column($conn);
+
     $paymentMethod = $data['payment_method'] ?? 'Cash';
     $paymentStatus = $data['payment_status'] ?? 'Paid';
     $referenceNumber = trim($data['reference_number'] ?? '');
+    $branch = normalize_billing_branch($data['branch'] ?? null);
     $allowedMethods = ['Cash', 'GCash', 'Maya', 'Credit Card', 'Bank Transfer'];
     $allowedStatuses = ['Paid', 'Unpaid', 'Overdue'];
+
+    if (!$branch) {
+        throw new Exception('Branch is required for manual invoices.');
+    }
 
     if (!in_array($paymentMethod, $allowedMethods, true)) {
         throw new Exception('Invalid payment method.');
@@ -39,12 +47,13 @@ try {
 
     $conn->beginTransaction();
 
-    $sqlBilling = "INSERT INTO billings (patient_id, appointment_id, total_amount, payment_method, reference_number, payment_status, payment_date)
-                   VALUES (?, NULL, ?, ?, ?, ?, ?)";
+    $sqlBilling = "INSERT INTO billings (patient_id, appointment_id, branch, total_amount, payment_method, reference_number, payment_status, payment_date)
+                   VALUES (?, NULL, ?, ?, ?, ?, ?, ?)";
 
     $stmtBilling = $conn->prepare($sqlBilling);
     $stmtBilling->execute([
         $data['patient_id'],
+        $branch,
         $data['total_amount'],
         $paymentMethod,
         $referenceNumber,

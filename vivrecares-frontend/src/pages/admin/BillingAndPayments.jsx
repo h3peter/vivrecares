@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import { apiUrl } from '../../utils/api';
+import { CLINIC_BRANCHES } from '../../utils/branches';
 
 const BillingAndPayments = () => {
     const [billings, setBillings] = useState([]);
@@ -8,6 +9,7 @@ const BillingAndPayments = () => {
     const [statusFilter, setStatusFilter] = useState('All');
     const [methodFilter, setMethodFilter] = useState('All');
     const [serviceFilter, setServiceFilter] = useState('All');
+    const [sortOrder, setSortOrder] = useState('latest');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [selectedInvoice, setSelectedInvoice] = useState(null);
@@ -16,6 +18,7 @@ const BillingAndPayments = () => {
     const [patients, setPatients] = useState([]);
     const [services, setServices] = useState([]);
     const [selectedPatient, setSelectedPatient] = useState('');
+    const [selectedBranch, setSelectedBranch] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('Cash');
     const [paymentStatus, setPaymentStatus] = useState('Paid');
     const [referenceNumber, setReferenceNumber] = useState('');
@@ -62,6 +65,18 @@ const BillingAndPayments = () => {
         return parsed;
     };
 
+    const getBillingSortTimestamp = (billing) => {
+        const candidates = [billing.payment_date, billing.created_at, billing.date];
+        for (const candidate of candidates) {
+            if (!candidate) continue;
+            const parsed = new Date(candidate);
+            if (!Number.isNaN(parsed.getTime())) {
+                return parsed.getTime();
+            }
+        }
+        return 0;
+    };
+
     const paymentMethods = ['All', ...new Set(billings.map((billing) => billing.payment_method).filter(Boolean))];
     const serviceNames = [
         'All',
@@ -79,19 +94,34 @@ const BillingAndPayments = () => {
         [patients]
     );
 
-    const filteredBillings = billings.filter((billing) => {
-        const matchesSearch = `${billing.first_name} ${billing.last_name} ${billing.invoice_id} ${billing.main_treatment || ''} ${billing.reference_number || ''}`
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase());
-        const billDate = normalizeDate(billing.payment_date);
-        const matchesStart = startDate ? (billDate && billDate >= normalizeDate(startDate)) : true;
-        const matchesEnd = endDate ? (billDate && billDate <= normalizeDate(endDate)) : true;
-        const matchesStatus = statusFilter === 'All' || billing.payment_status === statusFilter;
-        const matchesMethod = methodFilter === 'All' || billing.payment_method === methodFilter;
-        const normalizedService = billing.main_treatment || 'Clinic Availment';
-        const matchesService = serviceFilter === 'All' || normalizedService === serviceFilter;
-        return matchesSearch && matchesStart && matchesEnd && matchesStatus && matchesMethod && matchesService;
-    });
+    const filteredBillings = useMemo(
+        () =>
+            billings
+                .filter((billing) => {
+                    const matchesSearch = `${billing.first_name} ${billing.last_name} ${billing.invoice_id} ${billing.main_treatment || ''} ${billing.reference_number || ''}`
+                        .toLowerCase()
+                        .includes(searchTerm.toLowerCase());
+                    const billDate = normalizeDate(billing.payment_date);
+                    const matchesStart = startDate ? (billDate && billDate >= normalizeDate(startDate)) : true;
+                    const matchesEnd = endDate ? (billDate && billDate <= normalizeDate(endDate)) : true;
+                    const matchesStatus = statusFilter === 'All' || billing.payment_status === statusFilter;
+                    const matchesMethod = methodFilter === 'All' || billing.payment_method === methodFilter;
+                    const normalizedService = billing.main_treatment || 'Clinic Availment';
+                    const matchesService = serviceFilter === 'All' || normalizedService === serviceFilter;
+                    return matchesSearch && matchesStart && matchesEnd && matchesStatus && matchesMethod && matchesService;
+                })
+                .sort((a, b) => {
+                    const timeDiff = getBillingSortTimestamp(b) - getBillingSortTimestamp(a);
+                    if (sortOrder === 'oldest') {
+                        if (timeDiff !== 0) return -timeDiff;
+                        return Number(a.invoice_id || 0) - Number(b.invoice_id || 0);
+                    }
+
+                    if (timeDiff !== 0) return timeDiff;
+                    return Number(b.invoice_id || 0) - Number(a.invoice_id || 0);
+                }),
+        [billings, searchTerm, startDate, endDate, statusFilter, methodFilter, serviceFilter, sortOrder]
+    );
 
     const totalRevenue = filteredBillings
         .filter((billing) => billing.payment_status === 'Paid')
@@ -105,13 +135,14 @@ const BillingAndPayments = () => {
 
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, statusFilter, methodFilter, serviceFilter, startDate, endDate, rowsPerPage]);
+    }, [searchTerm, statusFilter, methodFilter, serviceFilter, sortOrder, startDate, endDate, rowsPerPage]);
 
     const clearFilters = () => {
         setSearchTerm('');
         setStatusFilter('All');
         setMethodFilter('All');
         setServiceFilter('All');
+        setSortOrder('latest');
         setStartDate('');
         setEndDate('');
         setCurrentPage(1);
@@ -120,6 +151,7 @@ const BillingAndPayments = () => {
     const resetAddInvoiceForm = () => {
         setItems([{ type: 'Service', service_id: null, description: '', quantity: 1, unit_price: '' }]);
         setSelectedPatient('');
+        setSelectedBranch('');
         setPaymentMethod('Cash');
         setPaymentStatus('Paid');
         setReferenceNumber('');
@@ -209,6 +241,7 @@ const BillingAndPayments = () => {
     const handleSaveInvoice = async (e) => {
         e.preventDefault();
         if (!selectedPatient) return alert('Please select a patient.');
+        if (!selectedBranch) return alert('Please select a branch.');
         if (items.some((item) => item.type === 'Service' && !item.service_id)) {
             return alert('Please choose a valid service for every service line.');
         }
@@ -225,6 +258,7 @@ const BillingAndPayments = () => {
         try {
             const res = await axios.post('/create_invoice.php', {
                 patient_id: selectedPatient,
+                branch: selectedBranch,
                 total_amount: calculateTotal(),
                 payment_method: paymentMethod,
                 payment_status: paymentStatus,
@@ -286,51 +320,67 @@ const BillingAndPayments = () => {
                     </button>
                 </div>
 
-                <div className={`${showMobileFilters ? 'grid' : 'hidden'} grid-cols-1 md:grid-cols-2 xl:grid-cols-7 gap-4 items-end lg:grid`}>
-                    <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-[0.18em] mb-2 block">Start Date</label>
-                        <input type="date" className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#d4af37] text-gray-700" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                <div className={`${showMobileFilters ? 'block' : 'hidden'} lg:block`}>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+                        <div>
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Search</label>
+                            <input type="text" placeholder="Name, invoice ID, treatment, or reference" className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base text-gray-700 outline-none focus:border-[#d4af37]" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Sort</label>
+                            <select className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-700 outline-none focus:border-[#d4af37]" value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>
+                                <option value="latest">Latest First</option>
+                                <option value="oldest">Oldest First</option>
+                            </select>
+                        </div>
                     </div>
-                    <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-[0.18em] mb-2 block">End Date</label>
-                        <input type="date" className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#d4af37] text-gray-700" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-[0.18em] mb-2 block">Search</label>
-                        <input type="text" placeholder="Name, invoice ID, treatment, or reference" className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#d4af37] text-gray-700" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                    </div>
-                    <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-[0.18em] mb-2 block">Status</label>
-                        <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#d4af37] bg-white text-gray-700" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                            <option value="All">All statuses</option>
-                            <option value="Paid">Paid</option>
-                            <option value="Unpaid">Unpaid</option>
-                            <option value="Overdue">Overdue</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-[0.18em] mb-2 block">Method</label>
-                        <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#d4af37] bg-white text-gray-700" value={methodFilter} onChange={(e) => setMethodFilter(e.target.value)}>
-                            {paymentMethods.map((method) => (
-                                <option key={method} value={method}>
-                                    {method === 'All' ? 'All methods' : method}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-[0.18em] mb-2 block">Service</label>
-                        <select className="w-full px-4 py-3 border border-gray-200 rounded-xl text-base outline-none focus:border-[#d4af37] bg-white text-gray-700" value={serviceFilter} onChange={(e) => setServiceFilter(e.target.value)}>
-                            {serviceNames.map((serviceName) => (
-                                <option key={serviceName} value={serviceName}>
-                                    {serviceName === 'All' ? 'All services' : serviceName}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                    <div className="flex gap-2 xl:justify-end xl:pl-3">
-                        <button onClick={clearFilters} className="px-2 py-3 rounded-xl border border-gray-200 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 hover:border-[#d4af37] hover:text-[#a8892d] transition">Clear</button>
-                        <button onClick={() => setIsAddModalOpen(true)} className="bg-[#555555] text-[#c4ba9d] px-6 py-3 rounded-xl text-sm font-bold uppercase tracking-[0.18em] shadow-lg hover:bg-[#404040] transition">+ Add Invoice</button>
+
+                    <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] xl:items-end">
+                        <div>
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">From</label>
+                            <input type="date" className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base text-gray-700 outline-none focus:border-[#d4af37]" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">To</label>
+                            <input type="date" className="w-full rounded-xl border border-gray-200 px-4 py-3 text-base text-gray-700 outline-none focus:border-[#d4af37]" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Status</label>
+                            <select className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-700 outline-none focus:border-[#d4af37]" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                                <option value="All">All statuses</option>
+                                <option value="Paid">Paid</option>
+                                <option value="Unpaid">Unpaid</option>
+                                <option value="Overdue">Overdue</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Method</label>
+                            <select className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-700 outline-none focus:border-[#d4af37]" value={methodFilter} onChange={(e) => setMethodFilter(e.target.value)}>
+                                {paymentMethods.map((method) => (
+                                    <option key={method} value={method}>
+                                        {method === 'All' ? 'All methods' : method}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Service</label>
+                            <select className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-700 outline-none focus:border-[#d4af37]" value={serviceFilter} onChange={(e) => setServiceFilter(e.target.value)}>
+                                {serviceNames.map((serviceName) => (
+                                    <option key={serviceName} value={serviceName}>
+                                        {serviceName === 'All' ? 'All services' : serviceName}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="flex flex-col gap-3 pt-1 sm:flex-row xl:justify-end">
+                            <button onClick={clearFilters} className="w-full rounded-xl border border-gray-200 px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 transition hover:border-[#d4af37] hover:text-[#a8892d] sm:w-auto">
+                                Clear Filters
+                            </button>
+                            <button onClick={() => setIsAddModalOpen(true)} className="w-full rounded-xl bg-[#555555] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#c4ba9d] shadow-lg transition hover:bg-[#404040] sm:w-auto">
+                                + Add Invoice
+                            </button>
+                        </div>
                     </div>
                 </div>
                 <div className="mt-4 text-sm text-gray-500">
@@ -344,15 +394,18 @@ const BillingAndPayments = () => {
             </div>
 
             <div className="bg-white p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-100">
-                <div className="hidden grid-cols-14 gap-4 mb-6 text-[#b2a58d] text-xs uppercase tracking-[0.18em] font-bold px-4 border-b border-gray-50 pb-6 xl:grid">
-                    <div className="col-span-2">ID</div>
-                    <div className="col-span-2">Patient</div>
-                    <div className="col-span-3">Context & Date</div>
-                    <div className="col-span-2">Method</div>
-                    <div className="col-span-2">Reference</div>
-                    <div className="col-span-1 text-center">Status</div>
-                    <div className="col-span-1 text-right">Amount</div>
-                    <div className="col-span-1 text-right">Action</div>
+                <div className="hidden mb-6 border-b border-gray-50 pb-6 xl:block">
+                    <div className="grid grid-cols-[1.05fr_1.35fr_1fr_1.7fr_1fr_1fr_0.9fr_1fr_0.8fr] gap-6 px-4 text-xs font-bold uppercase tracking-[0.18em] text-[#b2a58d]">
+                        <div>ID</div>
+                        <div>Patient</div>
+                        <div>Branch</div>
+                        <div>Context & Date</div>
+                        <div>Method</div>
+                        <div>Reference</div>
+                        <div className="text-center">Status</div>
+                        <div className="text-right">Amount</div>
+                        <div className="text-right">Action</div>
+                    </div>
                 </div>
 
                 <div className="space-y-3">
@@ -381,6 +434,10 @@ const BillingAndPayments = () => {
 
                                 <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl bg-white p-4 sm:grid-cols-2">
                                     <InfoBlock
+                                        label="Branch"
+                                        value={billing.branch || 'Not set'}
+                                    />
+                                    <InfoBlock
                                         label="Context"
                                         value={`${billing.main_treatment || 'Clinic Availment'}${billing.item_count > 1 ? ` (+${billing.item_count - 1} more)` : ''}`}
                                     />
@@ -398,30 +455,34 @@ const BillingAndPayments = () => {
                                 </button>
                             </div>
 
-                            <div className="hidden grid-cols-14 gap-4 items-center text-base text-gray-700 p-4 hover:bg-[#faf9f6] rounded-2xl transition border border-transparent hover:border-gray-100 xl:grid">
-                                <div className="col-span-2 uppercase text-xs font-bold tracking-[0.18em] text-gray-400">
+                            <div className="hidden xl:block rounded-2xl border border-transparent p-4 text-base text-gray-700 transition hover:border-gray-100 hover:bg-[#faf9f6]">
+                                <div className="grid grid-cols-[1.05fr_1.35fr_1fr_1.7fr_1fr_1fr_0.9fr_1fr_0.8fr] items-center gap-6">
+                                    <div className="uppercase text-xs font-bold tracking-[0.18em] text-gray-400">
                                     INV-{String(billing.invoice_id).padStart(4, '0')}
-                                </div>
-                                <div className="col-span-2 font-bold text-gray-800 truncate">
-                                    {billing.last_name}, {billing.first_name}
-                                </div>
-                                <div className="col-span-3 flex flex-col">
-                                    <span className="font-medium text-gray-800 truncate">
-                                        {billing.main_treatment || 'Clinic Availment'}
-                                        {billing.item_count > 1 && <span className="text-[#c4ba9d] text-xs ml-1 uppercase font-bold tracking-[0.18em]">(+{billing.item_count - 1} more)</span>}
-                                    </span>
-                                    <span className="text-xs text-gray-400 mt-1">
-                                        {billing.payment_date ? new Date(billing.payment_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not yet paid'}
-                                    </span>
-                                </div>
-                                <div className="col-span-2 text-sm font-medium text-gray-500">
-                                    {billing.payment_method || 'N/A'}
-                                </div>
-                                <div className="col-span-2 text-sm text-gray-500">
-                                    {billing.reference_number || 'N/A'}
-                                </div>
-                                <div className="col-span-1 text-center">
-                                    <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-[0.18em] ${
+                                    </div>
+                                    <div className="truncate font-bold text-gray-800">
+                                        {billing.last_name}, {billing.first_name}
+                                    </div>
+                                    <div className="text-sm font-medium text-gray-500">
+                                        {billing.branch || 'Not set'}
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="truncate font-medium text-gray-800">
+                                            {billing.main_treatment || 'Clinic Availment'}
+                                            {billing.item_count > 1 && <span className="ml-1 text-xs font-bold uppercase tracking-[0.18em] text-[#c4ba9d]">(+{billing.item_count - 1} more)</span>}
+                                        </span>
+                                        <span className="mt-1 text-xs text-gray-400">
+                                            {billing.payment_date ? new Date(billing.payment_date).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) : 'Not yet paid'}
+                                        </span>
+                                    </div>
+                                    <div className="text-sm font-medium text-gray-500">
+                                        {billing.payment_method || 'N/A'}
+                                    </div>
+                                    <div className="truncate text-sm text-gray-500">
+                                        {billing.reference_number || 'N/A'}
+                                    </div>
+                                    <div className="text-center">
+                                        <span className={`rounded-lg px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] ${
                                         billing.payment_status === 'Paid'
                                             ? 'bg-green-50 text-green-600'
                                             : billing.payment_status === 'Overdue'
@@ -429,13 +490,14 @@ const BillingAndPayments = () => {
                                                 : 'bg-red-50 text-red-600'
                                     }`}>
                                         {billing.payment_status}
-                                    </span>
-                                </div>
-                                <div className="col-span-1 text-right font-bold text-gray-900">
-                                    {formatCurrency(billing.total_amount)}
-                                </div>
-                                <div className="col-span-1 text-right">
-                                    <button onClick={() => viewInvoiceDetails(billing.invoice_id)} className="text-[#c4ba9d] hover:text-[#555555] transition text-xs font-bold uppercase tracking-[0.18em]">View</button>
+                                        </span>
+                                    </div>
+                                    <div className="text-right font-bold text-gray-900">
+                                        {formatCurrency(billing.total_amount)}
+                                    </div>
+                                    <div className="text-right">
+                                        <button onClick={() => viewInvoiceDetails(billing.invoice_id)} className="text-xs font-bold uppercase tracking-[0.18em] text-[#c4ba9d] transition hover:text-[#555555]">View</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -493,6 +555,17 @@ const BillingAndPayments = () => {
                                         {sortedPatients.map((patient) => (
                                             <option key={patient.patient_id} value={patient.patient_id}>
                                                 {String(patient.patient_id).padStart(3, '0')} - {patient.last_name}, {patient.first_name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold block mb-2">Branch</label>
+                                    <select className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-xl text-sm outline-none focus:border-[#c4ba9d]" value={selectedBranch} onChange={(e) => setSelectedBranch(e.target.value)} required>
+                                        <option value="">-- Choose Branch --</option>
+                                        {CLINIC_BRANCHES.map((branch) => (
+                                            <option key={branch} value={branch}>
+                                                {branch}
                                             </option>
                                         ))}
                                     </select>
@@ -624,6 +697,8 @@ const BillingAndPayments = () => {
                             <p className="text-sm text-[#c4ba9d] font-bold uppercase tracking-[0.2em] mt-2">{selectedInvoice.patient_name}</p>
                             <div className="flex justify-center gap-6 mt-4 text-xs text-gray-400 uppercase tracking-[0.18em] font-bold">
                                 <span>Date: {selectedInvoice.date ? new Date(selectedInvoice.date).toLocaleDateString() : 'Not yet paid'}</span>
+                                <span>|</span>
+                                <span>Branch: {selectedInvoice.branch || 'Not set'}</span>
                                 <span>|</span>
                                 <span>Method: {selectedInvoice.payment_method || 'N/A'}</span>
                                 <span>|</span>

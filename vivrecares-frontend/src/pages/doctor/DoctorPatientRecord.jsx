@@ -12,6 +12,7 @@ const DoctorPatientRecord = () => {
     const [treatments, setTreatments] = useState([]);
     const [notes, setNotes] = useState([]);
     const [appointments, setAppointments] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [form, setForm] = useState({
         appointment_id: '',
@@ -23,6 +24,7 @@ const DoctorPatientRecord = () => {
 
     const loadAll = async () => {
         try {
+            setLoading(true);
             const profileRes = await axios.get(`/get_profile.php?user_id=${userId}`);
             if (profileRes.data.status !== 'success') return;
             const patientInfo = profileRes.data.data;
@@ -40,6 +42,8 @@ const DoctorPatientRecord = () => {
             setAppointments(visitRes.data?.data || []);
         } catch (error) {
             console.error('Error loading patient record', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -89,8 +93,12 @@ const DoctorPatientRecord = () => {
         }
     };
 
+    if (loading) {
+        return <DoctorPatientRecordSkeleton />;
+    }
+
     if (!patient) {
-        return <div className="p-12 text-gray-500">Loading patient record...</div>;
+        return <div className="p-12 text-gray-500">Patient record unavailable.</div>;
     }
 
     return (
@@ -274,6 +282,92 @@ const TextArea = ({ label, value, onChange }) => (
             onChange={(e) => onChange(e.target.value)}
             className="w-full p-3 rounded-xl border border-gray-200 bg-[#faf9f6] text-sm text-gray-700 outline-none focus:border-[#c4ba9d] resize-none"
         />
+    </div>
+);
+
+const DoctorPatientRecordSkeleton = () => (
+    <div className="min-h-screen bg-[#f4f4f4] p-8 lg:p-12">
+        <div className="animate-pulse">
+            <div className="mb-8 flex items-start justify-between gap-6">
+                <div className="space-y-3">
+                    <div className="h-3 w-32 rounded-full bg-[#e8dfd2]" />
+                    <div className="h-8 w-56 rounded-full bg-[#ddd2c2]" />
+                    <div className="h-4 w-96 max-w-full rounded-full bg-[#ebe4d9]" />
+                </div>
+                <div className="h-11 w-40 rounded-xl bg-[#ebe4d9]" />
+            </div>
+
+            <div className="grid grid-cols-1 gap-8 xl:grid-cols-[0.95fr_1.05fr]">
+                <section className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
+                    <div className="mb-6 flex items-center gap-4">
+                        <div className="h-16 w-16 rounded-full bg-[#ebe4d9]" />
+                        <div className="space-y-2">
+                            <div className="h-6 w-40 rounded-full bg-[#ddd2c2]" />
+                            <div className="h-3 w-24 rounded-full bg-[#e8dfd2]" />
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                        {Array.from({ length: 6 }).map((_, index) => (
+                            <div key={index} className="rounded-xl border border-gray-100 bg-[#faf9f6] px-4 py-3">
+                                <div className="h-3 w-20 rounded-full bg-[#e8dfd2]" />
+                                <div className="mt-2 h-4 w-full rounded-full bg-[#ebe4d9]" />
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-8 border-t border-gray-100 pt-6 space-y-6">
+                        {Array.from({ length: 3 }).map((_, sectionIndex) => (
+                            <div key={sectionIndex}>
+                                <div className="mb-3 h-3 w-40 rounded-full bg-[#e8dfd2]" />
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    {Array.from({ length: 4 }).map((_, index) => (
+                                        <div key={index} className="rounded-xl border border-gray-100 bg-[#faf9f6] px-4 py-3">
+                                            <div className="h-3 w-24 rounded-full bg-[#e8dfd2]" />
+                                            <div className="mt-2 h-4 w-full rounded-full bg-[#ebe4d9]" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+
+                <section className="space-y-8">
+                    <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
+                        <div className="h-8 w-56 rounded-full bg-[#ddd2c2]" />
+                        <div className="mt-3 h-4 w-80 max-w-full rounded-full bg-[#ebe4d9]" />
+                        <div className="mt-6 space-y-4">
+                            {Array.from({ length: 5 }).map((_, index) => (
+                                <div key={index}>
+                                    <div className="mb-2 h-3 w-28 rounded-full bg-[#e8dfd2]" />
+                                    <div className="h-24 rounded-2xl bg-[#faf9f6]" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
+                        <div className="h-8 w-56 rounded-full bg-[#ddd2c2]" />
+                        <div className="mt-6 space-y-3">
+                            {Array.from({ length: 3 }).map((_, index) => (
+                                <div key={index} className="rounded-2xl border border-gray-100 bg-[#faf9f6] p-4">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <div className="h-3 w-32 rounded-full bg-[#e8dfd2]" />
+                                        <div className="h-3 w-24 rounded-full bg-[#ebe4d9]" />
+                                    </div>
+                                    <div className="mt-3 space-y-2">
+                                        <div className="h-4 w-full rounded-full bg-[#ebe4d9]" />
+                                        <div className="h-4 w-11/12 rounded-full bg-[#f1ece4]" />
+                                        <div className="h-4 w-10/12 rounded-full bg-[#f1ece4]" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
     </div>
 );
 

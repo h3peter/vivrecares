@@ -10,10 +10,12 @@ const PatientDetails = () => {
     const [appointments, setAppointments] = useState([]);
     const [treatments, setTreatments] = useState([]);
     const [consultationNotes, setConsultationNotes] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchDetails = async () => {
             try {
+                setLoading(true);
                 // 1. Fetch Profile
                 const profileRes = await axios.get(`/get_profile.php?user_id=${userId}`);
                 
@@ -41,12 +43,15 @@ const PatientDetails = () => {
                 }
             } catch (error) {
                 console.error("Error fetching patient details:", error);
+            } finally {
+                setLoading(false);
             }
         };
         fetchDetails();
     }, [userId]);
 
-    if (!patientData) return <div className="p-12 text-gray-500">Loading details...</div>;
+    if (loading) return <PatientDetailsSkeleton />;
+    if (!patientData) return <div className="p-12 text-gray-500">Patient details unavailable.</div>;
 
     return (
         <div className="p-12 bg-[#f4f4f4] min-h-screen">
@@ -176,5 +181,87 @@ const formatDateTime = (value) => {
         minute: '2-digit',
     });
 };
+
+const PatientDetailsSkeleton = () => (
+    <div className="min-h-screen bg-[#f4f4f4] p-12">
+        <div className="animate-pulse">
+            <div className="mb-8 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <div className="h-6 w-6 rounded-full bg-[#ebe4d9]" />
+                    <div className="h-7 w-48 rounded-full bg-[#ddd2c2]" />
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                <div className="space-y-8">
+                    <div className="flex flex-col items-center rounded-xl border border-gray-100 bg-white p-8 text-center shadow-sm">
+                        <div className="h-24 w-24 rounded-full bg-[#ebe4d9]" />
+                        <div className="mt-4 h-5 w-40 rounded-full bg-[#ddd2c2]" />
+                        <div className="mt-2 h-3 w-32 rounded-full bg-[#ebe4d9]" />
+                        <div className="mt-3 h-3 w-44 rounded-full bg-[#f1ece4]" />
+                        <div className="mt-6 w-full space-y-2 border-t pt-4">
+                            <div className="h-3 w-4/5 rounded-full bg-[#ebe4d9]" />
+                            <div className="h-3 w-3/5 rounded-full bg-[#ebe4d9]" />
+                        </div>
+                    </div>
+
+                    <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+                        <div className="border-b border-gray-100 bg-[#fcfaf5] px-6 py-3">
+                            <div className="h-3 w-28 rounded-full bg-[#e8dfd2]" />
+                        </div>
+                        <div className="space-y-3 p-6">
+                            {Array.from({ length: 3 }).map((_, index) => (
+                                <div key={index} className="rounded-xl border border-gray-100 bg-[#faf9f6] p-3">
+                                    <div className="h-3 w-32 rounded-full bg-[#e8dfd2]" />
+                                    <div className="mt-2 h-3 w-24 rounded-full bg-[#ebe4d9]" />
+                                    <div className="mt-3 space-y-2">
+                                        <div className="h-3 w-full rounded-full bg-[#ebe4d9]" />
+                                        <div className="h-3 w-11/12 rounded-full bg-[#f1ece4]" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-8 lg:col-span-2">
+                    <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
+                        <div className="border-b border-gray-100 bg-[#fcfaf5] px-6 py-3">
+                            <div className="h-3 w-24 rounded-full bg-[#e8dfd2]" />
+                        </div>
+                        <div className="grid grid-cols-1 gap-x-8 gap-y-6 p-8 md:grid-cols-2">
+                            {Array.from({ length: 4 }).map((_, index) => (
+                                <div key={index}>
+                                    <div className="mb-2 h-3 w-24 rounded-full bg-[#e8dfd2]" />
+                                    <div className="h-4 w-full rounded-full bg-[#ebe4d9]" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="overflow-hidden rounded-[1.5rem] border border-gray-100 bg-white shadow-sm">
+                        <div className="border-b border-gray-50 bg-[#faf9f6] px-8 py-5">
+                            <div className="h-3 w-44 rounded-full bg-[#e8dfd2]" />
+                        </div>
+                        <div className="space-y-4 p-8">
+                            {Array.from({ length: 4 }).map((_, index) => (
+                                <div key={index} className="flex items-center justify-between border-b border-gray-50 pb-4 last:border-0 last:pb-0">
+                                    <div className="space-y-2">
+                                        <div className="h-4 w-40 rounded-full bg-[#ddd2c2]" />
+                                        <div className="h-3 w-32 rounded-full bg-[#ebe4d9]" />
+                                    </div>
+                                    <div className="space-y-2 text-right">
+                                        <div className="h-4 w-20 rounded-full bg-[#ddd2c2]" />
+                                        <div className="h-3 w-12 rounded-full bg-[#ebe4d9]" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+);
 
 export default PatientDetails;

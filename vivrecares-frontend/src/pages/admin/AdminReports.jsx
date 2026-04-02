@@ -29,6 +29,8 @@ const buildFilterMeta = (items) =>
         .filter((item) => item.value && item.value !== 'All')
         .map((item) => ({ label: item.label, value: item.value }));
 
+const getTransactionBranchValue = (billing) => billing.branch || '';
+
 const AdminReports = () => {
     const [billings, setBillings] = useState([]);
     const [appointments, setAppointments] = useState([]);
@@ -79,7 +81,7 @@ const AdminReports = () => {
         }).format(Number(amount || 0));
 
     const transactionBranches = useMemo(
-        () => ['All', ...new Set(billings.map((billing) => billing.branch || 'Direct Billing').filter(Boolean))],
+        () => ['All', ...new Set(billings.map((billing) => billing.branch).filter(Boolean))],
         [billings]
     );
 
@@ -122,7 +124,7 @@ const AdminReports = () => {
 
                 const matchesSearch = haystack.includes(transactionSearch.toLowerCase());
                 const matchesStatus = transactionStatus === 'All' || billing.payment_status === transactionStatus;
-                const matchesBranch = transactionBranch === 'All' || (billing.branch || 'Direct Billing') === transactionBranch;
+                const matchesBranch = transactionBranch === 'All' || getTransactionBranchValue(billing) === transactionBranch;
                 const matchesMonth = !transactionMonth || getMonthValue(billing.payment_date) === transactionMonth;
                 const matchesDay = !transactionDay || (billingDate && billingDate.getTime() === normalizeDate(transactionDay)?.getTime());
                 const matchesStart = !rangeStart || (billingDate && billingDate >= rangeStart);
@@ -148,7 +150,7 @@ const AdminReports = () => {
     const transactionRows = filteredBillings.map((billing) => ({
         invoice_number: `INV-${String(billing.invoice_id).padStart(4, '0')}`,
         patient_name: `${billing.last_name || ''}, ${billing.first_name || ''}`.replace(/^,\s*/, '').trim() || 'N/A',
-        branch: billing.branch || 'Direct Billing',
+        branch: billing.branch || 'Not set',
         service: billing.main_treatment || 'Clinic Availment',
         payment_date: billing.payment_date ? new Date(billing.payment_date).toLocaleDateString() : 'Not yet paid',
         payment_method: billing.payment_method || 'N/A',

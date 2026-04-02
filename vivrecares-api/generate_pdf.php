@@ -1,6 +1,7 @@
 <?php
 require 'vendor/autoload.php';
 require_once 'config.php';
+require_once 'billing_branch.php';
 
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -11,7 +12,16 @@ if (!$invoice_id) {
     die("Invoice ID is required.");
 }
 
-$sqlMaster = "SELECT b.total_amount, b.payment_date, b.payment_status, b.payment_method, b.reference_number, u.first_name, u.last_name
+$invoiceBranch = 'Not set';
+ensure_billings_branch_column($conn);
+
+$sqlMaster = "SELECT b.total_amount, b.payment_date, b.payment_status, b.payment_method, b.reference_number, u.first_name, u.last_name,
+                 CASE
+                     WHEN b.branch = 'Main Branch' THEN 'Pasay Branch'
+                     WHEN b.branch IS NOT NULL AND b.branch <> '' THEN b.branch
+                     WHEN a.branch = 'Main Branch' THEN 'Pasay Branch'
+                     ELSE a.branch
+                 END AS branch
               FROM billings b
               LEFT JOIN appointments a ON b.appointment_id = a.appointment_id
               LEFT JOIN patients p ON p.patient_id = COALESCE(b.patient_id, a.patient_id)
@@ -35,6 +45,7 @@ $payment_date = $master['payment_date'] ? date("F j, Y", strtotime($master['paym
 $payment_method = $master['payment_method'] ?? 'N/A';
 $payment_status = $master['payment_status'] ?? 'Unpaid';
 $reference_number = $master['reference_number'] ?? '';
+$invoice_branch = $master['branch'] ?? 'Not set';
 $total_amount = $master['total_amount'];
 
 $logo_path = 'vivre-black.png';

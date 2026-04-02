@@ -28,7 +28,7 @@ const AdminViewPatient = () => {
         fetchPatientDetails();
     }, [id]);
 
-    if (loading) return <div className="p-12 text-center text-gray-500">Loading patient data...</div>;
+    if (loading) return <AdminViewPatientSkeleton />;
     if (error) return <div className="p-12 text-center text-red-500">{error}</div>;
     if (!patient) return <div className="p-12 text-center text-gray-500">Patient not found.</div>;
 
@@ -149,5 +149,53 @@ const Badge = ({ label, active }) => {
         </div>
     );
 };
+
+const AdminViewPatientSkeleton = () => (
+    <div className="min-h-screen bg-[#f4f4f4] p-8 lg:p-12">
+        <div className="animate-pulse">
+            <div className="mb-8 flex items-center justify-between">
+                <div className="space-y-2">
+                    <div className="h-7 w-44 rounded-full bg-[#ddd2c2]" />
+                    <div className="h-4 w-56 rounded-full bg-[#ebe4d9]" />
+                </div>
+                <div className="h-5 w-24 rounded-full bg-[#ebe4d9]" />
+            </div>
+
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                <div className="space-y-8 lg:col-span-1">
+                    <div className="flex flex-col items-center rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-sm">
+                        <div className="h-32 w-32 rounded-full bg-[#ebe4d9]" />
+                        <div className="mt-4 h-6 w-48 rounded-full bg-[#ddd2c2]" />
+                        <div className="mt-2 h-3 w-24 rounded-full bg-[#e8dfd2]" />
+                        <div className="mt-8 w-full space-y-4 text-left">
+                            {Array.from({ length: 5 }).map((_, index) => (
+                                <div key={index}>
+                                    <div className="mb-2 h-3 w-16 rounded-full bg-[#e8dfd2]" />
+                                    <div className="h-4 w-full rounded-full bg-[#ebe4d9]" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="space-y-8 lg:col-span-2">
+                    {Array.from({ length: 2 }).map((_, sectionIndex) => (
+                        <div key={sectionIndex} className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
+                            <div className="mb-6 h-4 w-36 rounded-full bg-[#ddd2c2]" />
+                            <div className="grid grid-cols-2 gap-6 md:grid-cols-3">
+                                {Array.from({ length: sectionIndex === 0 ? 6 : 9 }).map((_, index) => (
+                                    <div key={index}>
+                                        <div className="mb-2 h-3 w-24 rounded-full bg-[#e8dfd2]" />
+                                        <div className="h-4 w-full rounded-full bg-[#ebe4d9]" />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    </div>
+);
 
 export default AdminViewPatient;

@@ -13,6 +13,7 @@ const SORT_OPTIONS = [
 const ManagePatients = () => {
     const navigate = useNavigate();
     const [patients, setPatients] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [showArchived, setShowArchived] = useState(false);
     const [selectedPatients, setSelectedPatients] = useState([]);
@@ -29,20 +30,26 @@ const ManagePatients = () => {
 
     const refreshTable = async () => {
         try {
+            setLoading(true);
             const res = await axios.get(`/get_all_patients.php?archived=${showArchived ? 1 : 0}`);
             setPatients(Array.isArray(res.data) ? res.data : []);
         } catch (error) {
             console.error('Error refreshing patients', error);
+        } finally {
+            setLoading(false);
         }
     };
 
     useEffect(() => {
         const fetchPatients = async () => {
             try {
+                setLoading(true);
                 const res = await axios.get(`/get_all_patients.php?archived=${showArchived ? 1 : 0}`);
                 setPatients(Array.isArray(res.data) ? res.data : []);
             } catch (error) {
                 console.error('Error fetching patients', error);
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -146,12 +153,28 @@ const ManagePatients = () => {
 
     return (
         <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
-            <div className="mb-8 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                    <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d]">Patient Registry</p>
-                    <h1 className="mb-3 text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">Manage Patients</h1>
-                    <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:gap-6">
-                        <div className="relative w-full max-w-xl">
+            <div className="mb-8">
+                <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d]">Patient Registry</p>
+                <div className="flex flex-col gap-6 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm lg:p-8">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">Manage Patients</h1>
+                            <p className="mt-2 text-sm text-gray-500">Search, sort, and manage active or archived patient records from one workspace.</p>
+                        </div>
+
+                        {!showArchived && (
+                            <button
+                                onClick={() => navigate('/admin/add-patient')}
+                                className="w-full rounded-xl bg-[#555555] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#c4ba9d] shadow-lg transition hover:bg-[#404040] sm:w-auto"
+                            >
+                                + Add Patient
+                            </button>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.5fr)_auto_auto] xl:items-end">
+                        <div className="relative w-full">
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Search Patients</label>
                             <input
                                 type="text"
                                 placeholder="Search by patient, phone, ID, address, or sex..."
@@ -159,29 +182,33 @@ const ManagePatients = () => {
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                             />
-                            <svg className="absolute left-4 top-4 h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="absolute left-4 top-[3.25rem] h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0 1 14 0z" />
                             </svg>
                         </div>
 
-                        <div className="flex w-full rounded-lg bg-gray-200 p-1 sm:w-auto">
-                            <button
-                                onClick={() => setShowArchived(false)}
-                                className={`flex-1 rounded-md px-4 py-2.5 text-sm font-bold uppercase tracking-[0.18em] transition sm:flex-none ${!showArchived ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                            >
-                                Active
-                            </button>
-                            <button
-                                onClick={() => setShowArchived(true)}
-                                className={`flex-1 rounded-md px-4 py-2.5 text-sm font-bold uppercase tracking-[0.18em] transition sm:flex-none ${showArchived ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-                            >
-                                Archived
-                            </button>
+                        <div>
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">View</label>
+                            <div className="flex w-full rounded-lg bg-gray-200 p-1 sm:w-auto">
+                                <button
+                                    onClick={() => setShowArchived(false)}
+                                    className={`flex-1 rounded-md px-4 py-2.5 text-sm font-bold uppercase tracking-[0.18em] transition sm:flex-none ${!showArchived ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    Active
+                                </button>
+                                <button
+                                    onClick={() => setShowArchived(true)}
+                                    className={`flex-1 rounded-md px-4 py-2.5 text-sm font-bold uppercase tracking-[0.18em] transition sm:flex-none ${showArchived ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    Archived
+                                </button>
+                            </div>
                         </div>
 
                         <div className="w-full sm:w-auto">
+                            <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Sort</label>
                             <select
-                                className="w-full rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 outline-none focus:border-[#d4af37] sm:w-auto"
+                                className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 outline-none focus:border-[#d4af37] sm:w-auto"
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
                             >
@@ -194,15 +221,6 @@ const ManagePatients = () => {
                         </div>
                     </div>
                 </div>
-
-                {!showArchived && (
-                    <button
-                        onClick={() => navigate('/admin/add-patient')}
-                        className="w-full rounded-2xl bg-[#555555] px-6 py-3.5 text-sm font-bold uppercase tracking-[0.18em] text-[#d4af37] shadow-lg transition duration-300 hover:bg-[#404040] sm:w-auto"
-                    >
-                        + Add Patient
-                    </button>
-                )}
             </div>
 
             <div className={`mb-5 flex flex-col gap-3 rounded-2xl border border-[#d4af37]/30 bg-white px-4 py-4 shadow-sm transition-all duration-300 sm:flex-row sm:items-center sm:justify-between sm:px-6 ${selectedPatients.length > 0 ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-4 opacity-0'}`}>
@@ -232,7 +250,9 @@ const ManagePatients = () => {
             </div>
 
             <div className="space-y-3">
-                {currentRows.map((patient) => (
+                {loading ? Array.from({ length: Math.max(3, Math.min(rowsPerPage, 5)) }).map((_, index) => (
+                    <PatientRowSkeleton key={index} />
+                )) : currentRows.map((patient) => (
                     <div key={patient.user_id}>
                         <div className={`rounded-[1.4rem] border bg-white p-4 shadow-sm transition-all sm:p-5 xl:hidden ${selectedPatients.includes(patient.user_id) ? 'border-[#d4af37] shadow-md' : 'border-gray-100'}`}>
                             <div className="flex items-start justify-between gap-3">
@@ -328,14 +348,14 @@ const ManagePatients = () => {
                     </div>
                 ))}
 
-                {filteredPatients.length === 0 && (
+                {!loading && filteredPatients.length === 0 && (
                     <div className="rounded-3xl border border-gray-100 bg-white p-12 text-center text-base italic text-gray-400">
                         No {showArchived ? 'archived' : 'active'} patients found.
                     </div>
                 )}
             </div>
 
-            {filteredPatients.length > 0 && (
+            {!loading && filteredPatients.length > 0 && (
                 <div className="mt-8 flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                     <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
                         <span>Rows per page:</span>
@@ -374,6 +394,62 @@ const InfoBlock = ({ label, value }) => (
     <div>
         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">{label}</p>
         <p className="mt-1 text-sm text-gray-700">{value}</p>
+    </div>
+);
+
+const PatientRowSkeleton = () => (
+    <div>
+        <div className="rounded-[1.4rem] border border-gray-100 bg-white p-4 shadow-sm xl:hidden animate-pulse">
+            <div className="flex items-start justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-3">
+                    <div className="mt-1 h-4 w-4 rounded bg-gray-200" />
+                    <div className="h-12 w-12 rounded-full bg-gray-200" />
+                    <div className="min-w-0 space-y-2">
+                        <div className="h-4 w-36 rounded-full bg-gray-200" />
+                        <div className="h-3 w-20 rounded-full bg-gray-100" />
+                    </div>
+                </div>
+                <div className="flex gap-3">
+                    <div className="h-5 w-5 rounded bg-gray-200" />
+                    <div className="h-5 w-5 rounded bg-gray-200" />
+                    <div className="h-5 w-5 rounded bg-gray-200" />
+                </div>
+            </div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl bg-[#faf9f6] p-4 sm:grid-cols-2">
+                {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index}>
+                        <div className="h-3 w-20 rounded-full bg-gray-200" />
+                        <div className="mt-2 h-4 w-28 rounded-full bg-gray-100" />
+                    </div>
+                ))}
+            </div>
+        </div>
+
+        <div className="hidden grid-cols-12 gap-4 items-center rounded-[1.4rem] border border-gray-100 bg-white p-5 shadow-sm xl:grid animate-pulse">
+            <div className="col-span-1 flex items-center gap-4 pl-2">
+                <div className="h-4 w-4 rounded bg-gray-200" />
+                <div className="h-4 w-10 rounded-full bg-gray-100" />
+            </div>
+            <div className="col-span-3 flex items-center gap-4">
+                <div className="h-12 w-12 rounded-full bg-gray-200" />
+                <div className="space-y-2">
+                    <div className="h-4 w-40 rounded-full bg-gray-200" />
+                    <div className="h-3 w-32 rounded-full bg-gray-100" />
+                </div>
+            </div>
+            <div className="col-span-3">
+                <div className="h-4 w-40 rounded-full bg-gray-100" />
+            </div>
+            <div className="col-span-3">
+                <div className="h-4 w-28 rounded-full bg-gray-100" />
+            </div>
+            <div className="col-span-2 flex justify-center gap-4">
+                <div className="h-5 w-5 rounded bg-gray-200" />
+                <div className="h-5 w-5 rounded bg-gray-200" />
+                <div className="h-5 w-5 rounded bg-gray-200" />
+            </div>
+        </div>
     </div>
 );
 
