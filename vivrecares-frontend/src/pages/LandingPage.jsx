@@ -1,14 +1,14 @@
 ﻿import { useNavigate, Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import clinicImage from '../assets/VIVREFRONT (3).png';
-import drJCImage from '../assets/drjc.png';
+import clinicImage from '../assets/VIVREFRONT (3).webp';
+import drJCImage from '../assets/drjc.webp';
 import logoBlack from '../assets/vivre-black.png';
-import igFacelift101 from '../assets/ig-facelift-101.png';
-import igPigmentation from '../assets/ig-pigmentation.png';
-import igStartWithTheBasics from '../assets/ig-start-with-the-basics.png';
-import igForeheadBotox from '../assets/ig-forehead-botox.png';
-import igPatientReview from '../assets/ig-patient-review.png';
-import igHikoNoselift from '../assets/ig-hiko-noselift.png';
+import igFacelift101 from '../assets/ig-facelift-101.webp';
+import igPigmentation from '../assets/ig-pigmentation.webp';
+import igStartWithTheBasics from '../assets/ig-start-with-the-basics.webp';
+import igForeheadBotox from '../assets/ig-forehead-botox.webp';
+import igPatientReview from '../assets/ig-patient-review.webp';
+import igHikoNoselift from '../assets/ig-hiko-noselift.webp';
 import LoginModal from '../components/LoginModal';
 import NotificationBell from '../components/NotificationBell';
 import ProfileAvatar from '../components/ProfileAvatar';
@@ -324,8 +324,14 @@ const LandingPage = () => {
       <section id="home" className="flex flex-col md:grid md:grid-cols-[58%_42%]" style={{ minHeight:'calc(100vh - 64px)' }}>
         {/* Image */}
         <div className="relative h-64 sm:h-80 md:h-auto overflow-hidden">
-          <img src={clinicImage} alt="Vivre Clinic Interior"
-            className="w-full h-full object-cover" style={{ filter:'brightness(.92)' }}/>
+          <img
+            src={clinicImage}
+            alt="Vivre Clinic Interior"
+            fetchPriority="high"
+            decoding="async"
+            className="w-full h-full object-cover"
+            style={{ filter:'brightness(.92)' }}
+          />
           <div className="absolute inset-0" style={{ background:'linear-gradient(to right, rgba(45,42,38,.18), transparent 60%)' }}/>
         </div>
 
@@ -418,9 +424,9 @@ const LandingPage = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-px">
           {[
-            { n:'01', title:'Expert Doctors',  body:'Led by board-certified aesthetic physician. Every consultation is thorough, every procedure is precise.' },
+            { n:'01', title:'Aesthetic Focus',  body:'Led by board-certified aesthetic physician. Every consultation is thorough, every procedure is precise.' },
             { n:'02', title:'Safe & Proven',   body:'We use only FDA-approved treatments and clinically validated techniques. Your safety is our foundation.' },
-            { n:'03', title:'Visible Results', body:'Real, natural-looking outcomes backed by before-and-after results and hundreds of happy patients.' },
+            { n:'03', title:'Real people. Real results.', body:'Real, natural-looking outcomes backed by before-and-after results and hundreds of happy patients.' },
           ].map(({ n, title, body }) => (
             <div key={n} className="vivre-why transition-all duration-300" style={{ padding:'40px 32px', border:'0.5px solid rgba(255,255,255,.06)', background:'rgba(255,255,255,.03)' }}>
               <div className="leading-none mb-5" style={{ fontFamily:C.serif, fontSize:48, fontWeight:300, color:'rgba(201,162,39,.22)' }}>{n}</div>
@@ -445,7 +451,13 @@ const LandingPage = () => {
             <div className="absolute top-8 -left-3 md:-left-5 w-0.5 rounded-sm"
               style={{ height:'calc(100% - 64px)', background:`linear-gradient(to bottom, ${C.gold}, transparent)` }}/>
             <div className="overflow-hidden rounded-sm" style={{ boxShadow:`16px 16px 0 ${C.cream2}` }}>
-              <img src={drJCImage} alt="Dr. JC Masangkay" className="w-full block object-cover object-top"/>
+              <img
+                src={drJCImage}
+                alt="Dr. JC Masangkay"
+                loading="lazy"
+                decoding="async"
+                className="w-full block object-cover object-top"
+              />
             </div>
             {/* Credential chip */}
             <div className="absolute -bottom-6 -right-4 md:-right-6 px-5 py-4"
@@ -644,6 +656,8 @@ const LandingPage = () => {
                   <img
                     src={image}
                     alt={title}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full aspect-[4/5] object-cover"
                   />
                 </div>
