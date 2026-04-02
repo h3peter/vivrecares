@@ -46,13 +46,14 @@ const PatientDashboard = () => {
     }, [navigate]);
 
     const upcomingAppointments = appointments
-        .filter((appointment) => ['pending', 'confirmed'].includes((appointment.status || '').toLowerCase()))
+        .filter((appointment) => ['pending', 'confirmed', 'rescheduled'].includes((appointment.status || '').toLowerCase()))
         .sort((a, b) => new Date(`${a.date}T${a.time}`) - new Date(`${b.date}T${b.time}`));
 
     const latestAppointment = upcomingAppointments[0] || null;
     const completedCount = appointments.filter((appointment) => (appointment.status || '').toLowerCase() === 'completed').length;
     const pendingCount = appointments.filter((appointment) => (appointment.status || '').toLowerCase() === 'pending').length;
     const confirmedCount = appointments.filter((appointment) => (appointment.status || '').toLowerCase() === 'confirmed').length;
+    const rescheduledCount = appointments.filter((appointment) => (appointment.status || '').toLowerCase() === 'rescheduled').length;
 
     if (loading) {
         return (
@@ -181,6 +182,7 @@ const PatientDashboard = () => {
                         <div className="flex flex-wrap gap-2.5">
                             <StatPill label="Pending" value={pendingCount} color="bg-orange-50 text-orange-500 border-orange-100" dot="bg-orange-400" />
                             <StatPill label="Confirmed" value={confirmedCount} color="bg-blue-50 text-blue-500 border-blue-100" dot="bg-blue-400" />
+                            <StatPill label="Rescheduled" value={rescheduledCount} color="bg-amber-50 text-amber-600 border-amber-100" dot="bg-amber-500" />
                             <StatPill label="Completed" value={completedCount} color="bg-emerald-50 text-emerald-600 border-emerald-100" dot="bg-emerald-500" />
                         </div>
                     </div>
@@ -226,6 +228,15 @@ const PatientDashboard = () => {
                                             {latestAppointment.concerns || 'No additional concerns provided.'}
                                         </p>
                                     </div>
+
+                                    {(latestAppointment.status || '').toLowerCase() === 'rescheduled' && (
+                                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                                            <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-amber-700">Action Needed</p>
+                                            <p className="mt-2 text-sm leading-relaxed text-amber-800">
+                                                The clinic proposed a new schedule for this appointment. Open your appointment history to confirm or decline the updated slot.
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 <div className="rounded-2xl border border-dashed border-[#d8d0c5] bg-[#fdfcfa] p-8 text-center">
@@ -309,6 +320,7 @@ const StatusBadge = ({ status }) => {
         completed: 'bg-emerald-50 text-emerald-600 border-emerald-100',
         pending: 'bg-orange-50 text-orange-500 border-orange-100',
         confirmed: 'bg-blue-50 text-blue-500 border-blue-100',
+        rescheduled: 'bg-amber-50 text-amber-600 border-amber-100',
         cancelled: 'bg-red-50 text-red-500 border-red-100',
     };
 

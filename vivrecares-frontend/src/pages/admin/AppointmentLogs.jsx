@@ -1,6 +1,44 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const normalizeStatus = (status) => (status || '').toString().trim().toLowerCase();
+
+const getStatusLabel = (status) => {
+    const normalized = normalizeStatus(status);
+
+    switch (normalized) {
+        case 'pending':
+            return 'Pending';
+        case 'confirmed':
+            return 'Confirmed';
+        case 'rescheduled':
+            return 'Rescheduled';
+        case 'completed':
+            return 'Completed';
+        case 'cancelled':
+            return 'Cancelled';
+        default:
+            return status || 'Unknown';
+    }
+};
+
+const getStatusBadgeClass = (status) => {
+    switch (normalizeStatus(status)) {
+        case 'completed':
+            return 'bg-green-50 text-green-600';
+        case 'pending':
+            return 'bg-orange-50 text-orange-500';
+        case 'confirmed':
+            return 'bg-blue-50 text-blue-600';
+        case 'rescheduled':
+            return 'bg-amber-50 text-amber-700';
+        case 'cancelled':
+            return 'bg-red-50 text-red-600';
+        default:
+            return 'bg-[#faf4dd] text-[#a8892d]';
+    }
+};
+
 const AppointmentLogs = () => {
     const [appointments, setAppointments] = useState([]);
     const [availability, setAvailability] = useState([]);
@@ -74,7 +112,7 @@ const AppointmentLogs = () => {
         const rangeEnd = normalizeDate(endDate);
 
         const matchesSearch = haystack.includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'All' || apt.status === statusFilter;
+        const matchesStatus = statusFilter === 'All' || normalizeStatus(apt.status) === normalizeStatus(statusFilter);
         const matchesBranch = branchFilter === 'All' || apt.branch === branchFilter;
         const matchesType = typeFilter === 'All' || apt.appointment_type === typeFilter;
         const matchesStart = !rangeStart || (appointmentDate && appointmentDate >= rangeStart);
@@ -96,13 +134,15 @@ const AppointmentLogs = () => {
     const paginatedLogs = filteredLogs.slice(indexOfFirstRow, indexOfLastRow);
 
     const getStatusColor = (status) => {
-        switch (status?.toLowerCase()) {
+        switch (normalizeStatus(status)) {
             case 'completed':
                 return 'text-green-500';
             case 'pending':
                 return 'text-orange-400';
             case 'confirmed':
                 return 'text-blue-500';
+            case 'rescheduled':
+                return 'text-amber-700';
             case 'cancelled':
                 return 'text-red-500';
             default:
@@ -118,7 +158,12 @@ const AppointmentLogs = () => {
     };
 
     const handleEditClick = (apt) => {
-        setSelectedApt({ ...apt });
+        setSelectedApt({
+            ...apt,
+            original_date: apt.date,
+            original_time: apt.time,
+            original_branch: apt.branch,
+        });
         setIsModalOpen(true);
     };
 
@@ -131,6 +176,8 @@ const AppointmentLogs = () => {
                 fetchAppointments();
                 if (res.data.mail_status === 'failed') {
                     alert(res.data.message || 'The appointment was updated, but we could not send the email notification right now.');
+                } else if (res.data.appointment_status === 'Rescheduled') {
+                    alert(res.data.message || 'The updated schedule is now waiting for patient confirmation.');
                 }
             } else {
                 alert(res.data.message || 'Unable to update appointment.');
@@ -169,6 +216,12 @@ const AppointmentLogs = () => {
         setStartDate('');
         setEndDate('');
     };
+
+    const scheduleChanged = selectedApt
+        ? selectedApt.date !== selectedApt.original_date
+            || selectedApt.time !== selectedApt.original_time
+            || selectedApt.branch !== selectedApt.original_branch
+        : false;
 
     return (
         <div className="min-h-screen relative bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
@@ -221,6 +274,7 @@ const AppointmentLogs = () => {
                                     <option value="All">All statuses</option>
                                     <option value="Pending">Pending</option>
                                     <option value="Confirmed">Confirmed</option>
+                                    <option value="Rescheduled">Rescheduled</option>
                                     <option value="Completed">Completed</option>
                                     <option value="Cancelled">Cancelled</option>
                                 </select>
@@ -286,17 +340,8 @@ const AppointmentLogs = () => {
                                         <p className="mt-1 text-xs font-bold uppercase tracking-[0.18em] text-[#b2a58d]">{apt.appointment_type || 'General'}</p>
                                         <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-400">{apt.branch || 'Unassigned'}</p>
                                     </div>
-                                    <span className={`inline-flex w-fit rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] ${apt.status === 'Completed'
-                                        ? 'bg-green-50 text-green-600'
-                                        : apt.status === 'Pending'
-                                            ? 'bg-orange-50 text-orange-500'
-                                            : apt.status === 'Confirmed'
-                                                ? 'bg-blue-50 text-blue-600'
-                                                : apt.status === 'Cancelled'
-                                                    ? 'bg-red-50 text-red-600'
-                                                    : 'bg-[#faf4dd] text-[#a8892d]'
-                                        }`}>
-                                        {apt.status}
+                                    <span className={`inline-flex w-fit rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] ${getStatusBadgeClass(apt.status)}`}>
+                                        {getStatusLabel(apt.status)}
                                     </span>
                                 </div>
 
@@ -311,8 +356,10 @@ const AppointmentLogs = () => {
                             </div>
 
                             <div className="hidden grid-cols-12 items-center gap-4 rounded-2xl p-4 text-base text-gray-700 transition hover:bg-[#faf9f6] lg:grid">
-                                <div className={`col-span-2 uppercase text-xs font-bold tracking-[0.18em] ${getStatusColor(apt.status)}`}>
-                                    {apt.status}
+                                <div className="col-span-2">
+                                    <span className={`inline-flex rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] ${getStatusBadgeClass(apt.status)} ${getStatusColor(apt.status)}`}>
+                                        {getStatusLabel(apt.status)}
+                                    </span>
                                 </div>
                                 <div className="col-span-2 font-bold text-gray-800">{apt.first_name} {apt.last_name}</div>
                                 <div className="col-span-3 flex flex-col">
@@ -367,10 +414,13 @@ const AppointmentLogs = () => {
 
             {isModalOpen && selectedApt && (
                 <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4">
-                    <div className="bg-white rounded-[2rem] shadow-2xl w-full max-w-lg p-10 relative">
-                        <button onClick={() => setIsModalOpen(false)} className="absolute top-6 right-6 text-gray-300 hover:text-gray-800 transition">
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
-                        </button>
+                    <div className="relative max-h-[calc(100vh-2rem)] w-full max-w-lg overflow-hidden rounded-[2rem] bg-white shadow-2xl">
+                        <div className="sticky top-0 z-10 flex justify-end bg-white px-6 pb-0 pt-6 sm:px-8">
+                            <button onClick={() => setIsModalOpen(false)} className="text-gray-300 hover:text-gray-800 transition">
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div className="max-h-[calc(100vh-7rem)] overflow-y-auto px-6 pb-8 pt-3 sm:px-8 sm:pb-10">
 
                         <div className="mb-8 border-b border-gray-50 pb-4">
                             <h2 className="text-2xl font-bold text-gray-800">Manage Appointment</h2>
@@ -378,6 +428,20 @@ const AppointmentLogs = () => {
                         </div>
 
                         <form onSubmit={handleUpdate} className="space-y-6">
+                            {selectedApt.status === 'Rescheduled' && (
+                                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-700">Pending Patient Approval</p>
+                                    <p className="mt-2 text-sm leading-relaxed text-amber-800">
+                                        This appointment already has a proposed schedule change. The patient can confirm or decline it from their appointment history.
+                                    </p>
+                                    {(selectedApt.previous_appointment_date || selectedApt.previous_appointment_time || selectedApt.previous_branch) && (
+                                        <p className="mt-3 text-xs leading-relaxed text-amber-700">
+                                            Previous schedule: {selectedApt.previous_appointment_date || 'No date'} at {formatTime(selectedApt.previous_appointment_time) || 'No time'} in {selectedApt.previous_branch || 'No branch'}.
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
                             <div className="space-y-2">
                                 <label className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold">Patient and Concerns</label>
                                 <input type="text" disabled value={`${selectedApt.first_name} ${selectedApt.last_name}`} className="w-full border-b border-gray-100 py-2 bg-transparent text-gray-800 font-medium outline-none" />
@@ -441,11 +505,21 @@ const AppointmentLogs = () => {
                                     <select value={selectedApt.status} onChange={(e) => setSelectedApt({ ...selectedApt, status: e.target.value })} className="w-full border-b border-gray-200 py-2 outline-none bg-white text-gray-700 font-medium">
                                         <option value="Pending">Pending</option>
                                         <option value="Confirmed">Confirmed</option>
+                                        <option value="Rescheduled">Rescheduled</option>
                                         <option value="Completed">Completed</option>
                                         <option value="Cancelled">Cancelled</option>
                                     </select>
                                 </div>
                             </div>
+
+                            {selectedApt.status !== 'Cancelled' && selectedApt.status !== 'Completed' && (
+                                <div className="rounded-2xl border border-[#ece5d8] bg-[#faf8f4] px-4 py-4">
+                                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#a89880]">Reschedule Behavior</p>
+                                    <p className="mt-2 text-sm leading-relaxed text-[#6f675b]">
+                                        If you change the branch, date, or time, the appointment will be marked as <strong>Rescheduled</strong> and the patient must confirm or decline the new schedule.
+                                    </p>
+                                </div>
+                            )}
 
                             <div className="flex justify-center pt-6">
                                 <button
@@ -463,7 +537,13 @@ const AppointmentLogs = () => {
                                     Choose a valid branch date and active time slot before saving.
                                 </p>
                             )}
+                            {!updateBlocked && scheduleChanged && selectedApt.status !== 'Cancelled' && selectedApt.status !== 'Completed' && (
+                                <p className="text-center text-[11px] uppercase tracking-[0.18em] text-amber-600 font-bold">
+                                    Saving this change will send a reschedule request to the patient.
+                                </p>
+                            )}
                         </form>
+                        </div>
                     </div>
                 </div>
             )}

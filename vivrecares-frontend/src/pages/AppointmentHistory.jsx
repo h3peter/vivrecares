@@ -6,26 +6,27 @@ const AppointmentHistory = () => {
     const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
+    const [actionAppointmentId, setActionAppointmentId] = useState(null);
+
+    const userData = localStorage.getItem('user');
+    const user = userData ? JSON.parse(userData) : null;
+
+    const fetchHistory = async () => {
+        if (!user) return;
+
+        try {
+            const res = await axios.get(`/get_patient_appointments.php?user_id=${user.id}`);
+            if (Array.isArray(res.data)) {
+                setAppointments(res.data);
+            }
+        } catch (error) {
+            console.error('Error fetching history:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchHistory = async () => {
-            const userData = localStorage.getItem('user');
-            if (!userData) return;
-
-            const user = JSON.parse(userData);
-
-            try {
-                const res = await axios.get(`/get_patient_appointments.php?user_id=${user.id}`);
-                if (Array.isArray(res.data)) {
-                    setAppointments(res.data);
-                }
-            } catch (error) {
-                console.error('Error fetching history:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchHistory();
     }, []);
 
@@ -37,6 +38,8 @@ const AppointmentHistory = () => {
                 return 'text-orange-400';
             case 'confirmed':
                 return 'text-blue-500';
+            case 'rescheduled':
+                return 'text-amber-500';
             case 'cancelled':
                 return 'text-red-500';
             default:
@@ -52,6 +55,8 @@ const AppointmentHistory = () => {
                 return 'bg-orange-50 text-orange-500';
             case 'confirmed':
                 return 'bg-blue-50 text-blue-600';
+            case 'rescheduled':
+                return 'bg-amber-50 text-amber-600';
             case 'cancelled':
                 return 'bg-red-50 text-red-600';
             default:
@@ -64,6 +69,28 @@ const AppointmentHistory = () => {
         const [hour, minute] = timeString.split(':');
         const h = parseInt(hour, 10);
         return `${h % 12 || 12}:${minute} ${h >= 12 ? 'PM' : 'AM'}`;
+    };
+
+    const handleRescheduleResponse = async (appointmentId, action) => {
+        try {
+            setActionAppointmentId(appointmentId);
+            const res = await axios.post('/respond_reschedule.php', {
+                appointment_id: appointmentId,
+                action,
+            });
+
+            if (res.data.status === 'success') {
+                await fetchHistory();
+                alert(res.data.message || 'Appointment updated.');
+            } else {
+                alert(res.data.message || 'Unable to process the reschedule request.');
+            }
+        } catch (error) {
+            console.error('Reschedule response error:', error);
+            alert('Unable to process the reschedule request right now.');
+        } finally {
+            setActionAppointmentId(null);
+        }
     };
 
     const totalPages = Math.max(1, Math.ceil(appointments.length / rowsPerPage));
@@ -119,6 +146,40 @@ const AppointmentHistory = () => {
                                         <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">Your Concerns</p>
                                         <p className="mt-1 text-sm leading-relaxed text-gray-600">{apt.concerns || 'No details provided.'}</p>
                                     </div>
+
+                                    {apt.status === 'Rescheduled' && (
+                                        <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-700">Clinic Proposed a New Schedule</p>
+                                            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                                <InfoBlock
+                                                    label="Previous Schedule"
+                                                    value={`${apt.previous_appointment_date || 'No date'}${apt.previous_appointment_time ? ` • ${formatTime(apt.previous_appointment_time)}` : ''}${apt.previous_branch ? ` • ${apt.previous_branch}` : ''}`}
+                                                />
+                                                <InfoBlock
+                                                    label="Proposed Schedule"
+                                                    value={`${apt.date || 'No date'}${apt.time ? ` • ${formatTime(apt.time)}` : ''}${apt.branch ? ` • ${apt.branch}` : ''}`}
+                                                />
+                                            </div>
+                                            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                                <button
+                                                    type="button"
+                                                    disabled={actionAppointmentId === apt.appointment_id}
+                                                    onClick={() => handleRescheduleResponse(apt.appointment_id, 'confirm')}
+                                                    className="rounded-xl bg-[#555555] px-4 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-[#c4ba9d] shadow-lg transition hover:bg-[#404040] disabled:opacity-50"
+                                                >
+                                                    {actionAppointmentId === apt.appointment_id ? 'Processing...' : 'Confirm New Schedule'}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    disabled={actionAppointmentId === apt.appointment_id}
+                                                    onClick={() => handleRescheduleResponse(apt.appointment_id, 'decline')}
+                                                    className="rounded-xl border border-red-200 bg-white px-4 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-red-500 transition hover:bg-red-50 disabled:opacity-50"
+                                                >
+                                                    Decline Reschedule
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="hidden grid-cols-12 items-center gap-4 rounded-[1.5rem] border border-gray-50 bg-[#faf9f6] p-5 text-base text-gray-700 transition hover:border-[#c4ba9d] lg:grid">
@@ -136,6 +197,36 @@ const AppointmentHistory = () => {
                                         <p className="truncate text-sm text-gray-500" title={apt.concerns}>
                                             {apt.concerns || 'No details provided.'}
                                         </p>
+
+                                        {apt.status === 'Rescheduled' && (
+                                            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+                                                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-700">Reschedule Approval Needed</p>
+                                                <p className="mt-2 text-sm leading-relaxed text-amber-800">
+                                                    Previous: {apt.previous_appointment_date || 'No date'} at {formatTime(apt.previous_appointment_time) || 'No time'} in {apt.previous_branch || 'No branch'}
+                                                </p>
+                                                <p className="mt-1 text-sm leading-relaxed text-amber-800">
+                                                    Proposed: {apt.date || 'No date'} at {formatTime(apt.time) || 'No time'} in {apt.branch || 'No branch'}
+                                                </p>
+                                                <div className="mt-3 flex flex-wrap gap-3">
+                                                    <button
+                                                        type="button"
+                                                        disabled={actionAppointmentId === apt.appointment_id}
+                                                        onClick={() => handleRescheduleResponse(apt.appointment_id, 'confirm')}
+                                                        className="rounded-full bg-[#555555] px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#c4ba9d] shadow-lg transition hover:bg-[#404040] disabled:opacity-50"
+                                                    >
+                                                        {actionAppointmentId === apt.appointment_id ? 'Processing...' : 'Confirm'}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        disabled={actionAppointmentId === apt.appointment_id}
+                                                        onClick={() => handleRescheduleResponse(apt.appointment_id, 'decline')}
+                                                        className="rounded-full border border-red-200 bg-white px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-red-500 transition hover:bg-red-50 disabled:opacity-50"
+                                                    >
+                                                        Decline
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className={`col-span-2 text-right text-xs font-bold uppercase tracking-[0.18em] ${getStatusColor(apt.status)}`}>

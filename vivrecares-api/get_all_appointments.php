@@ -1,14 +1,22 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once 'appointment_reschedule.php';
 
 init_api_auth();
 require_roles(['Admin']);
 
 try {
+    ensure_appointment_reschedule_columns($conn);
+
     $sql = "SELECT a.appointment_id, a.appointment_date as date, a.appointment_time as time, 
                    a.status,
                    CASE WHEN a.branch = 'Main Branch' THEN 'Pasay Branch' ELSE a.branch END AS branch,
+                   CASE WHEN a.previous_branch = 'Main Branch' THEN 'Pasay Branch' ELSE a.previous_branch END AS previous_branch,
+                   a.previous_appointment_date,
+                   a.previous_appointment_time,
+                   a.reschedule_requested_at,
+                   a.reschedule_responded_at,
                    COALESCE(s.service_name, a.appointment_type) AS appointment_type, a.concerns,
                    u.first_name, u.last_name
             FROM appointments a

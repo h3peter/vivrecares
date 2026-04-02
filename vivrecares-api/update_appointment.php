@@ -2,6 +2,7 @@
 require_once 'auth.php';
 require_once 'config.php';
 require_once 'appointment_validation.php';
+require_once 'appointment_reschedule.php';
 require_once 'mail_helper.php';
 
 init_api_auth();
@@ -15,6 +16,8 @@ if (!$data || !isset($data['appointment_id'])) {
 }
 
 try {
+    ensure_appointment_reschedule_columns($conn);
+
     $mailSent = null;
     $mailError = null;
 
@@ -32,6 +35,7 @@ try {
 
     $currentStmt = $conn->prepare("
         SELECT a.appointment_date, a.appointment_time, a.branch, a.status,
+               a.previous_branch, a.previous_appointment_date, a.previous_appointment_time,
                COALESCE(s.service_name, a.appointment_type) AS appointment_type
         FROM appointments a
         LEFT JOIN services s ON a.service_id = s.service_id
@@ -46,31 +50,67 @@ try {
         exit;
     }
 
+    $scheduleChanged = appointment_schedule_changed($currentAppointment, $normalizedBranch, $appointmentDate, $appointmentTime);
+    $targetStatus = $status;
+
+    if ($scheduleChanged && !in_array($status, ['Cancelled', 'Completed'], true)) {
+        $targetStatus = 'Rescheduled';
+    }
+
     $slotLabel = null;
-    if ($status !== 'Cancelled') {
+    if ($targetStatus !== 'Cancelled') {
         $schedule = validate_appointment_schedule($conn, $normalizedBranch, $appointmentDate, $appointmentTime, $data['appointment_id'], ['Confirmed']);
         $normalizedBranch = $schedule['branch'];
         $slotLabel = $schedule['slot_label'];
     }
 
-    // 1. Update the appointment (Your original working code)
-    $sql = "UPDATE appointments 
-            SET appointment_date = ?, 
-                appointment_time = ?, 
-                branch = ?, 
-                status = ? 
-            WHERE appointment_id = ?";
-            
-    $stmt = $conn->prepare($sql);
-    $stmt->execute([
-        $appointmentDate,
-        $appointmentTime,
-        $normalizedBranch,
-        $status,
-        $data['appointment_id']
-    ]);
+    if ($targetStatus === 'Rescheduled') {
+        $sql = "UPDATE appointments
+                SET appointment_date = ?,
+                    appointment_time = ?,
+                    branch = ?,
+                    status = 'Rescheduled',
+                    previous_branch = ?,
+                    previous_appointment_date = ?,
+                    previous_appointment_time = ?,
+                    reschedule_requested_at = NOW(),
+                    reschedule_responded_at = NULL
+                WHERE appointment_id = ?";
 
-    if ($status === 'Confirmed') {
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([
+            $appointmentDate,
+            $appointmentTime,
+            $normalizedBranch,
+            normalize_appointment_branch($currentAppointment['branch'] ?? ''),
+            $currentAppointment['appointment_date'] ?? null,
+            $currentAppointment['appointment_time'] ?? null,
+            $data['appointment_id'],
+        ]);
+    } else {
+        $sql = "UPDATE appointments
+                SET appointment_date = ?,
+                    appointment_time = ?,
+                    branch = ?,
+                    status = ?,
+                    reschedule_responded_at = CASE WHEN status = 'Rescheduled' THEN NOW() ELSE reschedule_responded_at END
+                WHERE appointment_id = ?";
+
+        $stmt = $conn->prepare($sql);
+        $stmt->execute([
+            $appointmentDate,
+            $appointmentTime,
+            $normalizedBranch,
+            $targetStatus,
+            $data['appointment_id']
+        ]);
+
+        if ($targetStatus !== 'Rescheduled') {
+            clear_reschedule_metadata($conn, $data['appointment_id']);
+        }
+    }
+
+    if ($targetStatus === 'Confirmed') {
         $competingStmt = $conn->prepare("
             SELECT a.appointment_id, u.user_id, u.email, u.first_name,
                    COALESCE(s.service_name, a.appointment_type) AS appointment_type
@@ -81,7 +121,7 @@ try {
             WHERE a.branch = ?
               AND a.appointment_date = ?
               AND a.appointment_time = ?
-              AND a.status = 'Pending'
+              AND a.status IN ('Pending', 'Rescheduled')
               AND a.appointment_id <> ?
         ");
         $competingStmt->execute([$normalizedBranch, $appointmentDate, $appointmentTime, $data['appointment_id']]);
@@ -135,18 +175,24 @@ try {
     if ($patientUserId) {
         $serviceLabel = $currentAppointment['appointment_type'] ?: 'appointment';
 
-        if ($status === 'Cancelled') {
+        if ($targetStatus === 'Cancelled') {
             $title = 'Appointment Cancelled';
             $message = "Your {$serviceLabel} appointment scheduled for {$appointmentDate} at {$appointmentTime} in {$normalizedBranch} has been cancelled.";
-        } elseif ($status === 'Confirmed') {
+        } elseif ($targetStatus === 'Rescheduled') {
+            $title = 'Appointment Reschedule Requested';
+            $previousBranch = normalize_appointment_branch($currentAppointment['branch'] ?? '') ?: 'your previous branch';
+            $previousDate = $currentAppointment['appointment_date'] ?? 'your previous date';
+            $previousTime = $currentAppointment['appointment_time'] ?? 'your previous time';
+            $message = "The clinic proposed moving your {$serviceLabel} appointment from {$previousDate} at {$previousTime} in {$previousBranch} to {$appointmentDate} at {$appointmentTime} in {$normalizedBranch}. Please confirm or decline the new schedule in your appointment history.";
+        } elseif ($targetStatus === 'Confirmed') {
             $title = 'Appointment Confirmed';
             $message = "Your {$serviceLabel} appointment is confirmed for {$appointmentDate} at {$appointmentTime} in {$normalizedBranch}.";
-        } elseif ($status === 'Completed') {
+        } elseif ($targetStatus === 'Completed') {
             $title = 'Appointment Completed';
             $message = "Your {$serviceLabel} appointment on {$appointmentDate} at {$appointmentTime} has been marked as completed.";
         } else {
             $title = 'Appointment Updated';
-            $message = "Your {$serviceLabel} appointment has been updated to {$status} for {$appointmentDate} at {$appointmentTime} in {$normalizedBranch}.";
+            $message = "Your {$serviceLabel} appointment has been updated to {$targetStatus} for {$appointmentDate} at {$appointmentTime} in {$normalizedBranch}.";
         }
         
         $notifSql = "INSERT INTO notifications (user_id, title, message, redirect_url) VALUES (?, ?, ?, ?)";
@@ -172,7 +218,10 @@ try {
 
     $response = [
         "status" => "success",
-        "message" => "Appointment updated!",
+        "message" => $targetStatus === 'Rescheduled'
+            ? "Reschedule request sent to the patient."
+            : "Appointment updated!",
+        "appointment_status" => $targetStatus,
     ];
 
     if ($mailSent === false) {
