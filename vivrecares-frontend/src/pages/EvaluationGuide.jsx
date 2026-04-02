@@ -2,12 +2,8 @@ import { Link } from 'react-router-dom';
 
 const evaluatorGroups = [
   {
-    title: 'Peer Students',
-    description: 'Use the patient-facing flow first, then access staff roles only if credentials were provided for your evaluation batch.',
-  },
-  {
-    title: 'Patients',
-    description: 'Focus on registration, login, appointment request, dashboard, history, and account experience.',
+    title: 'Secondary Users',
+    description: 'Includes peer students and patient respondents. Focus on the patient-facing experience such as registration, login, appointment requests, dashboard access, history viewing, and general account usability.',
   },
   {
     title: 'Domain Experts',
@@ -22,7 +18,7 @@ const evaluatorGroups = [
 const evaluationSteps = [
   'Open the correct role account or register a patient account if you are testing the patient flow.',
   'Complete the core tasks assigned to your respondent classification.',
-  'Observe the system’s functionality, usability, reliability, and clarity while using it.',
+  "Observe the system's functionality, usability, reliability, and clarity while using it.",
   'Answer the same ISO/IEC 25010-based survey after completing the guided tasks.',
 ];
 
