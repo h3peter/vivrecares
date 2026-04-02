@@ -40,6 +40,7 @@ const LandingPage = () => {
   const [activeSection,  setActiveSection]  = useState('home');
 
   const user = getStoredUser();
+  const shouldShowBookingAuthHint = !user;
 
   /* ── Google Fonts ─────────────────────────────────────────────── */
   useEffect(() => {
@@ -226,13 +227,7 @@ const LandingPage = () => {
                 setIsMobileMenuOpen(false);
               }}
             />
-          ) : (
-            <button onClick={() => setIsLoginOpen(true)} style={{...iconBtn}} title="Notifications">
-              <svg width="17" height="17" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="1.5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-              </svg>
-            </button>
-          )}
+          ) : null}
 
           {!user ? (
             <button onClick={() => setIsLoginOpen(true)} style={{...iconBtn}}>
@@ -367,6 +362,13 @@ const LandingPage = () => {
               style={{ color:C.muted, borderBottom:`0.5px solid ${C.muted}` }}
             >Explore Treatments</span>
           </div>
+          {shouldShowBookingAuthHint && (
+            <AppointmentAccessHint
+              mutedColor={C.muted}
+              accentColor={C.goldDark}
+              onLogin={() => setIsLoginOpen(true)}
+            />
+          )}
 
           {/* Scroll hint — hide on mobile */}
           <div className="hidden md:flex absolute bottom-8 left-1/2 -translate-x-1/2 flex-col items-center gap-1.5">
@@ -604,6 +606,13 @@ const LandingPage = () => {
               className="vivre-btn-gold px-6 py-3 text-[10px] font-bold tracking-[.18em] uppercase border-0 cursor-pointer transition-all duration-300"
               style={{ background:C.gold, color:C.charcoal, fontFamily:C.sans }}
             >Book a Consultation</button>
+            {shouldShowBookingAuthHint && (
+              <AppointmentAccessHint
+                mutedColor="rgba(240,237,232,.6)"
+                accentColor={C.goldLight}
+                onLogin={() => setIsLoginOpen(true)}
+              />
+            )}
           </div>
         </div>
       </section>
@@ -700,6 +709,16 @@ const LandingPage = () => {
           className="vivre-btn-dark px-8 py-4 text-[10px] font-semibold tracking-[.2em] uppercase border-0 cursor-pointer transition-all duration-300"
           style={{ background:C.charcoal, color:C.gold, fontFamily:C.sans }}
         >Request an Appointment</button>
+        {shouldShowBookingAuthHint && (
+          <div className="mt-5 flex justify-center">
+            <AppointmentAccessHint
+              mutedColor={C.muted}
+              accentColor={C.goldDark}
+              onLogin={() => setIsLoginOpen(true)}
+              centered
+            />
+          </div>
+        )}
 
         <div className="mx-auto my-14" style={{ width:60, height:'0.5px', background:'rgba(201,162,39,.4)' }}/>
 
@@ -731,6 +750,31 @@ const Eyebrow = ({ color, children }) => (
   <div className="flex items-center gap-2.5 mb-3">
     <div className="w-7 shrink-0" style={{ height:'0.5px', background:color }}/>
     <span className="text-[11px] font-medium tracking-[.24em] uppercase" style={{ color }}>{children}</span>
+  </div>
+);
+
+const AppointmentAccessHint = ({ mutedColor, accentColor, onLogin, centered = false }) => (
+  <div
+    className={`mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] font-light leading-relaxed ${centered ? 'justify-center text-center' : ''}`}
+    style={{ color: mutedColor }}
+  >
+    <span>Create an account or log in to request an appointment.</span>
+    <Link
+      to="/register"
+      className="font-medium transition-opacity hover:opacity-80"
+      style={{ color: accentColor }}
+    >
+      Sign up
+    </Link>
+    <span>/</span>
+    <button
+      type="button"
+      onClick={onLogin}
+      className="border-0 bg-transparent p-0 font-medium transition-opacity hover:opacity-80"
+      style={{ color: accentColor }}
+    >
+      Log in
+    </button>
   </div>
 );
 

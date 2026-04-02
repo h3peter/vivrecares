@@ -1,12 +1,16 @@
 @import "tailwindcss";
 
+ .password-input-field {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
 .password-input-field::-ms-reveal,
 .password-input-field::-ms-clear {
   display: none;
 }
 
-.password-input-field::-webkit-credentials-auto-fill-button,
-.password-input-field::-webkit-textfield-decoration-container {
+.password-input-field::-webkit-credentials-auto-fill-button {
   visibility: hidden;
   display: none !important;
   pointer-events: none;
