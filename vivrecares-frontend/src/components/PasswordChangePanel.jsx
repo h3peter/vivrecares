@@ -3,6 +3,8 @@ import axios from 'axios';
 import { getStoredUser } from '../utils/session';
 import PasswordInput from './PasswordInput';
 
+const FRIENDLY_MAIL_SEND_ERROR = 'We could not send the code right now. Please try again in a moment.';
+
 const PasswordChangePanel = ({ roleLabel = 'Account' }) => {
     const user = getStoredUser();
     const [verificationCode, setVerificationCode] = useState('');
@@ -41,10 +43,10 @@ const PasswordChangePanel = ({ roleLabel = 'Account' }) => {
                 setStatusMessage(res.data.message || 'Verification code sent.');
                 setDevelopmentCode(res.data.dev_code || '');
             } else {
-                setErrorMessage(res.data.mail_error ? `${res.data.message} (${res.data.mail_error})` : (res.data.message || 'Unable to send verification code.'));
+                setErrorMessage(res.data.message || FRIENDLY_MAIL_SEND_ERROR);
             }
         } catch (error) {
-            setErrorMessage(error.response?.data?.message || 'Unable to send verification code right now.');
+            setErrorMessage(error.response?.data?.message || FRIENDLY_MAIL_SEND_ERROR);
         } finally {
             setSending(false);
         }
@@ -72,7 +74,7 @@ const PasswordChangePanel = ({ roleLabel = 'Account' }) => {
                 setErrorMessage(res.data.message || 'Invalid verification code.');
             }
         } catch (error) {
-            setErrorMessage(error.response?.data?.message || 'Unable to verify the code right now.');
+            setErrorMessage(error.response?.data?.message || 'We could not verify the code right now. Please try again.');
         } finally {
             setVerifying(false);
         }
@@ -115,7 +117,7 @@ const PasswordChangePanel = ({ roleLabel = 'Account' }) => {
                 setErrorMessage(res.data.message || 'Unable to update password.');
             }
         } catch (error) {
-            setErrorMessage(error.response?.data?.message || 'Unable to update password right now.');
+            setErrorMessage(error.response?.data?.message || 'We could not update your password right now. Please try again.');
         } finally {
             setSaving(false);
         }

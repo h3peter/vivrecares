@@ -6,6 +6,8 @@ import PasswordInput from './PasswordInput';
 import { clearStoredSession, rememberStoredToken, rememberStoredUser } from '../utils/session';
 
 const REMEMBERED_EMAIL_KEY = 'rememberedLoginEmail';
+const FRIENDLY_MAIL_SEND_ERROR = 'We could not send the code right now. Please try again in a moment.';
+const FRIENDLY_MAIL_TIMEOUT_ERROR = 'Sending the code took too long. Please try again in a moment.';
 
 const LoginModal = ({ onClose }) => {
   const navigate = useNavigate();
@@ -96,7 +98,7 @@ const LoginModal = ({ onClose }) => {
       }
     } catch (error) {
       setCredentials((prev) => ({ ...prev, password: '' }));
-      showError(error.response?.data?.message || 'Network Error. Check your connection.');
+      showError(error.response?.data?.message || 'We could not sign you in right now. Please check your connection and try again.');
     } finally {
       setSigningIn(false);
     }
@@ -131,13 +133,13 @@ const LoginModal = ({ onClose }) => {
         setDevelopmentCode(response.data.dev_code || '');
         showSuccess(response.data.message || 'Verification code sent.');
       } else {
-        showError(response.data.mail_error ? `${response.data.message} (${response.data.mail_error})` : response.data.message);
+        showError(response.data.message || FRIENDLY_MAIL_SEND_ERROR);
       }
     } catch (error) {
       const timeoutMessage = error.code === 'ECONNABORTED'
-        ? 'Email sending timed out. Check the server mail configuration and try again.'
+        ? FRIENDLY_MAIL_TIMEOUT_ERROR
         : null;
-      showError(timeoutMessage || error.response?.data?.message || 'Unable to send a reset code right now.');
+      showError(timeoutMessage || error.response?.data?.message || FRIENDLY_MAIL_SEND_ERROR);
     } finally {
       setSendingCode(false);
     }
@@ -165,7 +167,7 @@ const LoginModal = ({ onClose }) => {
         showError(response.data.message || 'Unable to verify code.');
       }
     } catch (error) {
-      showError(error.response?.data?.message || 'Unable to verify the reset code right now.');
+      showError(error.response?.data?.message || 'We could not verify the code right now. Please try again.');
     } finally {
       setVerifyingCode(false);
     }
@@ -212,7 +214,7 @@ const LoginModal = ({ onClose }) => {
         showError(response.data.message || 'Unable to reset password.');
       }
     } catch (error) {
-      showError(error.response?.data?.message || 'Unable to reset password right now.');
+      showError(error.response?.data?.message || 'We could not reset your password right now. Please try again.');
     } finally {
       setResettingPassword(false);
     }

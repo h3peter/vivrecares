@@ -130,7 +130,7 @@ const AppointmentLogs = () => {
                 setIsModalOpen(false);
                 fetchAppointments();
                 if (res.data.mail_status === 'failed') {
-                    alert(res.data.mail_error ? `${res.data.message}\n\nMail error: ${res.data.mail_error}` : res.data.message);
+                    alert(res.data.message || 'The appointment was updated, but we could not send the email notification right now.');
                 }
             } else {
                 alert(res.data.message || 'Unable to update appointment.');

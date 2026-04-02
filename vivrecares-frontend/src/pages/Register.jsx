@@ -4,6 +4,8 @@ import axios from 'axios';
 import logoBlack from '../assets/vivre-black.png';
 import PasswordInput from '../components/PasswordInput';
 
+const FRIENDLY_MAIL_SEND_ERROR = 'We could not send the code right now. Please try again in a moment.';
+
 const Register = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -69,10 +71,10 @@ const Register = () => {
         setVerificationStatus(response.data.message || 'Verification code sent.');
         setDevelopmentCode(response.data.dev_code || '');
       } else {
-        setVerificationError(response.data.mail_error ? `${response.data.message} (${response.data.mail_error})` : (response.data.message || 'Unable to send verification code.'));
+        setVerificationError(response.data.message || FRIENDLY_MAIL_SEND_ERROR);
       }
     } catch (error) {
-      setVerificationError(error.response?.data?.message || 'Unable to send verification code right now.');
+      setVerificationError(error.response?.data?.message || FRIENDLY_MAIL_SEND_ERROR);
     } finally {
       setSendingCode(false);
     }
@@ -101,7 +103,7 @@ const Register = () => {
         setVerificationError(response.data.message || 'Invalid verification code.');
       }
     } catch (error) {
-      setVerificationError(error.response?.data?.message || 'Unable to verify the code right now.');
+      setVerificationError(error.response?.data?.message || 'We could not verify the code right now. Please try again.');
     } finally {
       setVerifyingCode(false);
     }
@@ -153,7 +155,7 @@ const Register = () => {
         alert(response.data.message || 'Registration failed.');
       }
     } catch (error) {
-      alert(error.response?.data?.message || 'Registration failed. Check your connection.');
+      alert(error.response?.data?.message || 'We could not create your account right now. Please try again.');
     }
   };
 
