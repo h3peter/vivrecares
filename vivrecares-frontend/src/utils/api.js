@@ -3,6 +3,28 @@ import { clearStoredSession, getStoredToken } from './session';
 
 const trimTrailingSlash = (value) => String(value || '').replace(/\/+$/, '');
 const trimLeadingSlash = (value) => String(value || '').replace(/^\/+/, '');
+const hasUrlScheme = (value) => /^[a-z][a-z\d+\-.]*:\/\//i.test(String(value || ''));
+const normalizeBaseUrl = (value, fallback = '') => {
+    const trimmed = trimTrailingSlash(value);
+
+    if (!trimmed) {
+        return trimTrailingSlash(fallback);
+    }
+
+    if (hasUrlScheme(trimmed)) {
+        return trimmed;
+    }
+
+    if (trimmed.startsWith('//')) {
+        return `https:${trimmed}`;
+    }
+
+    if (trimmed.startsWith('/')) {
+        return trimmed;
+    }
+
+    return `https://${trimmed}`;
+};
 
 const runtimeOrigin = typeof window !== 'undefined'
     ? window.location.origin
@@ -12,8 +34,8 @@ const defaultAppBaseUrl = import.meta.env.DEV
     ? 'http://localhost/vivrecares'
     : runtimeOrigin;
 
-export const APP_BASE_URL = trimTrailingSlash(import.meta.env.VITE_APP_BASE_URL || defaultAppBaseUrl);
-export const API_BASE_URL = trimTrailingSlash(import.meta.env.VITE_API_BASE_URL || `${APP_BASE_URL}/vivrecares-api`);
+export const APP_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_APP_BASE_URL, defaultAppBaseUrl);
+export const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_BASE_URL, `${APP_BASE_URL}/vivrecares-api`);
 
 axios.defaults.baseURL = API_BASE_URL;
 axios.defaults.withCredentials = true;

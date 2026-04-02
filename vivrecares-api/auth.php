@@ -11,10 +11,24 @@ if (!function_exists('get_allowed_api_origins')) {
 
         foreach ($rawValues as $rawValue) {
             foreach (explode(',', (string) $rawValue) as $origin) {
-                $origin = rtrim(trim($origin), '/');
-                if ($origin !== '') {
-                    $origins[$origin] = true;
+                $origin = trim($origin);
+                if ($origin === '') {
+                    continue;
                 }
+
+                $origin = rtrim($origin, '/');
+                $parsed = parse_url($origin);
+                if (!empty($parsed['scheme']) && !empty($parsed['host'])) {
+                    $normalizedOrigin = $parsed['scheme'] . '://' . $parsed['host'];
+                    if (!empty($parsed['port'])) {
+                        $normalizedOrigin .= ':' . $parsed['port'];
+                    }
+
+                    $origins[$normalizedOrigin] = true;
+                    continue;
+                }
+
+                $origins[$origin] = true;
             }
         }
 

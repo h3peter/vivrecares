@@ -32,7 +32,7 @@ const PasswordInput = ({
       <input
         {...inputProps}
         type={visible ? 'text' : 'password'}
-        className={inputClassName}
+        className={['password-input-field', inputClassName].filter(Boolean).join(' ')}
         style={inputStyle}
       />
       <button
