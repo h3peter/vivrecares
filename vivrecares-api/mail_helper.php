@@ -59,20 +59,31 @@ if (!function_exists('build_mail_html')) {
     }
 }
 
-if (!function_exists('get_mail_logo_url')) {
-    function get_mail_logo_url()
+if (!function_exists('get_mail_logo_src')) {
+    function get_mail_logo_src()
     {
+        $inlineLogoPath = __DIR__ . '/vivre-black.png';
+        if (is_file($inlineLogoPath) && is_readable($inlineLogoPath)) {
+            $logoContents = file_get_contents($inlineLogoPath);
+            if ($logoContents !== false) {
+                $mimeType = 'image/png';
+                if (function_exists('mime_content_type')) {
+                    $detectedMime = @mime_content_type($inlineLogoPath);
+                    if ($detectedMime) {
+                        $mimeType = $detectedMime;
+                    }
+                }
+
+                return 'data:' . $mimeType . ';base64,' . base64_encode($logoContents);
+            }
+        }
+
         $configured = trim((string) app_env('MAIL_LOGO_URL', ''));
         if ($configured !== '') {
             return $configured;
         }
 
-        $appBaseUrl = rtrim((string) app_env('APP_BASE_URL', ''), '/');
-        if ($appBaseUrl === '') {
-            return null;
-        }
-
-        return $appBaseUrl . '/vivrecares-api/vivre-black.png';
+        return null;
     }
 }
 
@@ -104,7 +115,7 @@ if (!function_exists('send_via_resend_api')) {
             $recipient = trim((string) $toName) . ' <' . $recipient . '>';
         }
 
-        $html = build_mail_html($title, $message, $actionUrl, $actionLabel, get_mail_logo_url());
+        $html = build_mail_html($title, $message, $actionUrl, $actionLabel, get_mail_logo_src());
         $text = trim((string) $title . "\n\n" . preg_replace('/\s+/', ' ', strip_tags((string) $message)));
 
         $payload = [

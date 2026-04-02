@@ -43,8 +43,26 @@ axios.defaults.withCredentials = true;
 export const apiUrl = (path) => `${API_BASE_URL}/${trimLeadingSlash(path)}`;
 export const assetUrl = (path) => `${APP_BASE_URL}/${trimLeadingSlash(path)}`;
 export const uploadAssetUrl = (path) => `${trimTrailingSlash(API_BASE_URL.replace(/\/vivrecares-api$/i, ''))}/${trimLeadingSlash(path)}`;
-export const profilePhotoUrl = (filename) => uploadAssetUrl(`assets/uploads/${encodeURIComponent(filename)}`);
-export const profilePhotoFallbackUrl = (filename) => apiUrl(`serve_profile_photo.php?file=${encodeURIComponent(filename)}`);
+const directApiRoot = trimTrailingSlash(API_BASE_URL);
+const appRoot = trimTrailingSlash(APP_BASE_URL);
+const canonicalApiRoot = trimTrailingSlash(
+    API_BASE_URL.replace(/\/(?:app|vivrecares-api)$/i, '/vivrecares-api')
+);
+
+const uniqueUrls = (values) => Array.from(new Set(values.filter(Boolean)));
+
+export const profilePhotoCandidates = (filename) => {
+    const encoded = encodeURIComponent(filename);
+    return uniqueUrls([
+        `${directApiRoot}/serve_profile_photo.php?file=${encoded}`,
+        `${canonicalApiRoot}/serve_profile_photo.php?file=${encoded}`,
+        `${appRoot}/serve_profile_photo.php?file=${encoded}`,
+        `${appRoot}/vivrecares-api/serve_profile_photo.php?file=${encoded}`,
+    ]);
+};
+
+export const profilePhotoUrl = (filename) => profilePhotoCandidates(filename)[0] || '';
+export const profilePhotoFallbackUrl = (filename) => profilePhotoCandidates(filename)[1] || '';
 
 axios.interceptors.request.use((config) => {
     if (typeof config.url === 'string' && config.url.startsWith('/')) {

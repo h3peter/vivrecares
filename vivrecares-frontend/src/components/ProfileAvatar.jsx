@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useState } from 'react';
-import { profilePhotoFallbackUrl, profilePhotoUrl } from '../utils/api';
+import { profilePhotoCandidates, profilePhotoUrl } from '../utils/api';
 
 const ProfileAvatar = ({ user = {}, className = 'w-10 h-10 rounded-full', textSize = 'text-sm' }) => {
     const safeUser = user && typeof user === 'object' ? user : {};
@@ -37,9 +37,9 @@ const ProfileAvatar = ({ user = {}, className = 'w-10 h-10 rounded-full', textSi
                 alt={`${first_name} ${last_name}`}
                 className={`object-cover ${className}`}
                 onError={() => {
-                    const fallbackSrc = profilePhotoFallbackUrl(profile_photo);
-                    if (imageSrc !== fallbackSrc) {
-                        setImageSrc(fallbackSrc);
+                    const nextCandidate = profilePhotoCandidates(profile_photo).find((src) => src && src !== imageSrc);
+                    if (nextCandidate) {
+                        setImageSrc(nextCandidate);
                         return;
                     }
 

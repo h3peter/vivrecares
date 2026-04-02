@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import PasswordChangePanel from '../components/PasswordChangePanel';
-import { profilePhotoFallbackUrl, profilePhotoUrl } from '../utils/api';
+import { profilePhotoCandidates, profilePhotoUrl } from '../utils/api';
 
 const AccountSettings = () => {
     const [formData, setFormData] = useState({
@@ -144,9 +144,15 @@ const AccountSettings = () => {
                                     alt="Profile"
                                     className="w-full h-full rounded-full object-cover border-2 border-gray-100"
                                     onError={() => {
-                                        if (!pendingPhoto && photoFilename && !hasRetriedPhoto) {
-                                            setHasRetriedPhoto(true);
-                                            setPhotoUrl(profilePhotoFallbackUrl(photoFilename));
+                                        if (!pendingPhoto && photoFilename) {
+                                            const nextCandidate = profilePhotoCandidates(photoFilename).find((src) => src && src !== photoUrl);
+                                            if (nextCandidate) {
+                                                setHasRetriedPhoto(true);
+                                                setPhotoUrl(nextCandidate);
+                                                return;
+                                            }
+
+                                            setPhotoUrl(null);
                                             return;
                                         }
 
