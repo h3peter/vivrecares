@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import PasswordChangePanel from '../../components/PasswordChangePanel';
-import { profilePhotoUrl } from '../../utils/api';
+import { profilePhotoFallbackUrl, profilePhotoUrl } from '../../utils/api';
 
 const AdminProfile = () => {
     const [formData, setFormData] = useState({
@@ -12,10 +12,18 @@ const AdminProfile = () => {
     });
 
     const [photoUrl,     setPhotoUrl]     = useState(null);
+    const [photoFilename, setPhotoFilename] = useState('');
+    const [hasRetriedPhoto, setHasRetriedPhoto] = useState(false);
     const [pendingPhoto, setPendingPhoto] = useState(null);
     const [uploading,    setUploading]    = useState(false);
     const [saveSuccess,  setSaveSuccess]  = useState(false);
     const fileInputRef = useRef(null);
+
+    const applyPersistedPhoto = (filename) => {
+        setPhotoFilename(filename);
+        setHasRetriedPhoto(false);
+        setPhotoUrl(filename ? profilePhotoUrl(filename) : null);
+    };
 
     useEffect(() => {
         const fetchCurrentData = async () => {
@@ -37,7 +45,7 @@ const AdminProfile = () => {
 
                 const photo = d.profile_photo;
                 if (photo && photo !== 'default-avatar.png') {
-                    setPhotoUrl(profilePhotoUrl(photo));
+                    applyPersistedPhoto(photo);
                 }
             } catch (error) {
                 console.error("Failed to fetch admin profile", error);
@@ -50,6 +58,8 @@ const AdminProfile = () => {
         const file = e.target.files[0];
         if (!file) return;
         setPendingPhoto(file);
+        setPhotoFilename('');
+        setHasRetriedPhoto(false);
         setPhotoUrl(URL.createObjectURL(file));
     };
 
@@ -77,7 +87,7 @@ const AdminProfile = () => {
                     throw new Error('Profile photo upload did not return a filename.');
                 }
 
-                setPhotoUrl(profilePhotoUrl(newFilename));
+                applyPersistedPhoto(newFilename);
                 setPendingPhoto(null);
                 const stored = JSON.parse(localStorage.getItem('user')) ?? {};
                 localStorage.setItem('user', JSON.stringify({ ...stored, profile_photo: newFilename }));
@@ -136,6 +146,15 @@ const AdminProfile = () => {
                                 src={photoUrl}
                                 alt="Profile"
                                 className="w-full h-full rounded-full object-cover border-2 border-gray-100"
+                                onError={() => {
+                                    if (!pendingPhoto && photoFilename && !hasRetriedPhoto) {
+                                        setHasRetriedPhoto(true);
+                                        setPhotoUrl(profilePhotoFallbackUrl(photoFilename));
+                                        return;
+                                    }
+
+                                    setPhotoUrl(null);
+                                }}
                             />
                         ) : (
                             <div className="w-full h-full rounded-full bg-[#c4ba9d]/40 border-2 border-[#c4ba9d]/60 flex items-center justify-center">

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import PasswordChangePanel from '../components/PasswordChangePanel';
-import { profilePhotoUrl } from '../utils/api';
+import { profilePhotoFallbackUrl, profilePhotoUrl } from '../utils/api';
 
 const AccountSettings = () => {
     const [formData, setFormData] = useState({
@@ -12,11 +12,19 @@ const AccountSettings = () => {
         user_id: ''
     });
     const [photoUrl, setPhotoUrl] = useState(null);
+    const [photoFilename, setPhotoFilename] = useState('');
+    const [hasRetriedPhoto, setHasRetriedPhoto] = useState(false);
     const [pendingPhoto, setPendingPhoto] = useState(null);
     const [uploading, setUploading] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
 
     const fileInputRef = useRef(null);
+
+    const applyPersistedPhoto = (filename) => {
+        setPhotoFilename(filename);
+        setHasRetriedPhoto(false);
+        setPhotoUrl(filename ? profilePhotoUrl(filename) : null);
+    };
 
     useEffect(() => {
         const fetchCurrentData = async () => {
@@ -37,8 +45,9 @@ const AccountSettings = () => {
 
                 const photo = data.profile_photo;
                 if (photo && photo !== 'default-avatar.png') {
-                    setPhotoUrl(profilePhotoUrl(photo));
+                    applyPersistedPhoto(photo);
                 } else {
+                    setPhotoFilename('');
                     setPhotoUrl(null);
                 }
             } catch (err) {
@@ -52,6 +61,8 @@ const AccountSettings = () => {
         const file = e.target.files[0];
         if (!file) return;
         setPendingPhoto(file);
+        setPhotoFilename('');
+        setHasRetriedPhoto(false);
         setPhotoUrl(URL.createObjectURL(file));
     };
 
@@ -80,7 +91,7 @@ const AccountSettings = () => {
                     throw new Error('Profile photo upload did not return a filename.');
                 }
 
-                setPhotoUrl(profilePhotoUrl(newFilename));
+                applyPersistedPhoto(newFilename);
                 setPendingPhoto(null);
 
                 const stored = JSON.parse(localStorage.getItem('user')) ?? {};
@@ -132,6 +143,15 @@ const AccountSettings = () => {
                                     src={photoUrl}
                                     alt="Profile"
                                     className="w-full h-full rounded-full object-cover border-2 border-gray-100"
+                                    onError={() => {
+                                        if (!pendingPhoto && photoFilename && !hasRetriedPhoto) {
+                                            setHasRetriedPhoto(true);
+                                            setPhotoUrl(profilePhotoFallbackUrl(photoFilename));
+                                            return;
+                                        }
+
+                                        setPhotoUrl(null);
+                                    }}
                                 />
                             ) : (
                                 <div className="w-full h-full rounded-full bg-[#d4af37]/20 border-2 border-[#d4af37]/40 flex items-center justify-center">

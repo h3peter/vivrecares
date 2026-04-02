@@ -109,7 +109,7 @@ const NotificationBell = ({ isOpen: controlledIsOpen, onOpenChange, onOpen, onCl
         if (role === 'Patient') {
             if (isAppointment) return '/appointment-history';
             if (isConsultation) return '/profile';
-            return '/profile';
+            return '/dashboard';
         }
 
         return '/';

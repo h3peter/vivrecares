@@ -43,7 +43,8 @@ axios.defaults.withCredentials = true;
 export const apiUrl = (path) => `${API_BASE_URL}/${trimLeadingSlash(path)}`;
 export const assetUrl = (path) => `${APP_BASE_URL}/${trimLeadingSlash(path)}`;
 export const uploadAssetUrl = (path) => `${trimTrailingSlash(API_BASE_URL.replace(/\/vivrecares-api$/i, ''))}/${trimLeadingSlash(path)}`;
-export const profilePhotoUrl = (filename) => apiUrl(`serve_profile_photo.php?file=${encodeURIComponent(filename)}`);
+export const profilePhotoUrl = (filename) => uploadAssetUrl(`assets/uploads/${encodeURIComponent(filename)}`);
+export const profilePhotoFallbackUrl = (filename) => apiUrl(`serve_profile_photo.php?file=${encodeURIComponent(filename)}`);
 
 axios.interceptors.request.use((config) => {
     if (typeof config.url === 'string' && config.url.startsWith('/')) {

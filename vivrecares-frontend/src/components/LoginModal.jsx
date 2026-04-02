@@ -85,7 +85,7 @@ const LoginModal = ({ onClose }) => {
         } else if (confirmedUser.role === 'Doctor') {
           navigate('/doctor/appointments');
         } else {
-          navigate('/profile');
+          navigate('/dashboard');
         }
 
         window.location.reload();
