@@ -64,6 +64,33 @@ export const profilePhotoCandidates = (filename) => {
 export const profilePhotoUrl = (filename) => profilePhotoCandidates(filename)[0] || '';
 export const profilePhotoFallbackUrl = (filename) => profilePhotoCandidates(filename)[1] || '';
 
+export const openProtectedDocument = async (path, fallbackFileName = 'document.pdf') => {
+    const response = await axios.get(path, {
+        responseType: 'blob',
+    });
+
+    const contentType = response?.headers?.['content-type'] || '';
+    if (!String(contentType).toLowerCase().includes('pdf')) {
+        throw new Error('Unexpected file response.');
+    }
+
+    const blobUrl = window.URL.createObjectURL(response.data);
+    const popup = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+
+    if (!popup) {
+        const anchor = document.createElement('a');
+        anchor.href = blobUrl;
+        anchor.download = fallbackFileName;
+        document.body.appendChild(anchor);
+        anchor.click();
+        anchor.remove();
+    }
+
+    window.setTimeout(() => {
+        window.URL.revokeObjectURL(blobUrl);
+    }, 60_000);
+};
+
 axios.interceptors.request.use((config) => {
     if (typeof config.url === 'string' && config.url.startsWith('/')) {
         config.url = apiUrl(config.url);

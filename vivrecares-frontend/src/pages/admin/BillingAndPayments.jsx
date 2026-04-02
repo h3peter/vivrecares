@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
-import { apiUrl } from '../../utils/api';
+import ActionFeedbackModal from '../../components/ActionFeedbackModal';
+import { openProtectedDocument } from '../../utils/api';
 import { CLINIC_BRANCHES } from '../../utils/branches';
 
 const BillingAndPayments = () => {
@@ -29,6 +30,7 @@ const BillingAndPayments = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [showMobileFilters, setShowMobileFilters] = useState(false);
+    const [feedback, setFeedback] = useState(null);
 
     const fetchData = async () => {
         try {
@@ -167,14 +169,29 @@ const BillingAndPayments = () => {
                 setIsViewModalOpen(true);
             }
         } catch (error) {
-            alert('Could not load details.');
+            setFeedback({
+                tone: 'error',
+                title: 'Unable to Load Invoice',
+                message: 'Could not load invoice details right now.',
+            });
         }
     };
 
-    const handleExportPDF = () => {
+    const handleExportPDF = async () => {
         if (!selectedInvoice) return;
-        const pdfUrl = apiUrl(`generate_pdf.php?id=${selectedInvoice.invoice_id}`);
-        window.open(pdfUrl, '_blank');
+        try {
+            await openProtectedDocument(
+                `/generate_pdf.php?id=${selectedInvoice.invoice_id}`,
+                `Invoice_INV${String(selectedInvoice.invoice_id).padStart(4, '0')}.pdf`
+            );
+        } catch (error) {
+            console.error('Error exporting invoice PDF', error);
+            setFeedback({
+                tone: 'error',
+                title: 'PDF Export Failed',
+                message: 'We could not open this invoice PDF right now. Please try again.',
+            });
+        }
     };
 
     const handleUpdatePaymentStatus = async (invoiceId) => {
@@ -286,6 +303,13 @@ const BillingAndPayments = () => {
 
     return (
         <div className="p-8 lg:p-12 bg-[#f4f4f4] min-h-screen">
+            <ActionFeedbackModal
+                open={Boolean(feedback)}
+                tone={feedback?.tone}
+                title={feedback?.title}
+                message={feedback?.message}
+                onClose={() => setFeedback(null)}
+            />
             <div className="mb-8">
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d] mb-2">Payments Console</p>
                 <h1 className="text-3xl lg:text-4xl font-bold text-gray-800 tracking-tight">Billing and Payments</h1>

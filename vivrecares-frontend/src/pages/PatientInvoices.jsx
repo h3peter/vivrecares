@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { apiUrl } from '../utils/api';
+import ActionFeedbackModal from '../components/ActionFeedbackModal';
+import { openProtectedDocument } from '../utils/api';
 
 const PatientInvoices = () => {
     const [invoices, setInvoices] = useState([]);
     const [statusFilter, setStatusFilter] = useState('All');
+    const [feedback, setFeedback] = useState(null);
 
     useEffect(() => {
         const fetchInvoices = async () => {
@@ -31,8 +33,17 @@ const PatientInvoices = () => {
         fetchInvoices();
     }, []);
 
-    const handleDownload = (id) => {
-        window.open(apiUrl(`generate_pdf.php?id=${id}`), '_blank');
+    const handleDownload = async (id) => {
+        try {
+            await openProtectedDocument(`/generate_pdf.php?id=${id}`, `Invoice_INV${String(id).padStart(4, '0')}.pdf`);
+        } catch (error) {
+            console.error('Error opening invoice PDF', error);
+            setFeedback({
+                tone: 'error',
+                title: 'PDF Export Failed',
+                message: 'We could not open this invoice PDF right now. Please try again.',
+            });
+        }
     };
 
     const formatCurrency = (amount) =>
@@ -52,6 +63,13 @@ const PatientInvoices = () => {
 
     return (
         <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
+            <ActionFeedbackModal
+                open={Boolean(feedback)}
+                tone={feedback?.tone}
+                title={feedback?.title}
+                message={feedback?.message}
+                onClose={() => setFeedback(null)}
+            />
             <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <div>
                     <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d]">Patient Portal</p>
