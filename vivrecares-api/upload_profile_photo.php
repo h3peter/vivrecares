@@ -48,8 +48,8 @@ if ($fileSize > 3 * 1024 * 1024) { // 3 MB max
 }
 
 // ── Save File ──
-// Put uploads one level above the API folder, inside /assets/uploads/
-$uploadDir = __DIR__ . '/../assets/uploads/';
+// Use persistent volume mount so uploads survive container restarts
+$uploadDir = '/data/uploads/';
 
 if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0755, true);
