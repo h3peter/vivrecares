@@ -118,6 +118,14 @@ function App() {
     </Route>
        {/* Protected Admin Routes */}
   <Route element={<ProtectedRoute allowedRole="Admin"><AdminLayout /></ProtectedRoute>}>
+      <Route
+          path="/admin"
+          element={<Navigate to="/admin/dashboard" replace />}
+      />
+      <Route
+          path="/admin/dashboard"
+          element={<AdminDashboard />}
+      />
       <Route 
           path="/admin/patients" 
           element={<ManagePatients />} 

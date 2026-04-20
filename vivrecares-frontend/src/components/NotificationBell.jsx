@@ -97,7 +97,7 @@ const NotificationBell = ({ isOpen: controlledIsOpen, onOpenChange, onOpen, onCl
 
         if (role === 'Admin') {
             if (isAppointment) return '/admin/appointments';
-            return '/admin/patients';
+            return '/admin/dashboard';
         }
 
         if (role === 'Doctor') {

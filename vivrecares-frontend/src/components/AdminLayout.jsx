@@ -9,6 +9,7 @@ const AdminLayout = () => {
             user={user}
             displayName={user?.first_name || 'Admin'}
             navItems={[
+                { label: 'Dashboard', path: '/admin/dashboard' },
                 { label: 'Manage Patients', path: '/admin/patients' },
                 { label: 'Appointment Logs', path: '/admin/appointments' },
                 { label: 'Billing & Payments', path: '/admin/billing' },

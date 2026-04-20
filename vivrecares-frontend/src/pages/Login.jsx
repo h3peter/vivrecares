@@ -66,7 +66,7 @@ const Login = () => {
         
         // The Traffic Cop Logic: Check the role and redirect
         if (confirmedUser.role === 'Admin') {
-          navigate('/admin/patients');
+          navigate('/admin/dashboard');
         } else if (confirmedUser.role === 'Doctor') {
           navigate('/doctor/appointments');
         } else {

@@ -93,7 +93,7 @@ const LandingPage = () => {
   const handleBookingClick = () => {
     if (user) {
       if      (user.role === 'Patient') navigate('/request-appointment');
-      else if (user.role === 'Admin')   navigate('/admin/patients');
+      else if (user.role === 'Admin')   navigate('/admin/dashboard');
       else if (user.role === 'Doctor')  navigate('/doctor/appointments');
       else                              navigate('/');
     } else {
@@ -110,7 +110,7 @@ const LandingPage = () => {
   };
 
   const dashboardRoute =
-    user?.role === 'Admin'  ? '/admin/patients'      :
+    user?.role === 'Admin'  ? '/admin/dashboard'     :
     user?.role === 'Doctor' ? '/doctor/appointments' :
     '/dashboard';
 

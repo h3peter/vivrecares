@@ -83,7 +83,7 @@ const LoginModal = ({ onClose }) => {
         rememberStoredUser(confirmedUser, authToken);
 
         if (confirmedUser.role === 'Admin') {
-          navigate('/admin/patients');
+          navigate('/admin/dashboard');
         } else if (confirmedUser.role === 'Doctor') {
           navigate('/doctor/appointments');
         } else {
