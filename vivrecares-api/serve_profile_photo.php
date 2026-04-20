@@ -12,24 +12,14 @@ if ($file === '' || $file === 'default-avatar.png') {
     exit;
 }
 
-$candidatePaths = [
-    __DIR__ . '/../assets/uploads/' . $file,
-    __DIR__ . '/assets/uploads/' . $file,
-];
+$filePath = '/data/uploads/' . $file;
 
-$resolvedPath = null;
-
-foreach ($candidatePaths as $path) {
-    if (is_file($path)) {
-        $resolvedPath = $path;
-        break;
-    }
-}
-
-if ($resolvedPath === null) {
+if (!is_file($filePath)) {
     http_response_code(404);
     exit;
 }
+
+$resolvedPath = $filePath;
 
 $mimeType = 'application/octet-stream';
 if (function_exists('mime_content_type')) {
