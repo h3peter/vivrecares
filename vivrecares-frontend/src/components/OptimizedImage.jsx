@@ -23,7 +23,6 @@ export default function OptimizedImage({
   ...props
 }) {
   const [isLoaded, setIsLoaded] = useState(false);
-  const [isError, setIsError] = useState(false);
   const imgRef = useRef(null);
 
   // Preload priority images
@@ -65,21 +64,8 @@ export default function OptimizedImage({
           ...style,
         }}
         onLoad={() => setIsLoaded(true)}
-        onError={() => setIsError(true)}
         {...props}
       />
-      {!isLoaded && !isError && (
-        <div
-          className={className}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'rgba(0,0,0,0.05)',
-            animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            ...style,
-          }}
-        />
-      )}
     </>
   );
 }

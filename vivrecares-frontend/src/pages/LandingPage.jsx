@@ -14,7 +14,6 @@ import laserRoomImage from '../assets/additional_assets/room-laser-room-setup.we
 import facialRoomImage from '../assets/additional_assets/room-facial-bed-cozy.webp';
 import ivTherapy from '../assets/additional_assets/room-treatment-double-bed-wide.webp';
 import equipmentLaserImage from '../assets/additional_assets/equipment-laser-resurfacing-tower.webp';
-import productDisplayImage from '../assets/additional_assets/detail-product-display-shelves.webp';
 import LoginModal from '../components/LoginModal';
 import NotificationBell from '../components/NotificationBell';
 import ProfileAvatar from '../components/ProfileAvatar';
