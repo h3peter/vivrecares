@@ -18,6 +18,7 @@ import productDisplayImage from '../assets/additional_assets/detail-product-disp
 import LoginModal from '../components/LoginModal';
 import NotificationBell from '../components/NotificationBell';
 import ProfileAvatar from '../components/ProfileAvatar';
+import OptimizedImage from '../components/OptimizedImage';
 import { clearStoredSession, getStoredUser } from '../utils/session';
 
 /* ─── brand color tokens (used for inline styles Tailwind can't reach) ── */
@@ -459,11 +460,10 @@ const LandingPage = () => {
       <section id="home" className="flex flex-col md:grid md:grid-cols-[48%_52%] md:min-h-[470px] lg:min-h-[520px] xl:min-h-[560px]">
         {/* Image */}
         <div className="relative h-64 sm:h-80 md:h-auto overflow-hidden">
-          <img
+          <OptimizedImage
             src={vivreLandingImage}
             alt="Vivre Medical landing visual"
-            fetchPriority="high"
-            decoding="async"
+            loading="priority"
             className="w-full h-full object-cover"
             style={{ filter:'brightness(.96)', objectPosition:'center 58%' }}
           />
@@ -560,12 +560,11 @@ const LandingPage = () => {
           style={{ background:'rgba(201,162,39,.18)', border:'0.5px solid rgba(201,162,39,.18)' }}
         >
           <div className="relative min-h-[430px] md:min-h-[500px] overflow-hidden" style={{ background:C.charcoal }}>
-            <img
+            <OptimizedImage
               key={activeServiceGroup.title}
               src={activeServiceGroup.image}
               alt={activeServiceGroup.title}
-              loading="lazy"
-              decoding="async"
+              loading="eager"
               className="absolute inset-0 h-full w-full object-cover"
               style={{ filter:'brightness(.82)' }}
             />
@@ -741,11 +740,10 @@ const LandingPage = () => {
             <div className="absolute top-8 -left-3 md:-left-5 w-0.5 rounded-sm"
               style={{ height:'calc(100% - 64px)', background:`linear-gradient(to bottom, ${C.gold}, transparent)` }}/>
             <div className="overflow-hidden rounded-sm" style={{ boxShadow:`16px 16px 0 ${C.cream2}` }}>
-              <img
+              <OptimizedImage
                 src={drJCImage}
                 alt="Dr. JC Masangkay"
-                loading="lazy"
-                decoding="async"
+                loading="eager"
                 className="w-full block object-cover object-top"
               />
             </div>
@@ -950,11 +948,10 @@ const LandingPage = () => {
                 }}
               >
                 <div className="mb-6 overflow-hidden rounded-[22px]" style={{ boxShadow:'0 10px 24px rgba(45,42,38,.08)' }}>
-                  <img
+                  <OptimizedImage
                     src={image}
                     alt={title}
                     loading="lazy"
-                    decoding="async"
                     className="w-full aspect-[4/5] object-cover"
                   />
                 </div>
