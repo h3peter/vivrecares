@@ -1,37 +1,38 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
 import LandingPage from './pages/LandingPage';
-import EvaluationGuide from './pages/EvaluationGuide';
-import Register from './pages/Register';
-import PatientDashboard from './pages/PatientDashboard';
-import AdminDashboard from './pages/AdminDashboard';
-import PatientProfile from './pages/PatientProfile';
-import RequestAppointment from './pages/RequestAppointment';
-import AppointmentHistory from './pages/AppointmentHistory';
-import AccountSettings from './pages/AccountSettings';
-import AdminLayout from './components/AdminLayout';
-import PatientLayout from './components/PatientLayout';
-import ManagePatients from './pages/admin/ManagePatients';
-import AppointmentLogs from './pages/admin/AppointmentLogs';
-import BillingAndPayments from './pages/admin/BillingAndPayments';
-import AdminProfile from './pages/admin/AdminProfile';
-import AdminAddPatient from './pages/admin/AdminAddPatient';
-import AdminViewPatient from './pages/admin/AdminViewPatient';
-import AdminCreateInvoice from './pages/admin/AdminCreateInvoice';
-import AdminReports from './pages/admin/AdminReports';
-import PatientInvoices from './pages/PatientInvoices';
-import AdminEditPatient from './pages/admin/AdminEditPatient';
-import AdminSettings from './pages/admin/AdminSettings';
-import DoctorLayout from './components/DoctorLayout';
-import DoctorPatients from './pages/doctor/DoctorPatients';
-import DoctorPatientRecord from './pages/doctor/DoctorPatientRecord';
-import DoctorAppointments from './pages/doctor/DoctorAppointments';
-import DoctorReports from './pages/doctor/DoctorReports';
-import DoctorProfile from './pages/doctor/DoctorProfile';
 import { clearStoredSession, getStoredToken, getStoredUser, rememberStoredUser } from './utils/session';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import axios from 'axios';
 import AppLoadingScreen from './components/AppLoadingScreen';
+
+const Login = lazy(() => import('./pages/Login'));
+const EvaluationGuide = lazy(() => import('./pages/EvaluationGuide'));
+const Register = lazy(() => import('./pages/Register'));
+const PatientDashboard = lazy(() => import('./pages/PatientDashboard'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const PatientProfile = lazy(() => import('./pages/PatientProfile'));
+const RequestAppointment = lazy(() => import('./pages/RequestAppointment'));
+const AppointmentHistory = lazy(() => import('./pages/AppointmentHistory'));
+const AccountSettings = lazy(() => import('./pages/AccountSettings'));
+const AdminLayout = lazy(() => import('./components/AdminLayout'));
+const PatientLayout = lazy(() => import('./components/PatientLayout'));
+const ManagePatients = lazy(() => import('./pages/admin/ManagePatients'));
+const AppointmentLogs = lazy(() => import('./pages/admin/AppointmentLogs'));
+const BillingAndPayments = lazy(() => import('./pages/admin/BillingAndPayments'));
+const AdminProfile = lazy(() => import('./pages/admin/AdminProfile'));
+const AdminAddPatient = lazy(() => import('./pages/admin/AdminAddPatient'));
+const AdminViewPatient = lazy(() => import('./pages/admin/AdminViewPatient'));
+const AdminCreateInvoice = lazy(() => import('./pages/admin/AdminCreateInvoice'));
+const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
+const PatientInvoices = lazy(() => import('./pages/PatientInvoices'));
+const AdminEditPatient = lazy(() => import('./pages/admin/AdminEditPatient'));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
+const DoctorLayout = lazy(() => import('./components/DoctorLayout'));
+const DoctorPatients = lazy(() => import('./pages/doctor/DoctorPatients'));
+const DoctorPatientRecord = lazy(() => import('./pages/doctor/DoctorPatientRecord'));
+const DoctorAppointments = lazy(() => import('./pages/doctor/DoctorAppointments'));
+const DoctorReports = lazy(() => import('./pages/doctor/DoctorReports'));
+const DoctorProfile = lazy(() => import('./pages/doctor/DoctorProfile'));
 
 // This acts as a security guard for your routes
 const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
@@ -53,7 +54,7 @@ const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
 };
 
 const SessionBootstrap = ({ children }) => {
-  const [isChecking, setIsChecking] = useState(true);
+  const [isChecking, setIsChecking] = useState(() => Boolean(getStoredUser() && getStoredToken()));
 
   useEffect(() => {
     let isMounted = true;
@@ -62,7 +63,6 @@ const SessionBootstrap = ({ children }) => {
 
     if (!storedUser || !storedToken) {
       clearStoredSession();
-      setIsChecking(false);
       return;
     }
 
@@ -101,6 +101,7 @@ function App() {
   return (
     <Router>
       <SessionBootstrap>
+      <Suspense fallback={<AppLoadingScreen label="Loading page" />}>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />          {/* This is the new front door */}
@@ -188,6 +189,7 @@ function App() {
   </Route>
   <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
       </SessionBootstrap>
     </Router>
   );
