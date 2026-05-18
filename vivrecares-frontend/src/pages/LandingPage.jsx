@@ -340,6 +340,11 @@ const LandingPage = () => {
         .vivre-nav-link:hover { color:#c9a227 !important; }
         .vivre-btn-dark:hover { background:#111 !important; }
         .vivre-btn-gold:hover { background:#e8d48b !important; }
+          .vivre-hero-img-mobile { object-position: 62% center; }
+          .vivre-doctor-img-mobile { object-position: center 50%; }
+          @media (min-width: 768px) {
+            .vivre-doctor-img-mobile { object-position: center top; }
+          }
       `}</style>
 
       {isLoginOpen && <LoginModal onClose={() => setIsLoginOpen(false)} />}
@@ -353,7 +358,6 @@ const LandingPage = () => {
       >
         {/* Logo */}
         <div className="flex items-center gap-2">
-          <span style={{ color: C.gold, fontSize: 14 }}>?</span>
           <img src={logoBlack} alt="Vivre Logo" className="h-8 md:h-10 w-auto object-contain" />
         </div>
 
@@ -472,66 +476,265 @@ const LandingPage = () => {
       {/* ----------------------------------------------------
           HERO
       ---------------------------------------------------- */}
-      <section id="home" className="flex flex-col md:grid md:grid-cols-[48%_52%] md:min-h-[470px] lg:min-h-[520px] xl:min-h-[560px]">
-        {/* Image */}
-        <div className="relative h-64 sm:h-80 md:h-auto overflow-hidden">
-          <OptimizedImage
-            src={vivreLandingImage}
-            alt="Vivre Medical landing visual"
-            loading="priority"
-            className="w-full h-full object-cover"
-            style={{ filter:'brightness(.96)', objectPosition:'center 58%' }}
+      <section id="home">
+ 
+  {/* ══════════════════════════════════════════
+      MOBILE LAYOUT  (hidden on md+)
+      Stacked: photo on top, content on cream below
+  ══════════════════════════════════════════ */}
+  <div className="md:hidden flex flex-col">
+ 
+    {/* Image block — no text on top */}
+    <div className="relative overflow-hidden" style={{ height: 300 }}>
+      <OptimizedImage
+        src={vivreLandingImage}
+        alt="Vivre Medical clinic interior"
+        loading="priority"
+        className="w-full h-full object-cover vivre-hero-img-mobile"
+      />
+      {/* Subtle bottom fade to blend into cream */}
+      <div
+        className="absolute inset-x-0 bottom-0"
+        style={{
+          height: 64,
+          background: `linear-gradient(to top, ${C.cream}, transparent)`,
+        }}
+      />
+    </div>
+ 
+    {/* Content block — solid cream, no overlap */}
+    <div className="px-6 pt-8 pb-12" style={{ background: C.cream }}>
+ 
+      {/* Eyebrow */}
+      <div className="flex items-center gap-2.5 mb-5">
+        <div className="shrink-0" style={{ width: 24, height: '0.5px', background: C.gold }} />
+        <span
+          className="text-[10px] font-medium tracking-[.26em] uppercase"
+          style={{ color: C.gold, fontFamily: C.sans }}
+        >
+          Luxury Medical Aesthetics
+        </span>
+      </div>
+ 
+      {/* Headline */}
+      <h1
+        className="font-light leading-[1.15] mb-4"
+        style={{
+          fontFamily: C.serif,
+          fontSize: 'clamp(38px, 11vw, 52px)',
+          color: C.charcoal,
+          letterSpacing: '-0.01em',
+        }}
+      >
+        Your skin,<br />
+        <em style={{ fontStyle: 'italic', color: C.goldDark }}>beautifully</em><br />
+        restored.
+      </h1>
+ 
+      {/* Sub-copy */}
+      <p
+        className="text-sm font-light leading-[1.85] mb-8"
+        style={{ color: C.muted, fontFamily: C.sans }}
+      >
+        Advanced skincare solutions with cutting-edge treatments —
+        designed for your beauty, your wellness, and your confidence.
+      </p>
+ 
+      {/* CTAs */}
+      <div className="flex flex-col gap-4">
+        <button
+          onClick={handleBookingClick}
+          className="vivre-btn-dark w-full py-4 text-[10px] font-bold tracking-[.22em] uppercase border-0 cursor-pointer transition-all duration-300"
+          style={{ background: C.charcoal, color: C.gold, fontFamily: C.sans }}
+        >
+          Request an Appointment
+        </button>
+        <span
+          onClick={() => scrollTo('services')}
+          className="cursor-pointer text-[11px] font-normal tracking-[.14em] uppercase pb-px self-start"
+          style={{ color: C.muted, borderBottom: `0.5px solid ${C.muted}`, fontFamily: C.sans }}
+        >
+          Explore Treatments
+        </span>
+      </div>
+ 
+      {shouldShowBookingAuthHint && (
+        <AppointmentAccessHint
+          mutedColor={C.muted}
+          accentColor={C.goldDark}
+          onLogin={() => setIsLoginOpen(true)}
+        />
+      )}
+    </div>
+  </div>
+ 
+  {/* ══════════════════════════════════════════
+      DESKTOP LAYOUT  (hidden below md)
+      Full-bleed cinematic hero — unchanged from v1
+  ══════════════════════════════════════════ */}
+  <div
+    className="hidden md:block relative overflow-hidden"
+    style={{ height: 'min(90vh, 800px)', minHeight: 460 }}
+  >
+    {/* Full-bleed image */}
+    <OptimizedImage
+      src={vivreLandingImage}
+      alt="Vivre Medical clinic interior"
+      loading="priority"
+      className="absolute inset-0 w-full h-full object-cover"
+      style={{ objectPosition: 'center 38%' }}
+    />
+ 
+    {/* Gradient layer 1: left-side reading veil */}
+    <div
+      className="absolute inset-0"
+      style={{
+        background:
+          'linear-gradient(100deg, rgba(30,27,23,.88) 0%, rgba(30,27,23,.68) 36%, rgba(30,27,23,.28) 62%, transparent 82%)',
+      }}
+    />
+ 
+    {/* Gradient layer 2: bottom grounding vignette */}
+    <div
+      className="absolute inset-0"
+      style={{
+        background:
+          'linear-gradient(to top, rgba(30,27,23,.55) 0%, rgba(30,27,23,.12) 28%, transparent 55%)',
+      }}
+    />
+ 
+    {/* Decorative vertical gold rule */}
+    <div
+      className="absolute top-0 bottom-0"
+      style={{
+        left: '46%',
+        width: '0.5px',
+        background:
+          'linear-gradient(to bottom, transparent 0%, rgba(201,162,39,.22) 30%, rgba(201,162,39,.22) 70%, transparent 100%)',
+      }}
+    />
+ 
+    {/* Hero content */}
+    <div
+      className="relative h-full flex flex-col justify-center"
+      style={{ padding: 'clamp(32px, 7vw, 96px)' }}
+    >
+      <div className="max-w-[520px]">
+ 
+        {/* Eyebrow */}
+        <div className="flex items-center gap-3 mb-6 md:mb-7">
+          <div className="shrink-0" style={{ width: 28, height: '0.5px', background: C.gold }} />
+          <span
+            className="text-[10px] md:text-[11px] font-medium tracking-[.3em] uppercase"
+            style={{ color: C.gold, fontFamily: C.sans }}
+          >
+            Luxury Medical Aesthetics
+          </span>
+        </div>
+ 
+        {/* Headline */}
+        <h1
+          className="font-light leading-[1.13] mb-5 md:mb-6"
+          style={{
+            fontFamily: C.serif,
+            fontSize: 'clamp(42px, 6.2vw, 72px)',
+            color: '#faf9f6',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          Your skin,<br />
+          <em style={{ fontStyle: 'italic', color: C.gold }}>beautifully</em><br />
+          restored.
+        </h1>
+ 
+        {/* Sub-copy */}
+        <p
+          className="text-sm font-light leading-[1.9] mb-9 md:mb-11 max-w-xs md:max-w-sm"
+          style={{ color: 'rgba(250,249,246,.68)', fontFamily: C.sans }}
+        >
+          Advanced skincare solutions with cutting-edge treatments —
+          designed for your beauty, your wellness, and your confidence.
+        </p>
+ 
+        {/* CTAs */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <button
+            onClick={handleBookingClick}
+            className="vivre-btn-gold shrink-0 px-7 py-4 text-[10px] font-bold tracking-[.22em] uppercase border-0 cursor-pointer transition-all duration-300"
+            style={{ background: C.gold, color: C.charcoal, fontFamily: C.sans }}
+          >
+            Request an Appointment
+          </button>
+          <span
+            onClick={() => scrollTo('services')}
+            className="cursor-pointer text-[11px] font-normal tracking-[.14em] uppercase pb-px"
+            style={{
+              color: 'rgba(250,249,246,.58)',
+              borderBottom: '0.5px solid rgba(250,249,246,.32)',
+              fontFamily: C.sans,
+            }}
+          >
+            Explore Treatments
+          </span>
+        </div>
+ 
+        {shouldShowBookingAuthHint && (
+          <AppointmentAccessHint
+            mutedColor="rgba(250,249,246,.45)"
+            accentColor={C.goldLight}
+            onLogin={() => setIsLoginOpen(true)}
           />
-          <div className="absolute inset-0" style={{ background:'linear-gradient(to right, rgba(45,42,38,.12), transparent 62%)' }}/>
+        )}
+      </div>
+    </div>
+ 
+    {/* Stats strip */}
+    <div
+      className="absolute bottom-0 left-0 right-0 flex items-center gap-0 px-12 lg:px-24"
+      style={{
+        height: 72,
+        background: 'rgba(20,18,14,.52)',
+        backdropFilter: 'blur(10px)',
+        borderTop: '0.5px solid rgba(201,162,39,.18)',
+      }}
+    >
+      {[
+        { value: '2',       label: 'Clinic Locations' },
+        { value: '100%',    label: 'Board-Certified Physician' },
+      ].map(({ value, label }) => (
+        <div key={label} className="flex items-center gap-3 mr-9">
+          <span className="font-light" style={{ fontFamily: C.serif, fontSize: 22, color: C.gold }}>
+            {value}
+          </span>
+          <span
+            className="text-[11px] font-light tracking-[.12em] uppercase leading-tight"
+            style={{ color: 'rgba(250,249,246,.48)', fontFamily: C.sans, maxWidth: 90 }}
+          >
+            {label}
+          </span>
         </div>
-
-        {/* Content */}
-        <div className="flex flex-col justify-center px-7 py-14 sm:px-12 md:px-12 lg:px-14 relative"
-          style={{ background: C.cream }}>
-          {/* Eyebrow */}
-          <div className="flex items-center gap-2.5 mb-5">
-            <div className="w-7 shrink-0" style={{ height:'0.5px', background:C.gold }}/>
-            <span className="text-[11px] font-medium tracking-[.28em] uppercase" style={{ color:C.gold }}>Luxury Medical Aesthetics</span>
-          </div>
-
-          <h1 className="font-light leading-[1.18] mb-5 md:mb-6"
-            style={{ fontFamily:C.serif, fontSize:'clamp(36px, 5vw, 52px)', color:C.charcoal }}>
-            Your skin,<br/>
-            <em style={{ fontStyle:'italic', color:C.goldDark }}>beautifully</em><br/>
-            restored.
-          </h1>
-
-          <p className="text-sm font-light leading-[1.85] mb-8 md:mb-10 max-w-sm" style={{ color:C.muted }}>
-            Advanced skincare solutions with cutting-edge treatments — designed for your beauty, your wellness, and your confidence.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <button
-              onClick={handleBookingClick}
-              className="vivre-btn-dark px-7 py-3.5 text-[10px] font-semibold tracking-[.22em] uppercase border-0 cursor-pointer transition-all duration-300 shrink-0"
-              style={{ background:C.charcoal, color:C.gold, fontFamily:C.sans }}
-            >Request an Appointment</button>
-            <span
-              onClick={() => scrollTo('services')}
-              className="cursor-pointer text-[11px] font-normal tracking-[.12em] uppercase pb-0.5"
-              style={{ color:C.muted, borderBottom:`0.5px solid ${C.muted}` }}
-            >Explore Treatments</span>
-          </div>
-          {shouldShowBookingAuthHint && (
-            <AppointmentAccessHint
-              mutedColor={C.muted}
-              accentColor={C.goldDark}
-              onLogin={() => setIsLoginOpen(true)}
-            />
-          )}
-
-          {/* Scroll hint — hide on mobile */}
-          <div className="hidden md:flex absolute bottom-8 left-1/2 -translate-x-1/2 flex-col items-center gap-1.5">
-            <div className="w-px h-9" style={{ background:`linear-gradient(to bottom, ${C.gold}, transparent)`, animation:'vivreScrollPulse 2s ease-in-out infinite' }}/>
-            <span className="text-[11px] tracking-[.16em] uppercase" style={{ color:C.muted }}>Scroll</span>
-          </div>
-        </div>
-      </section>
+      ))}
+ 
+      <div className="ml-auto flex items-center gap-2.5">
+        <div
+          className="w-px"
+          style={{
+            height: 28,
+            background: `linear-gradient(to bottom, ${C.gold}, transparent)`,
+            animation: 'vivreScrollPulse 2s ease-in-out infinite',
+          }}
+        />
+        <span
+          className="text-[10px] tracking-[.2em] uppercase"
+          style={{ color: 'rgba(250,249,246,.4)', fontFamily: C.sans }}
+        >
+          Scroll
+        </span>
+      </div>
+    </div>
+  </div>
+ 
+</section>
 
       {/* ----------------------------------------------------
           SERVICES
@@ -751,17 +954,17 @@ const LandingPage = () => {
         <div className="flex flex-col md:grid md:grid-cols-[360px_1fr] gap-12 md:gap-20 items-start mt-2">
 
           {/* Photo col */}
-          <div className="relative w-full max-w-sm mx-auto md:mx-0 md:max-w-none">
+         <div className="relative w-[calc(100%-28px)] max-w-[350px] mx-auto md:mx-0 md:w-full md:max-w-none">
             <div className="absolute top-8 -left-3 md:-left-5 w-0.5 rounded-sm"
               style={{ height:'calc(100% - 64px)', background:`linear-gradient(to bottom, ${C.gold}, transparent)` }}/>
             <div className="overflow-hidden rounded-sm" style={{ boxShadow:`16px 16px 0 ${C.cream2}` }}>
-              <OptimizedImage
-                src={drJCImage}
-                alt="Dr. JC Masangkay"
-                loading="eager"
-                className="w-full block object-cover object-top"
-              />
-            </div>
+  <OptimizedImage
+    src={drJCImage}
+    alt="Dr. JC Masangkay"
+    loading="eager"
+    className="vivre-doctor-img-mobile w-full block aspect-square md:aspect-auto object-cover object-top"
+  />
+</div>
             {/* Credential chip */}
             <div className="absolute -bottom-6 -right-4 md:-right-6 px-5 py-4"
               style={{ background:C.charcoal, boxShadow:'0 8px 32px rgba(45,42,38,.18)' }}>
@@ -827,7 +1030,7 @@ const LandingPage = () => {
             {/* Fun fact */}
             <div className="inline-flex items-start gap-3 p-4"
               style={{ background:C.cream2, border:'0.5px solid rgba(201,162,39,.25)' }}>
-              <span style={{ color:C.gold, fontSize:16, lineHeight:1 }}>?</span>
+              <span style={{ color:C.gold, fontSize:16, lineHeight:1 }}>◆</span>
               <div>
                 <div className="text-[11px] font-semibold tracking-[.16em] uppercase mb-1" style={{ color:C.gold }}>Fun Fact</div>
                 <div className="text-xs font-light leading-relaxed max-w-xs" style={{ color:C.muted }}>
@@ -888,7 +1091,7 @@ const LandingPage = () => {
                 className="inline-block text-[11px] font-medium tracking-[.12em] uppercase pb-px cursor-pointer"
                 style={{ color:C.charcoal, borderBottom:`0.5px solid ${C.charcoal}` }}
               >
-                View on Map ?
+                View on Map ◆
               </a>
             </div>
           ))}
@@ -982,7 +1185,7 @@ const LandingPage = () => {
                     {description}
                   </p>
                   <div className="text-[11px] md:text-[12px] font-semibold tracking-[.14em] uppercase" style={{ color:C.charcoal }}>
-                    View on Instagram ?
+                    View on Instagram ◆
                   </div>
                 </div>
               </div>
@@ -996,7 +1199,7 @@ const LandingPage = () => {
       ---------------------------------------------------- */}
       <section id="contact" className="px-5 py-16 sm:px-10 md:px-20 md:py-24 text-center" style={{ background:C.cream2 }}>
         <div className="text-[12px] tracking-[.22em] uppercase mb-6" style={{ color:C.gold, fontFamily:C.sans }}>
-          ? &nbsp; Begin Your Transformation &nbsp; ?
+          ◆ &nbsp; Begin Your Transformation &nbsp; ◆
         </div>
         <h2 className="font-light leading-[1.2] mb-5" style={{ fontFamily:C.serif, fontSize:'clamp(32px,5vw,52px)', color:C.charcoal }}>
           Healthy, <em style={{ fontStyle:'italic', color:C.goldDark }}>radiant</em><br/>skin starts here.
