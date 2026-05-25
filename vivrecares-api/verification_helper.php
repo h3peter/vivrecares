@@ -42,6 +42,13 @@ if (!function_exists('verification_purpose_patient_registration')) {
     }
 }
 
+if (!function_exists('verification_purpose_profile_email_change')) {
+    function verification_purpose_profile_email_change()
+    {
+        return 'profile_email_change';
+    }
+}
+
 if (!function_exists('create_email_verification_code')) {
     function create_email_verification_code(PDO $conn, $email, $purpose)
     {

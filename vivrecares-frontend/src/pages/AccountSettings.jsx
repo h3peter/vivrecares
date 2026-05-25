@@ -17,9 +17,19 @@ const AccountSettings = () => {
     const [photoFilename, setPhotoFilename] = useState('');
     const [hasRetriedPhoto, setHasRetriedPhoto] = useState(false);
     const [pendingPhoto, setPendingPhoto] = useState(null);
+    const [originalEmail, setOriginalEmail] = useState('');
     const [uploading, setUploading] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [feedback, setFeedback] = useState(null);
+    const [emailVerification, setEmailVerification] = useState({
+        open: false,
+        code: '',
+        sending: false,
+        verifying: false,
+        status: '',
+        error: '',
+        devCode: '',
+    });
 
     const fileInputRef = useRef(null);
 
@@ -45,6 +55,7 @@ const AccountSettings = () => {
                     phone: data.phone ?? '',
                     user_id: user.id
                 });
+                setOriginalEmail(data.email ?? '');
 
                 const photo = data.profile_photo;
                 if (photo && photo !== 'default-avatar.png') {
@@ -81,8 +92,84 @@ const AccountSettings = () => {
         }
     };
 
-    const handleUpdate = async (e) => {
-        e.preventDefault();
+    const emailHasChanged = formData.email.trim().toLowerCase() !== originalEmail.trim().toLowerCase();
+
+    const openEmailVerification = () => {
+        setEmailVerification({
+            open: true,
+            code: '',
+            sending: false,
+            verifying: false,
+            status: '',
+            error: '',
+            devCode: '',
+        });
+    };
+
+    const closeEmailVerification = () => {
+        setEmailVerification((prev) => ({ ...prev, open: false }));
+    };
+
+    const sendEmailVerificationCode = async () => {
+        setEmailVerification((prev) => ({ ...prev, sending: true, error: '', status: '', devCode: '' }));
+
+        try {
+            const res = await axios.post('/send_profile_email_change_code.php', {
+                user_id: formData.user_id,
+                email: formData.email.trim(),
+                first_name: formData.first_name,
+            });
+
+            if (res.data.status !== 'success') {
+                throw new Error(res.data.message || 'Unable to send verification code.');
+            }
+
+            setEmailVerification((prev) => ({
+                ...prev,
+                status: res.data.message || 'Verification code sent.',
+                devCode: res.data.dev_code || '',
+            }));
+        } catch (err) {
+            setEmailVerification((prev) => ({
+                ...prev,
+                error: err.response?.data?.message || err.message || 'Unable to send verification code.',
+            }));
+        } finally {
+            setEmailVerification((prev) => ({ ...prev, sending: false }));
+        }
+    };
+
+    const verifyEmailAndSave = async () => {
+        if (!emailVerification.code.trim()) {
+            setEmailVerification((prev) => ({ ...prev, error: 'Enter the verification code first.' }));
+            return;
+        }
+
+        setEmailVerification((prev) => ({ ...prev, verifying: true, error: '', status: '' }));
+
+        try {
+            const res = await axios.post('/verify_profile_email_change_code.php', {
+                user_id: formData.user_id,
+                email: formData.email.trim(),
+                code: emailVerification.code.trim(),
+            });
+
+            if (res.data.status !== 'success' || !res.data.verification_token) {
+                throw new Error(res.data.message || 'Unable to verify code.');
+            }
+
+            setEmailVerification((prev) => ({ ...prev, open: false, verifying: false }));
+            await saveProfile(res.data.verification_token);
+        } catch (err) {
+            setEmailVerification((prev) => ({
+                ...prev,
+                verifying: false,
+                error: err.response?.data?.message || err.message || 'Unable to verify code.',
+            }));
+        }
+    };
+
+    const saveProfile = async (emailVerificationToken = '') => {
         setUploading(true);
 
         try {
@@ -113,7 +200,11 @@ const AccountSettings = () => {
                 localStorage.setItem('user', JSON.stringify({ ...stored, profile_photo: newFilename }));
             }
 
-            const res = await axios.post('/update_profile.php', formData);
+            const res = await axios.post('/update_profile.php', {
+                ...formData,
+                email: formData.email.trim(),
+                email_verification_token: emailVerificationToken,
+            });
 
             if (res.data.status === 'success') {
                 const stored = JSON.parse(localStorage.getItem('user')) ?? {};
@@ -121,11 +212,16 @@ const AccountSettings = () => {
                     ...stored,
                     first_name: formData.first_name,
                     last_name: formData.last_name,
-                    email: formData.email
+                    email: formData.email.trim()
                 }));
 
+                setOriginalEmail(formData.email.trim());
                 setSaveSuccess(true);
                 setTimeout(() => setSaveSuccess(false), 2500);
+            } else if (res.data.status === 'verification_required') {
+                openEmailVerification();
+            } else {
+                throw new Error(res.data.message || 'Unable to update your profile right now.');
             }
         } catch (err) {
             console.error('Update failed:', err);
@@ -139,6 +235,17 @@ const AccountSettings = () => {
         }
     };
 
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+
+        if (emailHasChanged) {
+            openEmailVerification();
+            return;
+        }
+
+        await saveProfile();
+    };
+
     const initials = `${formData.first_name?.[0] ?? ''}${formData.last_name?.[0] ?? ''}`.toUpperCase();
 
     return (
@@ -150,6 +257,66 @@ const AccountSettings = () => {
                 message={feedback?.message}
                 onClose={() => setFeedback(null)}
             />
+            {emailVerification.open && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="w-full max-w-md rounded-3xl border border-gray-100 bg-white p-6 shadow-2xl">
+                        <div className="mb-6">
+                            <p className="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#b2a58d]">Email Verification</p>
+                            <h2 className="text-2xl font-bold text-gray-800">Confirm your new email</h2>
+                            <p className="mt-2 text-sm leading-relaxed text-gray-500">
+                                We need to verify access to {formData.email.trim()} before changing the email on your account.
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            <button
+                                type="button"
+                                onClick={sendEmailVerificationCode}
+                                disabled={emailVerification.sending || emailVerification.verifying}
+                                className="w-full rounded-xl bg-[#555555] px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-[#c4ba9d] shadow-lg transition hover:bg-[#404040] disabled:opacity-50"
+                            >
+                                {emailVerification.sending ? 'Sending...' : 'Send Verification Code'}
+                            </button>
+
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                value={emailVerification.code}
+                                onChange={(e) => setEmailVerification((prev) => ({ ...prev, code: e.target.value, error: '' }))}
+                                placeholder="Enter verification code"
+                                className="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 text-base text-gray-700 outline-none focus:border-[#b2a58d]"
+                            />
+
+                            {emailVerification.status && <p className="text-sm text-green-700">{emailVerification.status}</p>}
+                            {emailVerification.devCode && (
+                                <p className="text-sm text-[#8f6d1f]">
+                                    Development code: <span className="font-bold tracking-[0.2em]">{emailVerification.devCode}</span>
+                                </p>
+                            )}
+                            {emailVerification.error && <p className="text-sm text-red-600">{emailVerification.error}</p>}
+                        </div>
+
+                        <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                            <button
+                                type="button"
+                                onClick={closeEmailVerification}
+                                disabled={emailVerification.verifying}
+                                className="rounded-xl border border-gray-200 px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-gray-500 transition hover:bg-gray-50 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={verifyEmailAndSave}
+                                disabled={emailVerification.verifying || emailVerification.sending || !emailVerification.code.trim()}
+                                className="rounded-xl bg-[#c4ba9d] px-5 py-3 text-xs font-bold uppercase tracking-[0.18em] text-white shadow-lg transition hover:bg-[#b2a58d] disabled:opacity-50"
+                            >
+                                {emailVerification.verifying ? 'Verifying...' : 'Verify and Save'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <div className="max-w-6xl mx-auto">
                 <div className="mb-8">
                     <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d] mb-2">Patient Portal</p>
@@ -233,6 +400,7 @@ const AccountSettings = () => {
                                 <InputGroup
                                     label="Email"
                                     value={formData.email}
+                                    type="email"
                                     onChange={(v) => setFormData({ ...formData, email: v })}
                                 />
                             </div>
@@ -271,11 +439,11 @@ const AccountSettings = () => {
     );
 };
 
-const InputGroup = ({ label, value, onChange }) => (
+const InputGroup = ({ label, value, onChange, type = 'text' }) => (
     <div className="space-y-2">
         <label className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold">{label}</label>
         <input
-            type="text"
+            type={type}
             value={value ?? ''}
             onChange={(e) => onChange(e.target.value)}
             className="w-full border border-gray-200 rounded-xl px-4 py-3 focus:border-[#b2a58d] outline-none text-base text-gray-700 bg-[#faf9f6]"
