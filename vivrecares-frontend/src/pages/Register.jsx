@@ -18,6 +18,8 @@ const Register = () => {
   const [verifyingCode, setVerifyingCode] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState({});
+  const [formAlert, setFormAlert] = useState('');
   
   const [formData, setFormData] = useState({
     first_name: '', middle_name: '', last_name: '', extension_name: '', nickname: '',
@@ -45,6 +47,13 @@ const Register = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
+    setFieldErrors(prev => {
+      if (!prev[name]) return prev;
+      const next = { ...prev };
+      delete next[name];
+      return next;
+    });
+    setFormAlert('');
 
     if (name === 'email' || name === 'first_name') {
       resetVerificationState();
@@ -109,11 +118,66 @@ const Register = () => {
     }
   };
 
+  const validateStepOne = () => {
+    const requiredFields = {
+      first_name: 'First name is required.',
+      last_name: 'Last name is required.',
+      age: 'Age is required.',
+      sex: 'Sex is required.',
+      phone: 'Phone number is required.',
+      email: 'Email is required.',
+      address: 'Address is required.',
+    };
+    const nextErrors = {};
+
+    Object.entries(requiredFields).forEach(([field, message]) => {
+      if (!String(formData[field] || '').trim()) {
+        nextErrors[field] = message;
+      }
+    });
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      setFormAlert('Please complete the highlighted required fields.');
+      return false;
+    }
+
+    return true;
+  };
+
+  const validateStepThree = () => {
+    const nextErrors = {};
+
+    if (!formData.password.trim()) {
+      nextErrors.password = 'Password is required.';
+    } else if (formData.password.length < 8) {
+      nextErrors.password = 'Password must be at least 8 characters long.';
+    }
+
+    if (!formData.confirmPassword.trim()) {
+      nextErrors.confirmPassword = 'Please confirm your password.';
+    } else if (formData.password !== formData.confirmPassword) {
+      nextErrors.confirmPassword = 'Passwords do not match.';
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
+      setFormAlert('Please fix the highlighted account fields.');
+      return false;
+    }
+
+    return true;
+  };
+
   const handleNext = () => {
-    if (step === 1 && !verificationToken) {
-      alert('Please verify your email before continuing.');
+    if (step === 1 && !validateStepOne()) {
       return;
     }
+    if (step === 1 && !verificationToken) {
+      setFormAlert('Please verify your email before continuing.');
+      return;
+    }
+    setFormAlert('');
     setStep(prev => prev + 1);
   };
 
@@ -123,22 +187,11 @@ const Register = () => {
     e.preventDefault();
 
     if (!verificationToken) {
-      alert('Please verify your email before creating an account.');
+      setFormAlert('Please verify your email before creating an account.');
       return;
     }
 
-    if (!formData.password.trim()) {
-      alert('Password is required.');
-      return;
-    }
-
-    if (formData.password.length < 8) {
-      alert('Password must be at least 8 characters long.');
-      return;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      alert('Passwords do not match!');
+    if (!validateStepThree()) {
       return;
     }
 
@@ -168,10 +221,16 @@ const Register = () => {
           <h2 className="text-3xl tracking-[0.2em] uppercase font-light text-[#2d2a26] mb-12 text-center">Create Account</h2>
 
           <form onSubmit={handleSubmit}>
+            {formAlert && (
+              <div className="mb-8 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
+                {formAlert}
+              </div>
+            )}
             {step === 1 && (
               <StepOne
                 formData={formData}
                 handleChange={handleChange}
+                fieldErrors={fieldErrors}
                 verificationCode={verificationCode}
                 setVerificationCode={setVerificationCode}
                 verificationToken={verificationToken}
@@ -189,6 +248,7 @@ const Register = () => {
               <StepThree
                 formData={formData}
                 handleChange={handleChange}
+                fieldErrors={fieldErrors}
                 showPassword={showPassword}
                 showConfirmPassword={showConfirmPassword}
                 onTogglePassword={() => setShowPassword((prev) => !prev)}
@@ -225,6 +285,7 @@ const Register = () => {
 const StepOne = ({
   formData,
   handleChange,
+  fieldErrors,
   verificationCode,
   setVerificationCode,
   verificationToken,
@@ -238,23 +299,24 @@ const StepOne = ({
 }) => (
   <div className="space-y-10 animate-fadeIn">
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <Input label="First Name" name="first_name" value={formData.first_name} onChange={handleChange} />
+      <Input label="First Name" name="first_name" value={formData.first_name} onChange={handleChange} required error={fieldErrors.first_name} />
       <Input label="Middle Name" name="middle_name" value={formData.middle_name} onChange={handleChange} />
-      <Input label="Last Name" name="last_name" value={formData.last_name} onChange={handleChange} />
+      <Input label="Last Name" name="last_name" value={formData.last_name} onChange={handleChange} required error={fieldErrors.last_name} />
       <Input label="Ext. (e.g. III)" name="extension_name" value={formData.extension_name} onChange={handleChange} />
       <Input label="Nickname" name="nickname" value={formData.nickname} onChange={handleChange} />
-      <Input label="Age" name="age" type="number" value={formData.age} onChange={handleChange} />
+      <Input label="Age" name="age" type="number" value={formData.age} onChange={handleChange} required error={fieldErrors.age} />
       <div className="flex flex-col gap-2">
-          <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">Sex</label>
-          <select name="sex" value={formData.sex} onChange={handleChange} className="w-full px-4 py-3 bg-[#f9f8f4] border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-[#d4af37]">
+          <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">Sex <span className="text-red-400">*</span></label>
+          <select name="sex" value={formData.sex} onChange={handleChange} aria-invalid={Boolean(fieldErrors.sex)} className={`w-full px-4 py-3 bg-[#f9f8f4] border rounded-lg text-sm focus:outline-none focus:border-[#d4af37] ${fieldErrors.sex ? 'border-red-300 bg-red-50' : 'border-gray-100'}`}>
               <option value="">Select...</option>
               <option value="Male">Male</option>
               <option value="Female">Female</option>
           </select>
+          {fieldErrors.sex && <p className="text-xs font-medium text-red-500">{fieldErrors.sex}</p>}
       </div>
-      <Input label="Phone Number" name="phone" value={formData.phone} onChange={handleChange} />
-      <Input label="Email" name="email" type="email" value={formData.email} onChange={handleChange} className="lg:col-span-2" />
-      <Input label="Address" name="address" value={formData.address} onChange={handleChange} className="lg:col-span-2" />
+      <Input label="Phone Number" name="phone" value={formData.phone} onChange={handleChange} required error={fieldErrors.phone} />
+      <Input label="Email" name="email" type="email" value={formData.email} onChange={handleChange} className="lg:col-span-2" required error={fieldErrors.email} />
+      <Input label="Address" name="address" value={formData.address} onChange={handleChange} className="lg:col-span-2" required error={fieldErrors.address} />
     </div>
 
     <div className="rounded-2xl border border-[#e9dcc0] bg-[#fcfaf5] p-6">
@@ -310,18 +372,20 @@ const StepOne = ({
     <div className="border-t border-gray-50 pt-10">
         <h3 className="text-sm uppercase tracking-[0.2em] font-medium text-[#d4af37] mb-8 text-center">Initial Disclosure</h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="flex flex-col justify-center">
-                <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1 mb-3">Recent Tooth Extraction?</label>
-                <Checkbox label="Yes" name="tooth_extraction" checked={formData.tooth_extraction} onChange={handleChange} />
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <Input label="Surgical Procedures (if any)" name="surgical_procedures" value={formData.surgical_procedures} onChange={handleChange} />
             <Input label="Allergies" name="allergies" value={formData.allergies} onChange={handleChange} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-6">
             <Input label="Aesthetic Procedures (if any)" name="aesthetic_procedures" value={formData.aesthetic_procedures} onChange={handleChange} />
-            <div className="flex flex-col gap-4 md:col-span-2">
+            <div className="flex flex-col gap-4">
+                <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">Recent Tooth Extraction?</span>
+                <div className="flex gap-6">
+                    <Checkbox label="Yes" name="tooth_extraction" checked={formData.tooth_extraction} onChange={handleChange} />
+                </div>
+            </div>
+            <div className="flex flex-col gap-4">
                 <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">Pregnant / Breastfeeding / Planning?</span>
                 <div className="flex gap-6">
                     <Radio label="Yes" name="pregnant" value="Yes" checked={formData.pregnant === 'Yes'} onChange={handleChange} />
@@ -383,6 +447,7 @@ const StepTwo = ({ formData, handleChange }) => {
 const StepThree = ({
   formData,
   handleChange,
+  fieldErrors,
   showPassword,
   showConfirmPassword,
   onTogglePassword,
@@ -395,6 +460,7 @@ const StepThree = ({
           name="password"
           value={formData.password}
           onChange={handleChange}
+          error={fieldErrors.password}
           visible={showPassword}
           onToggleVisibility={onTogglePassword}
         />
@@ -403,6 +469,7 @@ const StepThree = ({
           name="confirmPassword"
           value={formData.confirmPassword}
           onChange={handleChange}
+          error={fieldErrors.confirmPassword}
           visible={showConfirmPassword}
           onToggleVisibility={onToggleConfirmPassword}
         />
@@ -411,25 +478,27 @@ const StepThree = ({
   </div>
 );
 
-const Input = ({ label, className = "", ...props }) => (
+const Input = ({ label, className = "", required = false, error = '', ...props }) => (
   <div className={`flex flex-col gap-2 ${className}`}>
-    <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">{label}</label>
-    <input {...props} className="w-full px-4 py-3 bg-[#f9f8f4] border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-[#d4af37] transition-all" />
+    <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">{label}{required && <span className="text-red-400"> *</span>}</label>
+    <input {...props} aria-invalid={Boolean(error)} className={`w-full px-4 py-3 bg-[#f9f8f4] border rounded-lg text-sm focus:outline-none focus:border-[#d4af37] transition-all ${error ? 'border-red-300 bg-red-50' : 'border-gray-100'}`} />
+    {error && <p className="text-xs font-medium text-red-500">{error}</p>}
   </div>
 );
 
-const PasswordField = ({ label, visible, onToggleVisibility, ...props }) => (
+const PasswordField = ({ label, visible, onToggleVisibility, error = '', ...props }) => (
   <div className="flex flex-col gap-2">
-    <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">{label}</label>
+    <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">{label} <span className="text-red-400">*</span></label>
     <PasswordInput
       {...props}
       visible={visible}
       onToggleVisibility={onToggleVisibility}
       minLength={8}
       required
-      inputClassName="w-full px-4 py-3 pr-14 bg-[#f9f8f4] border border-gray-100 rounded-lg text-sm focus:outline-none focus:border-[#d4af37] transition-all"
+      inputClassName={`w-full px-4 py-3 pr-14 bg-[#f9f8f4] border rounded-lg text-sm focus:outline-none focus:border-[#d4af37] transition-all ${error ? 'border-red-300 bg-red-50' : 'border-gray-100'}`}
       buttonClassName="absolute inset-y-0 right-0 px-4 text-gray-400 hover:text-[#b59635] transition"
     />
+    {error && <p className="text-xs font-medium text-red-500">{error}</p>}
   </div>
 );
 

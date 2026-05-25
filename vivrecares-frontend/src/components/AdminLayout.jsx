@@ -14,6 +14,7 @@ const AdminLayout = () => {
                 { label: 'Appointment Logs', path: '/admin/appointments' },
                 { label: 'Billing & Payments', path: '/admin/billing' },
                 { label: 'Reports', path: '/admin/reports' },
+                { label: 'Import', path: '/admin/imports' },
                 { label: 'Settings', path: '/admin/settings' },
                 { label: 'My Profile', path: '/admin/profile' },
             ]}

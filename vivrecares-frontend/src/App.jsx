@@ -8,6 +8,7 @@ import AppLoadingScreen from './components/AppLoadingScreen';
 const Login = lazy(() => import('./pages/Login'));
 const EvaluationGuide = lazy(() => import('./pages/EvaluationGuide'));
 const Register = lazy(() => import('./pages/Register'));
+const AcceptStaffInvite = lazy(() => import('./pages/AcceptStaffInvite'));
 const PatientDashboard = lazy(() => import('./pages/PatientDashboard'));
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const PatientProfile = lazy(() => import('./pages/PatientProfile'));
@@ -24,6 +25,7 @@ const AdminAddPatient = lazy(() => import('./pages/admin/AdminAddPatient'));
 const AdminViewPatient = lazy(() => import('./pages/admin/AdminViewPatient'));
 const AdminCreateInvoice = lazy(() => import('./pages/admin/AdminCreateInvoice'));
 const AdminReports = lazy(() => import('./pages/admin/AdminReports'));
+const AdminImports = lazy(() => import('./pages/admin/AdminImports'));
 const PatientInvoices = lazy(() => import('./pages/PatientInvoices'));
 const AdminEditPatient = lazy(() => import('./pages/admin/AdminEditPatient'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings'));
@@ -108,6 +110,7 @@ function App() {
         <Route path="/evaluation-guide" element={<EvaluationGuide />} />
         <Route path="/login" element={<Login />} />            {/* Moved login to its own route */}
         <Route path="/register" element={<Register />} />
+        <Route path="/staff-invite/:token" element={<AcceptStaffInvite />} />
         {/* Protected Patient Route */}
        <Route element={<ProtectedRoute allowedRole="Patient"><PatientLayout /></ProtectedRoute>}>
     <Route path="/dashboard" element={<PatientDashboard />} />
@@ -163,6 +166,9 @@ function App() {
     <Route
     path="/admin/reports"
     element={<AdminReports />} />
+    <Route
+    path="/admin/imports"
+    element={<AdminImports />} />
   </Route>
 
   <Route element={<ProtectedRoute allowedRole="Doctor"><DoctorLayout /></ProtectedRoute>}>

@@ -107,6 +107,47 @@ const AppointmentHistory = () => {
         }
     };
 
+    const canCancelAppointment = (appointment) => {
+        return ['pending', 'confirmed', 'rescheduled'].includes(String(appointment?.status || '').toLowerCase());
+    };
+
+    const handleCancelAppointment = async (appointmentId) => {
+        if (!window.confirm('Cancel this appointment? This action will notify the clinic.')) {
+            return;
+        }
+
+        try {
+            setActionAppointmentId(appointmentId);
+            const res = await axios.post('/cancel_patient_appointment.php', {
+                appointment_id: appointmentId,
+            });
+
+            if (res.data.status === 'success') {
+                await fetchHistory();
+                setFeedback({
+                    tone: 'success',
+                    title: 'Appointment Cancelled',
+                    message: res.data.message || 'Your appointment has been cancelled.',
+                });
+            } else {
+                setFeedback({
+                    tone: 'error',
+                    title: 'Cancellation Failed',
+                    message: res.data.message || 'Unable to cancel this appointment.',
+                });
+            }
+        } catch (error) {
+            console.error('Appointment cancellation error:', error);
+            setFeedback({
+                tone: 'error',
+                title: 'Cancellation Failed',
+                message: 'Unable to cancel this appointment right now.',
+            });
+        } finally {
+            setActionAppointmentId(null);
+        }
+    };
+
     const totalPages = Math.max(1, Math.ceil(appointments.length / rowsPerPage));
     const indexOfLastRow = currentPage * rowsPerPage;
     const indexOfFirstRow = indexOfLastRow - rowsPerPage;
@@ -201,6 +242,17 @@ const AppointmentHistory = () => {
                                             </div>
                                         </div>
                                     )}
+
+                                    {canCancelAppointment(apt) && (
+                                        <button
+                                            type="button"
+                                            disabled={actionAppointmentId === apt.appointment_id}
+                                            onClick={() => handleCancelAppointment(apt.appointment_id)}
+                                            className="mt-4 w-full rounded-xl border border-red-200 bg-white px-4 py-3 text-[11px] font-bold uppercase tracking-[0.18em] text-red-500 transition hover:bg-red-50 disabled:opacity-50"
+                                        >
+                                            {actionAppointmentId === apt.appointment_id ? 'Processing...' : 'Cancel Appointment'}
+                                        </button>
+                                    )}
                                 </div>
 
                                 <div className="hidden grid-cols-12 items-center gap-4 rounded-[1.5rem] border border-gray-50 bg-[#faf9f6] p-5 text-base text-gray-700 transition hover:border-[#c4ba9d] lg:grid">
@@ -252,6 +304,16 @@ const AppointmentHistory = () => {
 
                                     <div className={`col-span-2 text-right text-xs font-bold uppercase tracking-[0.18em] ${getStatusColor(apt.status)}`}>
                                         {apt.status}
+                                        {canCancelAppointment(apt) && (
+                                            <button
+                                                type="button"
+                                                disabled={actionAppointmentId === apt.appointment_id}
+                                                onClick={() => handleCancelAppointment(apt.appointment_id)}
+                                                className="mt-3 rounded-full border border-red-200 bg-white px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-red-500 transition hover:bg-red-50 disabled:opacity-50"
+                                            >
+                                                {actionAppointmentId === apt.appointment_id ? 'Processing...' : 'Cancel'}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>

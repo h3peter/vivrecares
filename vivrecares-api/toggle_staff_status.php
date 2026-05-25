@@ -1,11 +1,12 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once 'admin_security.php';
 
 init_api_auth();
-require_roles(['Admin']);
 
 $data = json_decode(file_get_contents("php://input"), true);
+require_admin_password($conn, is_array($data) ? $data : []);
 
 $userId = isset($data['user_id']) ? (int) $data['user_id'] : 0;
 $nextActive = !empty($data['is_active']) ? 1 : 0;

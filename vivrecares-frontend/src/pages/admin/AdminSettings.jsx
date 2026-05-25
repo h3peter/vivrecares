@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
-import PasswordInput from '../../components/PasswordInput';
+import AdminPasswordPrompt from '../../components/AdminPasswordPrompt';
 
 const defaultServiceForm = {
     service_id: null,
@@ -16,7 +16,6 @@ const defaultStaffForm = {
     first_name: '',
     last_name: '',
     email: '',
-    password: '',
     role: 'Doctor',
 };
 
@@ -31,6 +30,7 @@ const getSlotKey = (slot) => {
 const AdminSettings = () => {
     const [services, setServices] = useState([]);
     const [staffUsers, setStaffUsers] = useState([]);
+    const [pendingStaffInvites, setPendingStaffInvites] = useState([]);
     const [serviceForm, setServiceForm] = useState(defaultServiceForm);
     const [staffForm, setStaffForm] = useState(defaultStaffForm);
     const [selectedBranch, setSelectedBranch] = useState(branches[0]);
@@ -39,9 +39,11 @@ const AdminSettings = () => {
     const [savingSchedule, setSavingSchedule] = useState(false);
     const [savingService, setSavingService] = useState(false);
     const [savingStaff, setSavingStaff] = useState(false);
+    const [developmentInviteUrl, setDevelopmentInviteUrl] = useState('');
     const [serviceView, setServiceView] = useState('active');
     const [highlightedServiceId, setHighlightedServiceId] = useState(null);
     const [toast, setToast] = useState(null);
+    const [protectedAction, setProtectedAction] = useState(null);
 
     const showToast = (type, message) => {
         setToast({ type, message });
@@ -70,6 +72,7 @@ const AdminSettings = () => {
 
             if (staffRes.data.status === 'success') {
                 setStaffUsers(staffRes.data.data || []);
+                setPendingStaffInvites(staffRes.data.pending_invites || []);
             }
         } catch (error) {
             console.error('Failed to load settings', error);
@@ -232,23 +235,36 @@ const AdminSettings = () => {
         }
     };
 
-    const handleCreateStaff = async (e) => {
-        e.preventDefault();
+    const inviteStaff = async (adminPassword) => {
         setSavingStaff(true);
+        setDevelopmentInviteUrl('');
         try {
-            const res = await axios.post('/save_staff_user.php', staffForm);
+            const res = await axios.post('/invite_staff_user.php', {
+                ...staffForm,
+                admin_password: adminPassword,
+            });
             if (res.data.status === 'success') {
                 setStaffForm(defaultStaffForm);
+                setDevelopmentInviteUrl(res.data.dev_invite_url || '');
                 await fetchAll();
-                showToast('success', res.data.message || 'Staff user created.');
+                showToast('success', res.data.message || 'Staff invitation sent.');
             } else {
-                showToast('error', res.data.message || 'Unable to create staff user.');
+                showToast('error', res.data.message || 'Unable to send staff invitation.');
             }
         } catch (error) {
-            showToast('error', 'Unable to create staff user.');
+            showToast('error', 'Unable to send staff invitation.');
         } finally {
             setSavingStaff(false);
         }
+    };
+
+    const handleCreateStaff = async (e) => {
+        e.preventDefault();
+        setProtectedAction({
+            title: 'Invite Staff User',
+            message: 'Enter your admin password before inviting an Admin or Doctor.',
+            onConfirm: inviteStaff,
+        });
     };
 
     const handleToggleStaffStatus = async (staff) => {
@@ -259,24 +275,46 @@ const AdminSettings = () => {
         );
         if (!confirmed) return;
 
-        try {
-            const res = await axios.post('/toggle_staff_status.php', {
-                user_id: staff.user_id,
-                is_active: nextActive,
-            });
-            if (res.data.status === 'success') {
-                await fetchAll();
-                showToast('success', res.data.message || 'Staff account updated.');
-            } else {
-                showToast('error', res.data.message || 'Unable to update staff status.');
-            }
-        } catch (error) {
-            showToast('error', 'Unable to update staff status.');
+        setProtectedAction({
+            title: nextActive ? 'Reactivate Staff Account' : 'Archive Staff Account',
+            message: `Enter your admin password to ${nextActive ? 'reactivate' : 'archive'} ${staff.first_name} ${staff.last_name}.`,
+            onConfirm: async (adminPassword) => {
+                try {
+                    const res = await axios.post('/toggle_staff_status.php', {
+                        user_id: staff.user_id,
+                        is_active: nextActive,
+                        admin_password: adminPassword,
+                    });
+                    if (res.data.status === 'success') {
+                        await fetchAll();
+                        showToast('success', res.data.message || 'Staff account updated.');
+                    } else {
+                        showToast('error', res.data.message || 'Unable to update staff status.');
+                    }
+                } catch (error) {
+                    showToast('error', 'Unable to update staff status.');
+                }
+            },
+        });
+    };
+
+    const handleProtectedConfirm = async (adminPassword) => {
+        const action = protectedAction;
+        setProtectedAction(null);
+        if (action?.onConfirm) {
+            await action.onConfirm(adminPassword);
         }
     };
 
     return (
         <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
+            <AdminPasswordPrompt
+                open={Boolean(protectedAction)}
+                title={protectedAction?.title}
+                message={protectedAction?.message}
+                onCancel={() => setProtectedAction(null)}
+                onConfirm={handleProtectedConfirm}
+            />
             {toast && (
                 <div
                     className={`fixed top-6 right-6 z-50 rounded-2xl px-5 py-4 shadow-xl border text-sm font-semibold transition-opacity ${
@@ -469,7 +507,7 @@ const AdminSettings = () => {
             <section className="mt-8 bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-8 py-6 border-b border-gray-100 bg-[#faf9f6]">
                     <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
-                    <p className="text-sm text-gray-500 mt-2">Create and manage Admin/Doctor accounts from the settings module.</p>
+                    <p className="text-sm text-gray-500 mt-2">Invite and manage Admin/Doctor accounts from the settings module.</p>
                 </div>
 
                 <div className="p-8 grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-8">
@@ -479,7 +517,6 @@ const AdminSettings = () => {
                             <Input label="Last Name" name="staff_last_name" autoComplete="off" value={staffForm.last_name} onChange={(value) => setStaffForm((prev) => ({ ...prev, last_name: value }))} />
                         </div>
                         <Input label="Email" name="staff_email" type="email" autoComplete="off" value={staffForm.email} onChange={(value) => setStaffForm((prev) => ({ ...prev, email: value }))} />
-                        <Input label="Temporary Password" name="staff_temp_password" type="password" autoComplete="new-password" value={staffForm.password} onChange={(value) => setStaffForm((prev) => ({ ...prev, password: value }))} />
                         <div>
                             <label className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400 block mb-2">Role</label>
                             <select name="staff_role" autoComplete="off" value={staffForm.role} onChange={(e) => setStaffForm((prev) => ({ ...prev, role: e.target.value }))} className="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]">
@@ -489,44 +526,76 @@ const AdminSettings = () => {
                         </div>
                         <div className="flex justify-end">
                             <button type="submit" disabled={savingStaff} className="px-6 py-3 rounded-xl bg-[#555555] text-[#c4ba9d] text-sm font-bold uppercase tracking-[0.18em] shadow-lg hover:bg-[#404040] transition">
-                                {savingStaff ? 'Creating...' : 'Add User'}
+                                {savingStaff ? 'Sending...' : 'Send Invite'}
                             </button>
                         </div>
+                        {developmentInviteUrl && (
+                            <div className="rounded-2xl border border-[#e9dcc0] bg-[#fcfaf5] p-4 text-sm text-gray-700">
+                                <p className="font-semibold text-[#8f6d1f]">Development invite link</p>
+                                <a href={developmentInviteUrl} className="mt-2 block break-all text-[#6b5c2e] underline">
+                                    {developmentInviteUrl}
+                                </a>
+                            </div>
+                        )}
                     </form>
 
-                    <div className="rounded-2xl border border-gray-100 bg-[#faf9f6] overflow-hidden">
-                        <div className="grid grid-cols-[1.1fr_1fr_0.8fr_0.7fr] gap-3 px-5 py-3 border-b border-gray-200 text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500">
-                            <span>Name</span>
-                            <span>Email</span>
-                            <span>Role</span>
-                            <span>Status</span>
+                    <div className="space-y-5">
+                        <div className="rounded-2xl border border-gray-100 bg-[#faf9f6] overflow-hidden">
+                            <div className="grid grid-cols-[1.1fr_1fr_0.8fr_0.7fr] gap-3 px-5 py-3 border-b border-gray-200 text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500">
+                                <span>Name</span>
+                                <span>Email</span>
+                                <span>Role</span>
+                                <span>Status</span>
+                            </div>
+                            <div className="max-h-[320px] overflow-auto">
+                                {staffUsers.map((staff) => {
+                                    const isActive = !staff.deleted_at;
+                                    return (
+                                        <div key={staff.user_id} className="grid grid-cols-[1.1fr_1fr_0.8fr_0.7fr] gap-3 items-center px-5 py-3 border-b border-gray-100 text-sm">
+                                            <div className="font-semibold text-gray-800">{staff.first_name} {staff.last_name}</div>
+                                            <div className="text-gray-500 truncate">{staff.email}</div>
+                                            <div>
+                                                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-[0.16em] ${staff.role === 'Admin' ? 'bg-blue-50 text-blue-600' : 'bg-amber-100 text-amber-700'}`}>
+                                                    {staff.role}
+                                                </span>
+                                            </div>
+                                            <button
+                                                onClick={() => handleToggleStaffStatus(staff)}
+                                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-[0.16em] ${
+                                                    isActive ? 'bg-red-50 text-red-600' : 'bg-emerald-100 text-emerald-700'
+                                                }`}
+                                            >
+                                                {isActive ? 'Archive' : 'Restore'}
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+                                {staffUsers.length === 0 && (
+                                    <div className="px-5 py-8 text-center text-sm text-gray-500">No staff users yet.</div>
+                                )}
+                            </div>
                         </div>
-                        <div className="max-h-[360px] overflow-auto">
-                            {staffUsers.map((staff) => {
-                                const isActive = !staff.deleted_at;
-                                return (
-                                    <div key={staff.user_id} className="grid grid-cols-[1.1fr_1fr_0.8fr_0.7fr] gap-3 items-center px-5 py-3 border-b border-gray-100 text-sm">
-                                        <div className="font-semibold text-gray-800">{staff.first_name} {staff.last_name}</div>
-                                        <div className="text-gray-500 truncate">{staff.email}</div>
+
+                        <div className="rounded-2xl border border-gray-100 bg-white overflow-hidden">
+                            <div className="px-5 py-3 border-b border-gray-100 bg-[#faf9f6]">
+                                <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#b2a58d]">Pending Invites</h3>
+                            </div>
+                            <div className="max-h-[220px] overflow-auto">
+                                {pendingStaffInvites.map((invite) => (
+                                    <div key={invite.invitation_id} className="grid grid-cols-[1.1fr_1fr_0.7fr] gap-3 items-center px-5 py-3 border-b border-gray-100 text-sm">
+                                        <div className="font-semibold text-gray-800">{invite.first_name} {invite.last_name}</div>
+                                        <div className="text-gray-500 truncate">{invite.email}</div>
                                         <div>
-                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-[0.16em] ${staff.role === 'Admin' ? 'bg-blue-50 text-blue-600' : 'bg-amber-100 text-amber-700'}`}>
-                                                {staff.role}
+                                            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-[0.16em] ${invite.role === 'Admin' ? 'bg-blue-50 text-blue-600' : 'bg-amber-100 text-amber-700'}`}>
+                                                {invite.role}
                                             </span>
                                         </div>
-                                        <button
-                                            onClick={() => handleToggleStaffStatus(staff)}
-                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-[0.16em] ${
-                                                isActive ? 'bg-red-50 text-red-600' : 'bg-emerald-100 text-emerald-700'
-                                            }`}
-                                        >
-                                            {isActive ? 'Archive' : 'Restore'}
-                                        </button>
                                     </div>
-                                );
-                            })}
-                            {staffUsers.length === 0 && (
-                                <div className="px-5 py-8 text-center text-sm text-gray-500">No staff users yet.</div>
-                            )}
+                                ))}
+                                {pendingStaffInvites.length === 0 && (
+                                    <div className="px-5 py-8 text-center text-sm text-gray-500">No pending staff invitations.</div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -535,35 +604,18 @@ const AdminSettings = () => {
     );
 };
 
-const Input = ({ label, value, onChange, type = 'text', name, autoComplete = 'off' }) => {
-    const [passwordVisible, setPasswordVisible] = useState(false);
-
-    return (
-        <div>
-            <label className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400 block mb-2">{label}</label>
-            {type === 'password' ? (
-                <PasswordInput
-                    name={name}
-                    value={value ?? ''}
-                    onChange={(e) => onChange(e.target.value)}
-                    autoComplete={autoComplete}
-                    visible={passwordVisible}
-                    onToggleVisibility={() => setPasswordVisible((prev) => !prev)}
-                    inputClassName="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 pr-14 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]"
-                    buttonClassName="absolute inset-y-0 right-0 px-4 text-gray-400 hover:text-[#b59635] transition"
-                />
-            ) : (
-                <input
-                    name={name}
-                    type={type}
-                    value={value ?? ''}
-                    onChange={(e) => onChange(e.target.value)}
-                    autoComplete={autoComplete}
-                    className="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]"
-                />
-            )}
-        </div>
-    );
-};
+const Input = ({ label, value, onChange, type = 'text', name, autoComplete = 'off' }) => (
+    <div>
+        <label className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400 block mb-2">{label}</label>
+        <input
+            name={name}
+            type={type}
+            value={value ?? ''}
+            onChange={(e) => onChange(e.target.value)}
+            autoComplete={autoComplete}
+            className="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]"
+        />
+    </div>
+);
 
 export default AdminSettings;

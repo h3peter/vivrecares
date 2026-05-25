@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import ActionFeedbackModal from '../../components/ActionFeedbackModal';
+import AdminSecurityPanel from '../../components/AdminSecurityPanel';
 import PasswordChangePanel from '../../components/PasswordChangePanel';
 import { profilePhotoCandidates, profilePhotoUrl } from '../../utils/api';
 import { prepareProfilePhotoUpload } from '../../utils/imageUpload';
@@ -280,6 +281,10 @@ const AdminProfile = () => {
                         </div>
                     </form>
                 </div>
+            </div>
+
+            <div className="max-w-6xl mx-auto mt-8">
+                <AdminSecurityPanel />
             </div>
 
             <div className="max-w-6xl mx-auto mt-8">
