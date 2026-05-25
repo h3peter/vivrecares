@@ -1,0 +1,11 @@
+invoice_key,patient_email,patient_id,branch,total_amount,payment_method,payment_status,reference_number,payment_date,item_description,quantity,unit_price,service_id
+DEMO-INV-001,maria.santos.defense2026a@example.com,,Pasay Branch,2500,Cash,Paid,,2026-05-20,Signature Facial Treatment,1,2500,
+DEMO-INV-002,jose.reyes.defense2026a@example.com,,Valenzuela Branch,8500,GCash,Paid,GCASH-DEMO-1002,2026-05-21,Botox Consultation and Procedure,1,8500,
+DEMO-INV-003,angela.cruz.defense2026a@example.com,,Pasay Branch,4200,Maya,Paid,MAYA-DEMO-1003,2026-05-22,Laser Hair Removal Session,1,4200,
+DEMO-INV-004,carlo.delacruz.defense2026a@example.com,,Pasay Branch,1800,Cash,Unpaid,,2026-05-23,Skin Consultation,1,1800,
+DEMO-INV-005,patricia.lim.defense2026a@example.com,,Valenzuela Branch,3600,Credit Card,Paid,CC-DEMO-1005,2026-05-24,Chemical Peel,1,3600,
+DEMO-INV-006,rafael.garcia.defense2026a@example.com,,Valenzuela Branch,5200,Bank Transfer,Paid,BANK-DEMO-1006,2026-05-24,Facial Rejuvenation Package,1,5200,
+DEMO-INV-007,bianca.navarro.defense2026a@example.com,,Pasay Branch,1200,Cash,Paid,,2026-05-25,Follow-up Consultation,1,1200,
+DEMO-INV-008,daniel.torres.defense2026a@example.com,,Valenzuela Branch,7000,GCash,Overdue,,2026-05-10,Acne Scar Treatment Plan,1,7000,
+DEMO-INV-009,maria.santos.defense2026a@example.com,,Pasay Branch,4300,Cash,Paid,,2026-05-25,Hydrating Facial,1,2300,
+DEMO-INV-009,maria.santos.defense2026a@example.com,,Pasay Branch,4300,Cash,Paid,,2026-05-25,Post-treatment Skincare Kit,1,2000,

@@ -1,0 +1,9 @@
+first_name,middle_name,last_name,extension_name,nickname,email,age,sex,address,phone,surgical_procedures,aesthetic_procedures,tooth_extraction,allergies,pregnant,untoward_reactions,heart_disease,hypertension,diabetes,hyperthyroidism,autoimmune_disease,cancer,renal_failure,liver_disease,bronchial_asthma,pulmonary_disease,infectious_disease,others,medications,current_skin_treatment
+Maria,,Santos,,Mia,maria.santos.defense2026a@example.com,29,Female,Pasay City,09171234567,Appendectomy 2019,Facial treatment 2024,No,None,No,,No,No,No,No,No,No,No,No,No,No,No,,Vitamin C serum,Sunscreen
+Jose,,Reyes,,Joey,jose.reyes.defense2026a@example.com,41,Male,Valenzuela City,09181234567,None,Botox 2023,No,Penicillin,No,Mild redness after facial,No,Yes,No,No,No,No,No,No,No,No,No,,Losartan,Moisturizer
+Angela,Marie,Cruz,,Ange,angela.cruz.defense2026a@example.com,34,Female,Paranaque City,09191234567,C-section 2021,Laser hair removal,Yes,None,No,,No,No,No,No,No,No,No,No,No,No,No,,None,None
+Carlo,,Dela Cruz,Jr.,Carlo,carlo.delacruz.defense2026a@example.com,27,Male,Makati City,09201234567,None,None,No,None,No,,No,No,No,No,No,No,No,No,No,No,No,,None,None
+Patricia,Ann,Lim,,Pat,patricia.lim.defense2026a@example.com,38,Female,Manila City,09211234567,Cholecystectomy 2018,Chemical peel 2025,No,Seafood,No,,No,No,No,No,No,No,No,No,Yes,No,No,,Salbutamol as needed,Retinol cream
+Rafael,,Garcia,,Rafa,rafael.garcia.defense2026a@example.com,45,Male,Quezon City,09221234567,None,Facial treatment 2024,No,None,No,,No,No,Yes,No,No,No,No,No,No,No,No,,Metformin,None
+Bianca,Mae,Navarro,,Bia,bianca.navarro.defense2026a@example.com,25,Female,Caloocan City,09231234567,None,None,No,None,No,,No,No,No,No,No,No,No,No,No,No,No,,None,Sunscreen
+Daniel,,Torres,,Dan,daniel.torres.defense2026a@example.com,52,Male,Pasig City,09241234567,Knee surgery 2016,None,No,None,No,,Yes,Yes,No,No,No,No,No,No,No,No,No,,Atorvastatin and amlodipine,None

@@ -67,6 +67,8 @@ function read_import_csv($file) {
 }
 
 try {
+    ensure_email_verification_schema($conn);
+
     $rows = read_import_csv($_FILES['file'] ?? null);
 
     if (empty($rows)) {
