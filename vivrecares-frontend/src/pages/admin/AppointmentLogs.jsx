@@ -45,6 +45,7 @@ const AppointmentLogs = () => {
     const [appointments, setAppointments] = useState([]);
     const [availability, setAvailability] = useState([]);
     const [slots, setSlots] = useState([]);
+    const [branches, setBranches] = useState(['Pasay Branch', 'Valenzuela Branch']);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
     const [branchFilter, setBranchFilter] = useState('All');
@@ -83,6 +84,9 @@ const AppointmentLogs = () => {
             try {
                 const res = await axios.get('/get_appointment_settings.php');
                 if (res.data.status === 'success') {
+                    if (Array.isArray(res.data.branches) && res.data.branches.length > 0) {
+                        setBranches(res.data.branches);
+                    }
                     setAvailability(res.data.availability || []);
                     setSlots(res.data.slots || []);
                 }
@@ -535,8 +539,9 @@ const AppointmentLogs = () => {
                                         onChange={(e) => setSelectedApt({ ...selectedApt, branch: e.target.value, date: '', time: '' })}
                                         className="w-full border-b border-gray-200 py-2 outline-none bg-white text-gray-700"
                                     >
-                                        <option value="Pasay Branch">Pasay Branch</option>
-                                        <option value="Valenzuela Branch">Valenzuela Branch</option>
+                                        {branches.map((branch) => (
+                                            <option key={branch} value={branch}>{branch}</option>
+                                        ))}
                                     </select>
                                 </div>
 

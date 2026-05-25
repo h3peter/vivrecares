@@ -19,6 +19,7 @@ const BillingAndPayments = () => {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [patients, setPatients] = useState([]);
     const [services, setServices] = useState([]);
+    const [branches, setBranches] = useState(CLINIC_BRANCHES);
     const [selectedPatient, setSelectedPatient] = useState('');
     const [selectedBranch, setSelectedBranch] = useState('');
     const [paymentMethod, setPaymentMethod] = useState('Cash');
@@ -37,15 +38,23 @@ const BillingAndPayments = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [billRes, patRes, serviceRes] = await Promise.all([
+            const [billRes, patRes, serviceRes, branchRes] = await Promise.all([
                 axios.get('/get_billings.php'),
                 axios.get('/get_all_patients.php?archived=0'),
                 axios.get('/get_services.php?active_only=1'),
+                axios.get('/get_branches.php'),
             ]);
 
             if (Array.isArray(billRes.data)) setBillings(billRes.data);
             if (Array.isArray(patRes.data)) setPatients(patRes.data);
             if (Array.isArray(serviceRes.data)) setServices(serviceRes.data);
+            if (branchRes.data.status === 'success') {
+                const activeBranches = (branchRes.data.branches || [])
+                    .filter((branch) => Number(branch.is_active) === 1)
+                    .map((branch) => branch.branch_name)
+                    .filter(Boolean);
+                if (activeBranches.length > 0) setBranches(activeBranches);
+            }
         } catch (error) {
             console.error('Error fetching data:', error);
         } finally {
@@ -598,7 +607,7 @@ const BillingAndPayments = () => {
                                     <label className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold block mb-2">Branch</label>
                                     <select className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-xl text-sm outline-none focus:border-[#c4ba9d]" value={selectedBranch} onChange={(e) => setSelectedBranch(e.target.value)} required>
                                         <option value="">-- Choose Branch --</option>
-                                        {CLINIC_BRANCHES.map((branch) => (
+                                        {branches.map((branch) => (
                                             <option key={branch} value={branch}>
                                                 {branch}
                                             </option>

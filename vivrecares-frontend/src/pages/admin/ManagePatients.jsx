@@ -68,6 +68,7 @@ const ManagePatients = () => {
             [
                 patient.first_name,
                 patient.last_name,
+                patient.email,
                 patient.patient_id,
                 patient.phone,
                 patient.address,
@@ -177,7 +178,7 @@ const ManagePatients = () => {
                             <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Search Patients</label>
                             <input
                                 type="text"
-                                placeholder="Search by patient, phone, ID, address, or sex..."
+                                placeholder="Search by patient, email, phone, ID, address, or sex..."
                                 className="w-full rounded-2xl border border-gray-200 py-3.5 pl-11 pr-4 text-base text-gray-700 shadow-sm outline-none focus:border-[#d4af37]"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -295,6 +296,7 @@ const ManagePatients = () => {
 
                             <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl bg-[#faf9f6] p-4 sm:grid-cols-2">
                                 <InfoBlock label="Profile" value={`${patient.sex || 'Unknown'} | ${patient.age || 'N/A'} yrs`} />
+                                <InfoBlock label="Email" value={patient.email || 'No email on file'} />
                                 <InfoBlock label="Phone" value={patient.phone || 'No phone on file'} />
                                 <InfoBlock label="Address" value={patient.address || 'No address on file'} />
                                 <InfoBlock label="Added" value={formatCreatedAt(patient.created_at)} />
@@ -319,6 +321,7 @@ const ManagePatients = () => {
                                     <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-500">
                                         {patient.sex} | {patient.age} yrs | Added {formatCreatedAt(patient.created_at)}
                                     </p>
+                                    <p className="mt-1 truncate text-xs text-gray-400">{patient.email || 'No email on file'}</p>
                                 </div>
                             </div>
 

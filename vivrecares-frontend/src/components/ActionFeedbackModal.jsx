@@ -42,6 +42,7 @@ const ActionFeedbackModal = ({
   if (!open) return null;
 
   const palette = toneStyles[tone] || toneStyles.info;
+  const displayMessage = friendlyErrorMessage(message);
 
   return (
     <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
@@ -50,7 +51,7 @@ const ActionFeedbackModal = ({
           {icons[tone] || icons.info}
         </div>
         <h3 className="mb-2 text-2xl font-bold text-gray-800">{title}</h3>
-        <p className="mx-auto max-w-sm text-sm leading-relaxed text-gray-500">{message}</p>
+        <p className="mx-auto max-w-sm text-sm leading-relaxed text-gray-500">{displayMessage}</p>
         <button
           type="button"
           onClick={onClose}
@@ -64,3 +65,4 @@ const ActionFeedbackModal = ({
 };
 
 export default ActionFeedbackModal;
+import { friendlyErrorMessage } from '../utils/friendlyErrors';

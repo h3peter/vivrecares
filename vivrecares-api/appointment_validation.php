@@ -1,21 +1,10 @@
 <?php
+require_once 'branch_helper.php';
 
 if (!function_exists('normalize_appointment_branch')) {
     function normalize_appointment_branch($rawBranch)
     {
-        $branchMap = [
-            'pasay branch' => 'Pasay Branch',
-            'valenzuela branch' => 'Valenzuela Branch',
-            'main branch' => 'Pasay Branch',
-        ];
-
-        $branch = trim((string) $rawBranch);
-        if ($branch === '') {
-            return '';
-        }
-
-        $branchKey = strtolower($branch);
-        return $branchMap[$branchKey] ?? $branch;
+        return normalize_clinic_branch_name($rawBranch);
     }
 }
 
@@ -56,6 +45,10 @@ if (!function_exists('validate_appointment_schedule')) {
 
         if ($normalizedBranch === '' || $date === '' || $time === '') {
             throw new Exception('Branch, date, and time are required.');
+        }
+
+        if (!clinic_branch_exists($conn, $normalizedBranch, true)) {
+            throw new Exception('The selected branch is not active.');
         }
 
         $validatedDate = validate_appointment_date_not_past($date);

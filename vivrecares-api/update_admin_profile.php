@@ -19,6 +19,14 @@ try {
     $stmt->execute([$data['first_name'], $data['last_name'], $data['email'], $data['user_id']]);
 
     echo json_encode(["status" => "success", "message" => "Admin profile updated!"]);
+} catch (PDOException $e) {
+    $errorCode = $e->errorInfo[1] ?? null;
+    if ((string) $e->getCode() === '23000' || (int) $errorCode === 1062) {
+        echo json_encode(["status" => "error", "message" => "That email address is already used by another account."]);
+        exit;
+    }
+
+    echo json_encode(["status" => "error", "message" => "Unable to update your profile right now."]);
 } catch (Exception $e) {
     echo json_encode(["status" => "error", "message" => $e->getMessage()]);
 }

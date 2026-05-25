@@ -35,8 +35,17 @@ try {
 
     $conn->commit();
     echo json_encode(["status" => "success", "message" => "Profile updated!"]);
+} catch (PDOException $e) {
+    $conn->rollBack();
+    $errorCode = $e->errorInfo[1] ?? null;
+    if ((string) $e->getCode() === '23000' || (int) $errorCode === 1062) {
+        echo json_encode(["status" => "error", "message" => "That email address is already used by another account."]);
+        exit;
+    }
+
+    echo json_encode(["status" => "error", "message" => "Unable to update your profile right now."]);
 } catch (Exception $e) {
     $conn->rollBack();
-    echo json_encode(["status" => "error", "message" => $e->getMessage()]);
+    echo json_encode(["status" => "error", "message" => "Unable to update your profile right now."]);
 }
 ?>

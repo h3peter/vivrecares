@@ -116,7 +116,7 @@ const DoctorProfile = () => {
                 setFeedback({
                     tone: 'error',
                     title: 'Update Failed',
-                    message: res.data.message ? `Error: ${res.data.message}` : 'Unable to update your profile.',
+                    message: res.data.message || 'Unable to update your profile.',
                 });
             }
         } catch (err) {

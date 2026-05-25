@@ -1,6 +1,7 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once 'branch_helper.php';
 
 init_api_auth();
 require_roles(['Admin']);
@@ -15,7 +16,10 @@ if (!$data || empty($data['branch']) || !isset($data['availability']) || !isset(
 try {
     $conn->beginTransaction();
 
-    $branch = $data['branch'];
+    $branch = normalize_clinic_branch_name($data['branch']);
+    if (!clinic_branch_exists($conn, $branch, false)) {
+        throw new Exception('Unknown branch.');
+    }
     $availabilityStmt = $conn->prepare("INSERT INTO appointment_availability (branch, weekday, weekday_name, is_active)
                                         VALUES (?, ?, ?, ?)
                                         ON DUPLICATE KEY UPDATE weekday_name = VALUES(weekday_name), is_active = VALUES(is_active)");

@@ -20,7 +20,12 @@ const defaultStaffForm = {
     role: 'Doctor',
 };
 
-const branches = ['Pasay Branch', 'Valenzuela Branch'];
+const defaultBranchForm = {
+    branch_id: null,
+    branch_name: '',
+    address: '',
+    is_active: true,
+};
 
 const getSlotKey = (slot) => {
     if (slot.slot_id) return `slot-${slot.slot_id}`;
@@ -30,16 +35,19 @@ const getSlotKey = (slot) => {
 
 const AdminSettings = () => {
     const [services, setServices] = useState([]);
+    const [branches, setBranches] = useState([]);
     const [staffUsers, setStaffUsers] = useState([]);
     const [pendingStaffInvites, setPendingStaffInvites] = useState([]);
     const [serviceForm, setServiceForm] = useState(defaultServiceForm);
     const [staffForm, setStaffForm] = useState(defaultStaffForm);
-    const [selectedBranch, setSelectedBranch] = useState(branches[0]);
+    const [branchForm, setBranchForm] = useState(defaultBranchForm);
+    const [selectedBranch, setSelectedBranch] = useState('Pasay Branch');
     const [availability, setAvailability] = useState([]);
     const [slots, setSlots] = useState([]);
     const [savingSchedule, setSavingSchedule] = useState(false);
     const [savingService, setSavingService] = useState(false);
     const [savingStaff, setSavingStaff] = useState(false);
+    const [savingBranch, setSavingBranch] = useState(false);
     const [developmentInviteUrl, setDevelopmentInviteUrl] = useState('');
     const [serviceView, setServiceView] = useState('active');
     const [highlightedServiceId, setHighlightedServiceId] = useState(null);
@@ -69,6 +77,11 @@ const AdminSettings = () => {
             setServices(Array.isArray(serviceRes.data) ? serviceRes.data : []);
 
             if (appointmentRes.data.status === 'success') {
+                const activeBranches = appointmentRes.data.branches || [];
+                setBranches(activeBranches.map((branchName) => ({ branch_name: branchName, is_active: 1 })));
+                if (activeBranches.length > 0 && !activeBranches.includes(selectedBranch)) {
+                    setSelectedBranch(activeBranches[0]);
+                }
                 setAvailability(appointmentRes.data.availability || []);
                 setSlots((appointmentRes.data.slots || []).map((slot) => ({ ...slot, is_new: false })));
             }
@@ -89,6 +102,33 @@ const AdminSettings = () => {
         fetchAll();
     }, []);
 
+    const fetchBranches = async () => {
+        try {
+            const res = await axios.get('/get_branches.php');
+            if (res.data.status === 'success') {
+                const nextBranches = res.data.branches || [];
+                setBranches(nextBranches);
+                const activeNames = nextBranches
+                    .filter((branch) => Number(branch.is_active) === 1)
+                    .map((branch) => branch.branch_name);
+                if (activeNames.length > 0 && !activeNames.includes(selectedBranch)) {
+                    setSelectedBranch(activeNames[0]);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to load branches', error);
+        }
+    };
+
+    useEffect(() => {
+        fetchBranches();
+    }, []);
+
+    const activeBranchNames = useMemo(
+        () => branches.filter((branch) => Number(branch.is_active) === 1).map((branch) => branch.branch_name),
+        [branches]
+    );
+
     const visibleServices = useMemo(() => {
         if (serviceView === 'active') return services.filter((service) => Number(service.is_active) === 1);
         if (serviceView === 'inactive') return services.filter((service) => Number(service.is_active) === 0);
@@ -108,6 +148,47 @@ const AdminSettings = () => {
         () => availability.filter((day) => day.branch === selectedBranch),
         [availability, selectedBranch]
     );
+
+    const saveBranch = async (adminPassword) => {
+        setSavingBranch(true);
+        try {
+            const res = await axios.post('/save_branch.php', {
+                ...branchForm,
+                is_active: branchForm.is_active ? 1 : 0,
+                admin_password: adminPassword,
+            });
+            if (res.data.status === 'success') {
+                setBranchForm(defaultBranchForm);
+                await fetchBranches();
+                await fetchAll();
+                showToast('success', res.data.message || 'Branch saved.');
+            } else {
+                showToast('error', res.data.message || 'Unable to save branch.');
+            }
+        } catch (error) {
+            showToast('error', 'Unable to save branch.');
+        } finally {
+            setSavingBranch(false);
+        }
+    };
+
+    const handleSaveBranch = (e) => {
+        e.preventDefault();
+        setProtectedAction({
+            title: branchForm.branch_id ? 'Update Branch' : 'Add Branch',
+            message: 'Enter your admin password before changing branch settings.',
+            onConfirm: saveBranch,
+        });
+    };
+
+    const editBranch = (branch) => {
+        setBranchForm({
+            branch_id: branch.branch_id,
+            branch_name: branch.branch_name,
+            address: branch.address || '',
+            is_active: Number(branch.is_active) === 1,
+        });
+    };
 
     const branchSlots = useMemo(
         () =>
@@ -452,7 +533,7 @@ const AdminSettings = () => {
                         <div>
                             <label className="text-xs font-bold uppercase tracking-[0.18em] text-gray-400 block mb-2">Branch</label>
                             <select value={selectedBranch} onChange={(e) => setSelectedBranch(e.target.value)} className="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]">
-                                {branches.map((branch) => <option key={branch} value={branch}>{branch}</option>)}
+                                {activeBranchNames.map((branch) => <option key={branch} value={branch}>{branch}</option>)}
                             </select>
                         </div>
 
@@ -513,6 +594,57 @@ const AdminSettings = () => {
                     </div>
                 </section>
             </div>}
+
+            {settingsLoading ? <div className="mt-8"><PanelSkeleton tall /></div> : (
+            <section className="mt-8 bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+                <div className="px-8 py-6 border-b border-gray-100 bg-[#faf9f6]">
+                    <h2 className="text-2xl font-bold text-gray-800">Branches</h2>
+                    <p className="text-sm text-gray-500 mt-2">Control which clinic branches are available for new appointments and invoices.</p>
+                </div>
+
+                <div className="p-8 grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-8">
+                    <form onSubmit={handleSaveBranch} className="space-y-5">
+                        <Input label="Branch Name" value={branchForm.branch_name} onChange={(value) => setBranchForm((prev) => ({ ...prev, branch_name: value }))} />
+                        <Input label="Address" value={branchForm.address} onChange={(value) => setBranchForm((prev) => ({ ...prev, address: value }))} />
+                        <label className="flex items-center gap-3 text-sm text-gray-600">
+                            <input type="checkbox" checked={branchForm.is_active} onChange={(e) => setBranchForm((prev) => ({ ...prev, is_active: e.target.checked }))} className="w-4 h-4 accent-[#c4ba9d]" />
+                            Active for new selections
+                        </label>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+                            <button type="button" onClick={() => setBranchForm(defaultBranchForm)} className="w-full rounded-xl border border-gray-200 px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-gray-600 sm:w-auto">Clear</button>
+                            <button type="submit" disabled={savingBranch} className="w-full rounded-xl bg-[#555555] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#c4ba9d] shadow-lg transition hover:bg-[#404040] sm:w-auto">
+                                {savingBranch ? 'Saving...' : branchForm.branch_id ? 'Update Branch' : 'Add Branch'}
+                            </button>
+                        </div>
+                    </form>
+
+                    <div className="rounded-2xl border border-gray-100 bg-[#faf9f6] overflow-hidden">
+                        <div className="grid grid-cols-[1.1fr_1fr_0.7fr] gap-3 px-5 py-3 border-b border-gray-200 text-[11px] font-bold uppercase tracking-[0.18em] text-gray-500">
+                            <span>Branch</span>
+                            <span>Address</span>
+                            <span>Status</span>
+                        </div>
+                        <div className="max-h-[320px] overflow-auto">
+                            {branches.map((branch) => {
+                                const isActive = Number(branch.is_active) === 1;
+                                return (
+                                    <button key={branch.branch_id || branch.branch_name} type="button" onClick={() => editBranch(branch)} className="grid w-full grid-cols-[1.1fr_1fr_0.7fr] gap-3 items-center px-5 py-3 border-b border-gray-100 text-left text-sm transition hover:bg-white">
+                                        <div className="font-semibold text-gray-800">{branch.branch_name}</div>
+                                        <div className="text-gray-500 truncate">{branch.address || 'No address set'}</div>
+                                        <span className={`w-fit px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-[0.16em] ${isActive ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                                            {isActive ? 'Active' : 'Archived'}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                            {branches.length === 0 && (
+                                <div className="px-5 py-8 text-center text-sm text-gray-500">No branches configured.</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </section>
+            )}
 
             {settingsLoading ? <div className="mt-8"><PanelSkeleton tall /></div> : <section className="mt-8 bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-8 py-6 border-b border-gray-100 bg-[#faf9f6]">

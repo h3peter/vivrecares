@@ -1,10 +1,12 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once 'branch_helper.php';
 
 init_api_auth();
 
 try {
+    ensure_branch_schema($conn);
     $availabilityStmt = $conn->query("SELECT branch, weekday, weekday_name, is_active
                                       FROM appointment_availability
                                       ORDER BY branch ASC, weekday ASC");
@@ -14,6 +16,7 @@ try {
 
     echo json_encode([
         "status" => "success",
+        "branches" => get_active_clinic_branches($conn),
         "availability" => $availabilityStmt->fetchAll(PDO::FETCH_ASSOC),
         "slots" => $slotStmt->fetchAll(PDO::FETCH_ASSOC),
     ]);

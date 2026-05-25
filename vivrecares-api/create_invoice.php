@@ -19,13 +19,9 @@ try {
     $paymentMethod = $data['payment_method'] ?? 'Cash';
     $paymentStatus = $data['payment_status'] ?? 'Paid';
     $referenceNumber = trim($data['reference_number'] ?? '');
-    $branch = normalize_billing_branch($data['branch'] ?? null);
+    $branch = validate_billing_branch($conn, $data['branch'] ?? null);
     $allowedMethods = ['Cash', 'GCash', 'Maya', 'Credit Card', 'Bank Transfer'];
     $allowedStatuses = ['Paid', 'Unpaid', 'Overdue'];
-
-    if (!$branch) {
-        throw new Exception('Branch is required for manual invoices.');
-    }
 
     if (!in_array($paymentMethod, $allowedMethods, true)) {
         throw new Exception('Invalid payment method.');

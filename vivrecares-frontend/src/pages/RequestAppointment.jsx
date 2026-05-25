@@ -18,6 +18,7 @@ const RequestAppointment = () => {
     const [feedback, setFeedback] = useState(null);
     const [availability, setAvailability] = useState([]);
     const [slots, setSlots] = useState([]);
+    const [branchOptions, setBranchOptions] = useState(['Pasay Branch', 'Valenzuela Branch']);
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -44,6 +45,9 @@ const RequestAppointment = () => {
                 }
 
                 if (settingsRes.data.status === 'success') {
+                    if (Array.isArray(settingsRes.data.branches) && settingsRes.data.branches.length > 0) {
+                        setBranchOptions(settingsRes.data.branches);
+                    }
                     setAvailability(settingsRes.data.availability || []);
                     setSlots(settingsRes.data.slots || []);
                 }
@@ -56,8 +60,6 @@ const RequestAppointment = () => {
 
         fetchInitialData();
     }, []);
-
-    const branchOptions = ['Pasay Branch', 'Valenzuela Branch'];
 
     const branchAvailability = useMemo(
         () => availability.filter((day) => day.branch === branch && Number(day.is_active) === 1),
