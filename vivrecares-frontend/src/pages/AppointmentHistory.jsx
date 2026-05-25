@@ -73,6 +73,44 @@ const AppointmentHistory = () => {
         return `${h % 12 || 12}:${minute} ${h >= 12 ? 'PM' : 'AM'}`;
     };
 
+    const parseAppointmentDate = (appointment) => {
+        if (!appointment?.date) return null;
+        const parsed = new Date(`${appointment.date}T00:00:00`);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    const isPastAppointment = (appointment) => {
+        const appointmentDate = parseAppointmentDate(appointment);
+        if (!appointmentDate) return false;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return appointmentDate < today;
+    };
+
+    const getTimelineLabel = (appointment) => {
+        const appointmentDate = parseAppointmentDate(appointment);
+        if (!appointmentDate) return null;
+        const status = String(appointment?.status || '').toLowerCase();
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (appointmentDate < today) {
+            return { label: 'Past Appointment', className: 'bg-gray-100 text-gray-500' };
+        }
+
+        if (appointmentDate.getTime() === today.getTime()) {
+            return { label: 'Today', className: 'bg-blue-50 text-blue-600' };
+        }
+
+        if (status === 'pending') {
+            return null;
+        }
+
+        return { label: 'Upcoming', className: 'bg-green-50 text-green-600' };
+    };
+
     const handleRescheduleResponse = async (appointmentId, action) => {
         try {
             setActionAppointmentId(appointmentId);
@@ -108,7 +146,7 @@ const AppointmentHistory = () => {
     };
 
     const canCancelAppointment = (appointment) => {
-        return ['pending', 'confirmed', 'rescheduled'].includes(String(appointment?.status || '').toLowerCase());
+        return ['pending', 'confirmed', 'rescheduled'].includes(String(appointment?.status || '').toLowerCase()) && !isPastAppointment(appointment);
     };
 
     const handleCancelAppointment = async (appointmentId) => {
@@ -175,9 +213,9 @@ const AppointmentHistory = () => {
             <div className="rounded-[2.5rem] border border-gray-100 bg-white p-5 shadow-sm lg:p-8">
                 <div className="mb-6 hidden grid-cols-12 gap-4 border-b border-gray-50 px-6 pb-6 text-xs font-bold uppercase tracking-[0.2em] text-[#b2a58d] lg:grid">
                     <div className="col-span-3">Type & Branch</div>
-                    <div className="col-span-3">Date & Time</div>
+                    <div className="col-span-2">Date & Time</div>
                     <div className="col-span-4">Your Concerns</div>
-                    <div className="col-span-2 text-right">Status</div>
+                    <div className="col-span-3 text-right">Status</div>
                 </div>
 
                 <div className="space-y-3 px-0 lg:px-2">
@@ -186,7 +224,11 @@ const AppointmentHistory = () => {
                             <AppointmentHistorySkeleton key={index} />
                         ))
                     ) : appointments.length > 0 ? (
-                        currentRows.map((apt) => (
+                        currentRows.map((apt) => {
+                            const timeline = getTimelineLabel(apt);
+                            const statusText = String(apt.status || '').trim();
+
+                            return (
                             <div key={apt.appointment_id}>
                                 <div className="rounded-[1.5rem] border border-gray-100 bg-[#faf9f6] p-4 sm:p-5 lg:hidden">
                                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -194,9 +236,18 @@ const AppointmentHistory = () => {
                                             <p className="text-base font-bold text-gray-800">{apt.appointment_type || 'General Inquiry'}</p>
                                             <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-400">{apt.branch || 'Unassigned'}</p>
                                         </div>
-                                        <span className={`inline-flex w-fit rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] ${getStatusBadge(apt.status)}`}>
-                                            {apt.status}
-                                        </span>
+                                        <div className="flex flex-wrap gap-2 sm:justify-end">
+                                            {timeline && (
+                                                <span className={`inline-flex w-fit rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] ${timeline.className}`}>
+                                                    {timeline.label}
+                                                </span>
+                                            )}
+                                            {statusText && (
+                                                <span className={`inline-flex w-fit rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.18em] ${getStatusBadge(statusText)}`}>
+                                                    {statusText}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     <div className="mt-4 grid grid-cols-1 gap-3 rounded-2xl bg-white p-4 sm:grid-cols-2">
@@ -253,6 +304,11 @@ const AppointmentHistory = () => {
                                             {actionAppointmentId === apt.appointment_id ? 'Processing...' : 'Cancel Appointment'}
                                         </button>
                                     )}
+                                    {!canCancelAppointment(apt) && isPastAppointment(apt) && ['pending', 'confirmed', 'rescheduled'].includes(String(apt.status || '').toLowerCase()) && (
+                                        <p className="mt-4 rounded-xl border border-gray-200 bg-white px-4 py-3 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
+                                            Past appointments can no longer be cancelled
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="hidden grid-cols-12 items-center gap-4 rounded-[1.5rem] border border-gray-50 bg-[#faf9f6] p-5 text-base text-gray-700 transition hover:border-[#c4ba9d] lg:grid">
@@ -261,7 +317,7 @@ const AppointmentHistory = () => {
                                         <span className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-400">{apt.branch || 'Unassigned'}</span>
                                     </div>
 
-                                    <div className="col-span-3 flex flex-col">
+                                    <div className="col-span-2 flex flex-col">
                                         <span className="font-medium">{apt.date}</span>
                                         <span className="mt-1 text-sm text-gray-500">{formatTime(apt.time)}</span>
                                     </div>
@@ -302,22 +358,39 @@ const AppointmentHistory = () => {
                                         )}
                                     </div>
 
-                                    <div className={`col-span-2 text-right text-xs font-bold uppercase tracking-[0.18em] ${getStatusColor(apt.status)}`}>
-                                        {apt.status}
+                                    <div className="col-span-3 flex flex-col items-end gap-3 text-right">
+                                        <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
+                                            {timeline && (
+                                                <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${timeline.className}`}>
+                                                    {timeline.label}
+                                                </span>
+                                            )}
+                                            {statusText && (
+                                                <span className={`inline-flex rounded-full bg-white px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] ${getStatusColor(statusText)}`}>
+                                                    {statusText}
+                                                </span>
+                                            )}
+                                        </div>
                                         {canCancelAppointment(apt) && (
                                             <button
                                                 type="button"
                                                 disabled={actionAppointmentId === apt.appointment_id}
                                                 onClick={() => handleCancelAppointment(apt.appointment_id)}
-                                                className="mt-3 rounded-full border border-red-200 bg-white px-4 py-2.5 text-[10px] font-bold uppercase tracking-[0.18em] text-red-500 transition hover:bg-red-50 disabled:opacity-50"
+                                                className="rounded-full border border-red-200 bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[0.14em] text-red-500 transition hover:bg-red-50 disabled:opacity-50"
                                             >
                                                 {actionAppointmentId === apt.appointment_id ? 'Processing...' : 'Cancel'}
                                             </button>
                                         )}
+                                        {!canCancelAppointment(apt) && isPastAppointment(apt) && ['pending', 'confirmed', 'rescheduled'].includes(String(apt.status || '').toLowerCase()) && (
+                                            <p className="max-w-[10rem] text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-400">
+                                                Cannot cancel past date
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </div>
-                        ))
+                            );
+                        })
                     ) : (
                         <p className="py-10 text-center text-base italic text-gray-400">You have no appointment history.</p>
                     )}

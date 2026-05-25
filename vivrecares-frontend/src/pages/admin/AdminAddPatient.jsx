@@ -107,64 +107,71 @@ const AdminAddPatient = () => {
             {error && <div className="mb-6 p-4 bg-red-50 text-red-600 text-sm rounded-xl border border-red-100">{error}</div>}
 
             <form onSubmit={handleSubmit} className="w-full space-y-8 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm sm:p-7 lg:p-10">
+                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#eadfca] bg-[#fcfaf5] px-4 py-3">
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9a8353]">Patient Details</p>
+                    <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+                        <span><span className="font-bold text-red-500">*</span> Required</span>
+                        <span><span className="font-bold text-gray-400">Optional</span> can be left blank</span>
+                    </div>
+                </div>
                 
                 {/* ACCOUNT INFO */}
                 <div className="mb-4 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
                     <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">First Name</label>
+                        <FieldLabel label="First Name" required />
                         <input type="text" name="first_name" required onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                     </div>
                     <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Middle Name</label>
+                        <FieldLabel label="Middle Name" />
                         <input type="text" name="middle_name" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                     </div>
                     <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Last Name</label>
+                        <FieldLabel label="Last Name" required />
                         <input type="text" name="last_name" required onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                     </div>
                     <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Ext. (E.G. III)</label>
+                        <FieldLabel label="Ext. (E.G. III)" />
                         <input type="text" name="extension_name" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                     </div>
                 </div>
 
                 <div className="mb-4 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
                     <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Nickname</label>
+                        <FieldLabel label="Nickname" />
                         <input type="text" name="nickname" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                     </div>
                     <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Age</label>
+                        <FieldLabel label="Age" required />
                         <input type="number" name="age" required onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                     </div>
                     <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Sex</label>
-                        <select name="sex" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition">
+                        <FieldLabel label="Sex" required />
+                        <select name="sex" required onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition">
                             <option value="Select...">Select...</option>
                             <option value="Female">Female</option>
                             <option value="Male">Male</option>
                         </select>
                     </div>
                     <div>
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Phone Number</label>
+                        <FieldLabel label="Phone Number" required />
                         <input type="text" name="phone" required onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                     </div>
                 </div>
 
                 <div className="mb-12 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
                     <div className="sm:col-span-1">
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Email</label>
+                        <FieldLabel label="Email" required />
                         <input type="email" name="email" required onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                     </div>
                     <div className="sm:col-span-1">
                         <div className="flex justify-between items-end mb-2">
-                            <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block">Temp. Password</label>
+                            <FieldLabel label="Temp. Password" required className="mb-0" />
                             <span className="text-[10px] text-[#d4af37] italic">Editable</span>
                         </div>
                         <input type="text" name="password" value={formData.password} required onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-[#d4af37]/30 rounded-lg focus:outline-none focus:border-[#d4af37] transition text-gray-600" />
                     </div>
                     <div className="sm:col-span-2 xl:col-span-2">
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Address</label>
+                        <FieldLabel label="Address" required />
                         <input type="text" name="address" required onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                     </div>
                 </div>
@@ -176,15 +183,15 @@ const AdminAddPatient = () => {
                     {/* Row 1: 3 columns, all top-aligned */}
                     <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-8">
                         <div>
-                            <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Previous Aesthetic Procedures</label>
+                            <FieldLabel label="Previous Aesthetic Procedures" />
                             <input type="text" name="aesthetic_procedures" placeholder="(if any)" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                         </div>
                         <div>
-                            <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Previous Surgical Procedures</label>
+                            <FieldLabel label="Previous Surgical Procedures" />
                             <input type="text" name="surgical_procedures" placeholder="(if any)" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                         </div>
                         <div>
-                            <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Allergies</label>
+                            <FieldLabel label="Allergies" />
                             <input type="text" name="allergies" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                         </div>
                     </div>
@@ -192,7 +199,7 @@ const AdminAddPatient = () => {
                     {/* Row 2: Aesthetic Procedures + Pregnant side by side */}
                         <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-8">
                         <div>
-                            <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Recent Tooth Extraction?</label>
+                            <FieldLabel label="Recent Tooth Extraction?" />
                             {/* Matches the input height so all 3 cells are visually equal */}
                             <div className="w-full p-3  rounded-lg flex items-center gap-3">
                                 <input type="checkbox" name="tooth_extraction" onChange={handleChange} className="w-4 h-4 accent-[#d4af37]" />
@@ -200,7 +207,7 @@ const AdminAddPatient = () => {
                             </div>
                         </div>
                         <div className="md:col-span-2">
-                            <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Pregnant / Breastfeeding / Planning?</label>
+                            <FieldLabel label="Pregnant / Breastfeeding / Planning?" />
                             <div className="flex w-full flex-col gap-3 rounded-lg p-3 sm:flex-row sm:items-center sm:gap-8">
                                 <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
                                     <input type="radio" name="pregnant" value="Yes" onChange={handleChange} className="w-4 h-4 accent-[#d4af37]" /> Yes
@@ -214,7 +221,7 @@ const AdminAddPatient = () => {
 
                     {/* Row 3: Full width */}
                     <div className="mt-6">
-                        <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Have you had any untoward reactions? If yes, please specify:</label>
+                        <FieldLabel label="Have you had any untoward reactions? If yes, please specify:" />
                         <input type="text" name="untoward_reactions" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                     </div>
                 </div>
@@ -235,15 +242,15 @@ const AdminAddPatient = () => {
 
                     <div className="space-y-6">
                         <div>
-                            <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Others</label>
+                            <FieldLabel label="Others" />
                             <input type="text" name="others" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                         </div>
                         <div>
-                            <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Medications / Treatment Regimen</label>
+                            <FieldLabel label="Medications / Treatment Regimen" />
                             <input type="text" name="medications" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                         </div>
                         <div>
-                            <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Are you currently on Skin/ Aesthetic Treatment such as creams/lotions/ointments/astringents:</label>
+                            <FieldLabel label="Are you currently on Skin/ Aesthetic Treatment such as creams/lotions/ointments/astringents:" />
                             <input type="text" name="current_skin_treatment" onChange={handleChange} className="w-full p-3 bg-[#faf9f6] border border-gray-100 rounded-lg focus:outline-none focus:border-[#d4af37] transition" />
                         </div>
                     </div>
@@ -259,5 +266,16 @@ const AdminAddPatient = () => {
         </div>
     );
 };
+
+const FieldLabel = ({ label, required = false, className = 'mb-2' }) => (
+    <label className={`block text-xs font-bold uppercase tracking-widest text-gray-400 ${className}`}>
+        {label}
+        {required ? (
+            <span className="ml-1 text-red-500">*</span>
+        ) : (
+            <span className="ml-2 text-[10px] font-semibold normal-case tracking-normal text-gray-300">Optional</span>
+        )}
+    </label>
+);
 
 export default AdminAddPatient;
