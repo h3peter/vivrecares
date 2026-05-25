@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import ActionFeedbackModal from '../../components/ActionFeedbackModal';
+import { MetricSkeletonGrid, TableRowsSkeleton } from '../../components/PageSkeleton';
 import { openProtectedDocument } from '../../utils/api';
 import { CLINIC_BRANCHES } from '../../utils/branches';
 
@@ -31,9 +32,11 @@ const BillingAndPayments = () => {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [feedback, setFeedback] = useState(null);
+    const [loading, setLoading] = useState(true);
 
     const fetchData = async () => {
         try {
+            setLoading(true);
             const [billRes, patRes, serviceRes] = await Promise.all([
                 axios.get('/get_billings.php'),
                 axios.get('/get_all_patients.php?archived=0'),
@@ -45,6 +48,8 @@ const BillingAndPayments = () => {
             if (Array.isArray(serviceRes.data)) setServices(serviceRes.data);
         } catch (error) {
             console.error('Error fetching data:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -316,15 +321,19 @@ const BillingAndPayments = () => {
                 <p className="text-sm text-gray-500 mt-2">Filter by payment status, method, service, date range, and patient to review transactions faster.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-                <div className="bg-white p-8 lg:p-10 rounded-3xl shadow-sm border border-gray-100">
-                    <p className="text-sm text-gray-400 font-bold uppercase tracking-[0.18em] mb-3">Collected Revenue</p>
-                    <h2 className="text-4xl lg:text-5xl font-bold text-[#c4ba9d]">{formatCurrency(totalRevenue)}</h2>
-                </div>
-                <div className="bg-white p-8 lg:p-10 rounded-3xl shadow-sm border border-gray-100">
-                    <p className="text-sm text-gray-400 font-bold uppercase tracking-[0.18em] mb-3">Clients in Range</p>
-                    <h2 className="text-4xl lg:text-5xl font-bold text-[#c4ba9d]">{uniqueClients}</h2>
-                </div>
+            <div className="mb-10">
+                {loading ? <MetricSkeletonGrid count={2} /> : (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="bg-white p-8 lg:p-10 rounded-3xl shadow-sm border border-gray-100">
+                            <p className="text-sm text-gray-400 font-bold uppercase tracking-[0.18em] mb-3">Collected Revenue</p>
+                            <h2 className="text-4xl lg:text-5xl font-bold text-[#c4ba9d]">{formatCurrency(totalRevenue)}</h2>
+                        </div>
+                        <div className="bg-white p-8 lg:p-10 rounded-3xl shadow-sm border border-gray-100">
+                            <p className="text-sm text-gray-400 font-bold uppercase tracking-[0.18em] mb-3">Clients in Range</p>
+                            <h2 className="text-4xl lg:text-5xl font-bold text-[#c4ba9d]">{uniqueClients}</h2>
+                        </div>
+                    </div>
+                )}
             </div>
 
             <div className="bg-white p-6 lg:p-8 rounded-3xl shadow-sm border border-gray-100 mb-8">
@@ -408,7 +417,7 @@ const BillingAndPayments = () => {
                     </div>
                 </div>
                 <div className="mt-4 text-sm text-gray-500">
-                    Showing <span className="font-semibold text-gray-700">{filteredBillings.length}</span> of {billings.length} transactions
+                    Showing <span className="font-semibold text-gray-700">{loading ? '...' : filteredBillings.length}</span> of {loading ? '...' : billings.length} transactions
                 </div>
                 <div className="mt-4 lg:hidden">
                     <button onClick={() => setIsAddModalOpen(true)} className="w-full rounded-xl bg-[#555555] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#c4ba9d] shadow-lg transition hover:bg-[#404040]">
@@ -433,7 +442,9 @@ const BillingAndPayments = () => {
                 </div>
 
                 <div className="space-y-3">
-                    {paginatedBillings.map((billing) => (
+                    {loading ? (
+                        <TableRowsSkeleton rows={5} columns={9} />
+                    ) : paginatedBillings.map((billing) => (
                         <div key={billing.invoice_id}>
                             <div className="rounded-2xl border border-gray-100 bg-[#faf9f6] p-4 sm:p-5 xl:hidden">
                                 <div className="flex items-start justify-between gap-4">
@@ -529,7 +540,7 @@ const BillingAndPayments = () => {
                 </div>
             </div>
 
-            {filteredBillings.length > 0 && (
+            {!loading && filteredBillings.length > 0 && (
                 <div className="mt-8 flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                     <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
                         <span>Rows per page:</span>

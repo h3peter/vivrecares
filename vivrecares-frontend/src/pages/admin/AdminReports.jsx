@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { downloadCsvReport, printTableReport } from '../../utils/reportExports';
+import { MetricSkeletonGrid, PanelSkeleton } from '../../components/PageSkeleton';
 
 const normalizeDate = (value) => {
     if (!value) return null;
@@ -35,6 +36,7 @@ const AdminReports = () => {
     const [billings, setBillings] = useState([]);
     const [appointments, setAppointments] = useState([]);
     const [services, setServices] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     const [transactionSearch, setTransactionSearch] = useState('');
     const [transactionStatus, setTransactionStatus] = useState('All');
@@ -67,6 +69,8 @@ const AdminReports = () => {
                 if (Array.isArray(servicesRes.data)) setServices(servicesRes.data);
             } catch (error) {
                 console.error('Error loading admin reports', error);
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -313,12 +317,14 @@ const AdminReports = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-8">
-                    <MetricCard label="Transactions" value={filteredBillings.length} />
-                    <MetricCard label="Collected Revenue" value={formatCurrency(totalRevenue)} />
-                    <MetricCard label="Paid" value={paidTransactions.length} />
-                    <MetricCard label="Pending or Unpaid" value={unpaidTransactions} />
-                </div>
+                {loading ? <div className="mt-8"><MetricSkeletonGrid count={4} /></div> : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-8">
+                        <MetricCard label="Transactions" value={filteredBillings.length} />
+                        <MetricCard label="Collected Revenue" value={formatCurrency(totalRevenue)} />
+                        <MetricCard label="Paid" value={paidTransactions.length} />
+                        <MetricCard label="Pending or Unpaid" value={unpaidTransactions} />
+                    </div>
+                )}
 
                 <div className="mt-8 lg:hidden">
                     <MobileFilterToggle
@@ -355,7 +361,7 @@ const AdminReports = () => {
                     </button>
                 </div>
 
-                <PreviewTable
+                {loading ? <PanelSkeleton tall /> : <PreviewTable
                     title="Transaction Preview"
                     description="Current transaction rows that will be printed or exported."
                     count={transactionRows.length}
@@ -402,7 +408,7 @@ const AdminReports = () => {
                     )}
                     emptyMessage="No transactions match the current report filters."
                     gridClassName="grid-cols-9"
-                />
+                />}
             </section>
 
             <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
@@ -421,11 +427,13 @@ const AdminReports = () => {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-8">
-                    <MetricCard label="Visits" value={filteredVisits.length} />
-                    <MetricCard label="Patients Covered" value={uniquePatients} />
-                    <MetricCard label="Completed Visits" value={completedVisits} />
-                </div>
+                {loading ? <div className="mt-8"><MetricSkeletonGrid count={3} /></div> : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-8">
+                        <MetricCard label="Visits" value={filteredVisits.length} />
+                        <MetricCard label="Patients Covered" value={uniquePatients} />
+                        <MetricCard label="Completed Visits" value={completedVisits} />
+                    </div>
+                )}
 
                 <div className="mt-8 lg:hidden">
                     <MobileFilterToggle
@@ -462,7 +470,7 @@ const AdminReports = () => {
                     </button>
                 </div>
 
-                <PreviewTable
+                {loading ? <PanelSkeleton tall /> : <PreviewTable
                     title="Visit Summary Preview"
                     description="Current visit rows that will be printed or exported."
                     count={visitRows.length}
@@ -501,7 +509,7 @@ const AdminReports = () => {
                     )}
                     emptyMessage="No visits match the current report filters."
                     gridClassName="grid-cols-7"
-                />
+                />}
             </section>
         </div>
     );

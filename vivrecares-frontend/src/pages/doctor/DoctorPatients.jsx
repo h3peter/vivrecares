@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import ProfileAvatar from '../../components/ProfileAvatar';
+import { TableRowsSkeleton } from '../../components/PageSkeleton';
 
 const DoctorPatients = () => {
     const navigate = useNavigate();
     const [patients, setPatients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
+    const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -19,6 +21,8 @@ const DoctorPatients = () => {
                 }
             } catch (error) {
                 console.error('Error loading doctor patients', error);
+            } finally {
+                setLoading(false);
             }
         };
         loadPatients();
@@ -69,7 +73,9 @@ const DoctorPatients = () => {
                 </div>
 
                 <div className="space-y-3">
-                    {currentRows.map((patient) => (
+                    {loading ? (
+                        <TableRowsSkeleton rows={5} columns={4} />
+                    ) : currentRows.map((patient) => (
                         <div key={patient.user_id}>
                             <div className="rounded-2xl border border-gray-100 bg-[#faf9f6] p-4 sm:p-5 lg:hidden">
                                 <div className="flex items-start gap-3">
@@ -122,12 +128,12 @@ const DoctorPatients = () => {
                     ))}
                 </div>
 
-                {filteredPatients.length === 0 && (
+                {!loading && filteredPatients.length === 0 && (
                     <p className="py-12 text-center italic text-gray-400">No patients matched your search.</p>
                 )}
             </div>
 
-            {filteredPatients.length > 0 && (
+            {!loading && filteredPatients.length > 0 && (
                 <div className="mt-8 flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                     <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
                         <span>Rows per page:</span>

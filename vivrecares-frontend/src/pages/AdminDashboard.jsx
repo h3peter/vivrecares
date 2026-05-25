@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import { DashboardSkeleton } from '../components/PageSkeleton';
 
 const MONTH_LABEL = new Intl.DateTimeFormat(undefined, { month: 'short' });
 const MONTH_YEAR_LABEL = new Intl.DateTimeFormat(undefined, { month: 'short', year: 'numeric' });
@@ -347,6 +348,10 @@ const AdminDashboard = () => {
     const serviceMax = Math.max(...metrics.topServices.map((item) => item.revenue), 1);
     const linePath = buildLinePath(metrics.scheduleTrend, 420, 180);
 
+    if (loading) {
+        return <DashboardSkeleton />;
+    }
+
     return (
         <div className="min-h-screen bg-[#f4f4f4] p-6 sm:p-8 lg:p-12">
             <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -371,25 +376,25 @@ const AdminDashboard = () => {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <KpiCard
                     label="Revenue This Month"
-                    value={loading ? 'Loading...' : formatCurrency(metrics.revenueThisMonth)}
+                    value={formatCurrency(metrics.revenueThisMonth)}
                     detail={metrics.revenueChange.text}
                     tone={metrics.revenueChange.tone}
                 />
                 <KpiCard
                     label="Collection Rate"
-                    value={loading ? 'Loading...' : formatPercent(metrics.collectionRate)}
-                    detail={loading ? 'Loading data' : `${formatCurrency(metrics.outstandingAmount)} still outstanding`}
+                    value={formatPercent(metrics.collectionRate)}
+                    detail={`${formatCurrency(metrics.outstandingAmount)} still outstanding`}
                     tone={metrics.collectionRate >= 0.75 ? 'positive' : metrics.collectionRate >= 0.5 ? 'warning' : 'negative'}
                 />
                 <KpiCard
                     label="Today's Appointments"
-                    value={loading ? 'Loading...' : metrics.todaysAppointments}
-                    detail={loading ? 'Loading data' : `${metrics.upcomingWeekAppointments} in the next 7 days`}
+                    value={metrics.todaysAppointments}
+                    detail={`${metrics.upcomingWeekAppointments} in the next 7 days`}
                     tone="neutral"
                 />
                 <KpiCard
                     label="Completed Visits"
-                    value={loading ? 'Loading...' : metrics.completedThisMonth}
+                    value={metrics.completedThisMonth}
                     detail={metrics.completionChange.text}
                     tone={metrics.completionChange.tone}
                 />
@@ -405,7 +410,7 @@ const AdminDashboard = () => {
                         </div>
                         <div className="rounded-2xl bg-[#faf9f6] px-4 py-3 text-right">
                             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">Patients billed</p>
-                            <p className="mt-1 text-2xl font-bold text-gray-900">{loading ? '--' : metrics.totalPatientsBilled}</p>
+                            <p className="mt-1 text-2xl font-bold text-gray-900">{metrics.totalPatientsBilled}</p>
                         </div>
                     </div>
 

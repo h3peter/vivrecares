@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import AdminPasswordPrompt from '../../components/AdminPasswordPrompt';
+import { PanelSkeleton } from '../../components/PageSkeleton';
 
 const defaultServiceForm = {
     service_id: null,
@@ -44,6 +45,7 @@ const AdminSettings = () => {
     const [highlightedServiceId, setHighlightedServiceId] = useState(null);
     const [toast, setToast] = useState(null);
     const [protectedAction, setProtectedAction] = useState(null);
+    const [settingsLoading, setSettingsLoading] = useState(true);
 
     const showToast = (type, message) => {
         setToast({ type, message });
@@ -57,6 +59,7 @@ const AdminSettings = () => {
 
     const fetchAll = async () => {
         try {
+            setSettingsLoading(true);
             const [serviceRes, appointmentRes, staffRes] = await Promise.all([
                 axios.get('/get_services.php'),
                 axios.get('/get_appointment_settings.php'),
@@ -77,6 +80,8 @@ const AdminSettings = () => {
         } catch (error) {
             console.error('Failed to load settings', error);
             showToast('error', 'Failed to load full settings data.');
+        } finally {
+            setSettingsLoading(false);
         }
     };
 
@@ -333,7 +338,12 @@ const AdminSettings = () => {
                 <p className="text-sm text-gray-500 mt-2">Manage users, services, and appointment availability in one place.</p>
             </div>
 
-            <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.2fr_0.8fr]">
+            {settingsLoading ? (
+                <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.2fr_0.8fr]">
+                    <PanelSkeleton tall />
+                    <PanelSkeleton tall />
+                </div>
+            ) : <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.2fr_0.8fr]">
                 <section className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
                     <div className="border-b border-gray-100 bg-[#faf9f6] px-5 py-6 sm:px-8">
                         <h2 className="text-2xl font-bold text-gray-800">Service Catalog</h2>
@@ -502,9 +512,9 @@ const AdminSettings = () => {
                         </div>
                     </div>
                 </section>
-            </div>
+            </div>}
 
-            <section className="mt-8 bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
+            {settingsLoading ? <div className="mt-8"><PanelSkeleton tall /></div> : <section className="mt-8 bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-8 py-6 border-b border-gray-100 bg-[#faf9f6]">
                     <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
                     <p className="text-sm text-gray-500 mt-2">Invite and manage Admin/Doctor accounts from the settings module.</p>
@@ -599,7 +609,7 @@ const AdminSettings = () => {
                         </div>
                     </div>
                 </div>
-            </section>
+            </section>}
         </div>
     );
 };

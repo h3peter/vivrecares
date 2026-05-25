@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import ActionFeedbackModal from '../../components/ActionFeedbackModal';
+import { TableRowsSkeleton } from '../../components/PageSkeleton';
 
 const normalizeStatus = (status) => (status || '').toString().trim().toLowerCase();
 
@@ -56,16 +57,20 @@ const AppointmentLogs = () => {
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [showMobileFilters, setShowMobileFilters] = useState(false);
     const [feedback, setFeedback] = useState(null);
+    const [loading, setLoading] = useState(true);
     const today = new Date().toISOString().split('T')[0];
 
     const fetchAppointments = async () => {
         try {
+            setLoading(true);
             const res = await axios.get('/get_all_appointments.php');
             if (Array.isArray(res.data)) {
                 setAppointments(res.data);
             }
         } catch (error) {
             console.error('Error fetching appointments:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -268,7 +273,7 @@ const AppointmentLogs = () => {
                             </p>
                         </div>
                         <div className="text-sm text-gray-500">
-                            Showing <span className="font-semibold text-gray-700">{filteredLogs.length}</span> of {appointments.length} appointments
+                            Showing <span className="font-semibold text-gray-700">{loading ? '...' : filteredLogs.length}</span> of {loading ? '...' : appointments.length} appointments
                         </div>
                     </div>
 
@@ -363,7 +368,9 @@ const AppointmentLogs = () => {
                 </div>
 
                 <div className="space-y-4 px-0 pb-0 lg:px-4 lg:pb-4">
-                    {paginatedLogs.map((apt) => (
+                    {loading ? (
+                        <TableRowsSkeleton rows={5} columns={6} />
+                    ) : paginatedLogs.map((apt) => (
                         <div key={apt.appointment_id}>
                             <div className="rounded-2xl border border-gray-100 bg-[#faf9f6] p-4 sm:p-5 lg:hidden">
                                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -408,11 +415,11 @@ const AppointmentLogs = () => {
                             </div>
                         </div>
                     ))}
-                    {filteredLogs.length === 0 && <p className="text-center text-base text-gray-400 italic py-6">No appointments found.</p>}
+                    {!loading && filteredLogs.length === 0 && <p className="text-center text-base text-gray-400 italic py-6">No appointments found.</p>}
                 </div>
             </div>
 
-            {filteredLogs.length > 0 && (
+            {!loading && filteredLogs.length > 0 && (
                 <div className="mt-8 flex flex-col gap-4 rounded-3xl border border-gray-100 bg-white p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                     <div className="flex items-center gap-2 text-sm font-bold uppercase tracking-[0.18em] text-gray-400">
                         <span>Rows per page:</span>

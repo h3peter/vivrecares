@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import ActionFeedbackModal from '../components/ActionFeedbackModal';
+import { FormPageSkeleton } from '../components/PageSkeleton';
 
 const RequestAppointment = () => {
     const navigate = useNavigate();
@@ -189,7 +190,7 @@ const RequestAppointment = () => {
                     <p className="text-sm text-gray-500 mt-2">Choose the purpose of your visit, then submit your preferred branch, date, and clinic slot for review.</p>
                 </div>
 
-                <div className="w-full bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
+                {initialLoading ? <FormPageSkeleton fields={4} /> : <div className="w-full bg-white rounded-[2rem] shadow-sm border border-gray-100 overflow-hidden">
                     <div className="bg-[#faf9f6] p-10 border-b border-gray-50">
                         <h2 className="text-2xl font-bold text-gray-800">Appointment Request</h2>
                         <p className="text-xs text-[#c4ba9d] font-bold uppercase tracking-[0.2em] mt-2">Submit your preferred clinic schedule</p>
@@ -310,7 +311,7 @@ const RequestAppointment = () => {
                             </button>
                         </div>
                     </form>
-                </div>
+                </div>}
             </div>
         </div>
     );

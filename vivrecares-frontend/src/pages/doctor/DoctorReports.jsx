@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { downloadCsvReport, printTableReport } from '../../utils/reportExports';
+import { MetricSkeletonGrid, PanelSkeleton, TableRowsSkeleton } from '../../components/PageSkeleton';
 
 const DoctorReports = () => {
     const [analytics, setAnalytics] = useState(null);
     const [patients, setPatients] = useState([]);
     const [selectedPatientId, setSelectedPatientId] = useState('');
     const [visitSummary, setVisitSummary] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [summaryLoading, setSummaryLoading] = useState(false);
 
     const loadAnalytics = async () => {
         try {
@@ -18,6 +21,8 @@ const DoctorReports = () => {
             if (patientsRes.data.status === 'success') setPatients(patientsRes.data.data || []);
         } catch (error) {
             console.error('Error loading clinical reports', error);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -32,12 +37,15 @@ const DoctorReports = () => {
                 return;
             }
             try {
+                setSummaryLoading(true);
                 const res = await axios.get(`/get_patient_visit_summary.php?patient_id=${selectedPatientId}`);
                 if (res.data.status === 'success') {
                     setVisitSummary(res.data.data || []);
                 }
             } catch (error) {
                 console.error('Error loading visit summary', error);
+            } finally {
+                setSummaryLoading(false);
             }
         };
         loadSummary();
@@ -103,15 +111,17 @@ const DoctorReports = () => {
                 <p className="text-sm text-gray-500 mt-2">Review non-financial clinical trends and generate patient visit summaries.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-                <Metric label="Total Visits" value={analytics?.summary?.total_visits ?? 0} />
-                <Metric label="Confirmed" value={analytics?.summary?.confirmed_visits ?? 0} />
-                <Metric label="Completed" value={analytics?.summary?.completed_visits ?? 0} />
-                <Metric label="Pending" value={analytics?.summary?.pending_visits ?? 0} />
-            </div>
+            {loading ? <div className="mb-8"><MetricSkeletonGrid count={4} /></div> : (
+                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+                    <Metric label="Total Visits" value={analytics?.summary?.total_visits ?? 0} />
+                    <Metric label="Confirmed" value={analytics?.summary?.confirmed_visits ?? 0} />
+                    <Metric label="Completed" value={analytics?.summary?.completed_visits ?? 0} />
+                    <Metric label="Pending" value={analytics?.summary?.pending_visits ?? 0} />
+                </div>
+            )}
 
             <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr] gap-8">
-                <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
+                {loading ? <PanelSkeleton tall /> : <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
                     <h2 className="text-2xl font-bold text-gray-800">Top Consultation Topics</h2>
                     <div className="mt-6 space-y-3">
                         {(analytics?.appointment_topics || []).map((row) => (
@@ -137,7 +147,7 @@ const DoctorReports = () => {
                             <p className="text-sm text-gray-400 italic">No service trends yet.</p>
                         )}
                     </div>
-                </section>
+                </section>}
 
                 <section className="bg-white rounded-3xl border border-gray-100 shadow-sm p-8">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -186,7 +196,9 @@ const DoctorReports = () => {
                     )}
 
                     <div className="mt-6 space-y-3 max-h-[34rem] overflow-y-auto">
-                        {visitSummary.map((visit) => (
+                        {summaryLoading ? (
+                            <TableRowsSkeleton rows={4} columns={3} />
+                        ) : visitSummary.map((visit) => (
                             <div key={visit.appointment_id} className="rounded-xl border border-gray-100 bg-[#faf9f6] px-4 py-3">
                                 <div className="flex items-center justify-between gap-3">
                                     <p className="text-sm font-bold text-gray-800">
@@ -200,7 +212,7 @@ const DoctorReports = () => {
                                 <p className="text-xs text-gray-500 mt-1"><span className="font-bold">Latest Plan:</span> {visit.latest_treatment_plan || 'Not documented'}</p>
                             </div>
                         ))}
-                        {selectedPatientId && visitSummary.length === 0 && (
+                        {!summaryLoading && selectedPatientId && visitSummary.length === 0 && (
                             <p className="text-sm text-gray-400 italic">No visit summary data for this patient yet.</p>
                         )}
                     </div>

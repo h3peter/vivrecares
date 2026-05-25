@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import ActionFeedbackModal from '../components/ActionFeedbackModal';
+import { TableRowsSkeleton } from '../components/PageSkeleton';
 import { openProtectedDocument } from '../utils/api';
 
 const PatientInvoices = () => {
     const [invoices, setInvoices] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('All');
     const [feedback, setFeedback] = useState(null);
 
@@ -28,6 +30,8 @@ const PatientInvoices = () => {
                 }
             } catch (error) {
                 console.error('Error fetching patient invoices', error);
+            } finally {
+                setLoading(false);
             }
         };
         fetchInvoices();
@@ -100,7 +104,9 @@ const PatientInvoices = () => {
                 </div>
 
                 <div className="space-y-3 px-0 lg:px-2">
-                    {filteredInvoices.map((invoice) => (
+                    {loading ? (
+                        <TableRowsSkeleton rows={5} columns={8} />
+                    ) : filteredInvoices.map((invoice) => (
                         <div key={invoice.invoice_id}>
                             <div className="rounded-[1.5rem] border border-gray-100 bg-[#faf9f6] p-4 sm:p-5 lg:hidden">
                                 <div className="flex items-start justify-between gap-4">
@@ -147,7 +153,7 @@ const PatientInvoices = () => {
                             </div>
                         </div>
                     ))}
-                    {filteredInvoices.length === 0 && <p className="py-10 text-center text-base italic text-gray-400">No transaction records found for this filter.</p>}
+                    {!loading && filteredInvoices.length === 0 && <p className="py-10 text-center text-base italic text-gray-400">No transaction records found for this filter.</p>}
                 </div>
             </div>
         </div>
