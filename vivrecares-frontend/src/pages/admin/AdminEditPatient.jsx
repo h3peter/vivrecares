@@ -112,7 +112,10 @@ const AdminEditPatient = () => {
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-        setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+        setFormData(prev => ({
+            ...prev,
+            [name]: name === 'tooth_extraction' && type === 'radio' ? value === 'Yes' : type === 'checkbox' ? checked : value
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -230,15 +233,13 @@ const AdminEditPatient = () => {
                     <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-8">
                         <div>
                             <label className="text-xs text-gray-400 font-bold uppercase tracking-widest block mb-2">Recent Tooth Extraction?</label>
-                            <div className="w-full p-3  rounded-lg flex items-center gap-3">
-                                <input
-                                    type="checkbox"
-                                    name="tooth_extraction"
-                                    checked={formData.tooth_extraction}
-                                    onChange={handleChange}
-                                    className="w-4 h-4 accent-[#d4af37]"
-                                />
-                                <span className="text-sm text-gray-600">Yes</span>
+                            <div className="flex w-full flex-col gap-3 rounded-lg p-3 sm:flex-row sm:items-center sm:gap-8">
+                                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                                    <input type="radio" name="tooth_extraction" value="Yes" checked={formData.tooth_extraction === true} onChange={handleChange} className="w-4 h-4 accent-[#d4af37]" /> Yes
+                                </label>
+                                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                                    <input type="radio" name="tooth_extraction" value="No" checked={formData.tooth_extraction === false} onChange={handleChange} className="w-4 h-4 accent-[#d4af37]" /> No
+                                </label>
                             </div>
                         </div>
                         <div className="md:col-span-2">

@@ -60,7 +60,7 @@ const AdminAddPatient = () => {
         const { name, value, type, checked } = e.target;
         setFormData({ 
             ...formData, 
-            [name]: type === 'checkbox' ? checked : value 
+            [name]: name === 'tooth_extraction' && type === 'radio' ? value === 'Yes' : type === 'checkbox' ? checked : value
         });
     };
 
@@ -200,10 +200,13 @@ const AdminAddPatient = () => {
                         <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3 md:gap-8">
                         <div>
                             <FieldLabel label="Recent Tooth Extraction?" />
-                            {/* Matches the input height so all 3 cells are visually equal */}
-                            <div className="w-full p-3  rounded-lg flex items-center gap-3">
-                                <input type="checkbox" name="tooth_extraction" onChange={handleChange} className="w-4 h-4 accent-[#d4af37]" />
-                                <span className="text-sm text-gray-600">Yes</span>
+                            <div className="flex w-full flex-col gap-3 rounded-lg p-3 sm:flex-row sm:items-center sm:gap-8">
+                                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                                    <input type="radio" name="tooth_extraction" value="Yes" checked={formData.tooth_extraction === true} onChange={handleChange} className="w-4 h-4 accent-[#d4af37]" /> Yes
+                                </label>
+                                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
+                                    <input type="radio" name="tooth_extraction" value="No" checked={formData.tooth_extraction === false} onChange={handleChange} className="w-4 h-4 accent-[#d4af37]" /> No
+                                </label>
                             </div>
                         </div>
                         <div className="md:col-span-2">

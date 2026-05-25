@@ -45,7 +45,7 @@ const Register = () => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: name === 'tooth_extraction' && type === 'radio' ? value === 'Yes' : type === 'checkbox' ? checked : value
     }));
     setFieldErrors(prev => {
       if (!prev[name]) return prev;
@@ -382,7 +382,8 @@ const StepOne = ({
             <div className="flex flex-col gap-4">
                 <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold ml-1">Recent Tooth Extraction?</span>
                 <div className="flex gap-6">
-                    <Checkbox label="Yes" name="tooth_extraction" checked={formData.tooth_extraction} onChange={handleChange} />
+                    <Radio label="Yes" name="tooth_extraction" value="Yes" checked={formData.tooth_extraction === true} onChange={handleChange} />
+                    <Radio label="No" name="tooth_extraction" value="No" checked={formData.tooth_extraction === false} onChange={handleChange} />
                 </div>
             </div>
             <div className="flex flex-col gap-4">
