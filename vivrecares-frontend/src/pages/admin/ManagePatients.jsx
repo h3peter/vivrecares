@@ -176,16 +176,18 @@ const ManagePatients = () => {
                     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.5fr)_auto_auto] xl:items-end">
                         <div className="relative w-full">
                             <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Search Patients</label>
-                            <input
-                                type="text"
-                                placeholder="Search by patient, email, phone, ID, address, or sex..."
-                                className="w-full rounded-2xl border border-gray-200 py-3.5 pl-11 pr-4 text-base text-gray-700 shadow-sm outline-none focus:border-[#d4af37]"
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                            <svg className="absolute left-4 top-[3.25rem] h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0 1 14 0z" />
-                            </svg>
+                            <div className="relative">
+                                <svg className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0 1 14 0z" />
+                                </svg>
+                                <input
+                                    type="text"
+                                    placeholder="Search by patient, email, phone, ID, address, or sex..."
+                                    className="w-full rounded-2xl border border-gray-200 py-3.5 pl-11 pr-4 text-base text-gray-700 shadow-sm outline-none focus:border-[#d4af37]"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                />
+                            </div>
                         </div>
 
                         <div>
