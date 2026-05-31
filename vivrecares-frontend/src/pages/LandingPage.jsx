@@ -19,6 +19,7 @@ import NotificationBell from '../components/NotificationBell';
 import ProfileAvatar from '../components/ProfileAvatar';
 import OptimizedImage from '../components/OptimizedImage';
 import { clearStoredSession, getStoredUser } from '../utils/session';
+import { firstAdminPath } from '../utils/adminAccess';
 
 /* --- brand color tokens (used for inline styles Tailwind can't reach) -- */
 const C = {
@@ -245,7 +246,7 @@ const LandingPage = () => {
   const handleBookingClick = () => {
     if (user) {
       if      (user.role === 'Patient') navigate('/request-appointment');
-      else if (user.role === 'Admin')   navigate('/admin/dashboard');
+      else if (user.role === 'Admin')   navigate(firstAdminPath(user));
       else if (user.role === 'Doctor')  navigate('/doctor/appointments');
       else                              navigate('/');
     } else {
@@ -262,7 +263,7 @@ const LandingPage = () => {
   };
 
   const dashboardRoute =
-    user?.role === 'Admin'  ? '/admin/dashboard'     :
+    user?.role === 'Admin'  ? firstAdminPath(user)     :
     user?.role === 'Doctor' ? '/doctor/appointments' :
     '/dashboard';
 

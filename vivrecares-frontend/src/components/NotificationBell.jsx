@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { clearStoredSession, getStoredUser } from '../utils/session';
+import { canAccessAdminTask, firstAdminPath } from '../utils/adminAccess';
 
 const NotificationBell = ({ isOpen: controlledIsOpen, onOpenChange, onOpen, onClose }) => {
     const navigate = useNavigate();
@@ -96,8 +97,8 @@ const NotificationBell = ({ isOpen: controlledIsOpen, onOpenChange, onOpen, onCl
         const isConsultation = title.includes('consultation') || message.includes('consultation');
 
         if (role === 'Admin') {
-            if (isAppointment) return '/admin/appointments';
-            return '/admin/dashboard';
+            if (isAppointment && canAccessAdminTask(user, 'appointments')) return '/admin/appointments';
+            return firstAdminPath(user);
         }
 
         if (role === 'Doctor') {

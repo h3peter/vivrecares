@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import PasswordInput from '../components/PasswordInput';
 import { clearStoredSession, rememberStoredToken, rememberStoredUser } from '../utils/session';
+import { firstAdminPath } from '../utils/adminAccess';
 
 const REMEMBERED_EMAIL_KEY = 'rememberedLoginEmail';
 
@@ -66,7 +67,7 @@ const Login = () => {
         
         // The Traffic Cop Logic: Check the role and redirect
         if (confirmedUser.role === 'Admin') {
-          navigate('/admin/dashboard');
+          navigate(firstAdminPath(confirmedUser));
         } else if (confirmedUser.role === 'Doctor') {
           navigate('/doctor/appointments');
         } else {

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import ProfileAvatar from '../../components/ProfileAvatar';
+import { downloadCsvReport } from '../../utils/reportExports';
 
 const SORT_OPTIONS = [
     { value: 'newest', label: 'Newest First' },
@@ -152,25 +153,54 @@ const ManagePatients = () => {
         processArchive([id]);
     };
 
+    const handleExport = () => {
+        downloadCsvReport({
+            filename: `patients_${showArchived ? 'archived' : 'active'}.csv`,
+            columns: [
+                { key: 'patient_id', label: 'Patient ID' },
+                { key: 'name', label: 'Patient' },
+                { key: 'email', label: 'Email' },
+                { key: 'phone', label: 'Phone' },
+                { key: 'sex', label: 'Sex' },
+                { key: 'age', label: 'Age' },
+                { key: 'address', label: 'Address' },
+                { key: 'created_at', label: 'Added' },
+            ],
+            rows: filteredPatients.map((patient) => ({
+                ...patient,
+                name: `${patient.first_name || ''} ${patient.last_name || ''}`.trim(),
+            })),
+        });
+    };
+
     return (
         <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
             <div className="mb-8">
                 <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d]">Patient Registry</p>
                 <div className="flex flex-col gap-6 rounded-3xl border border-gray-100 bg-white p-6 shadow-sm lg:p-8">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                         <div>
                             <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">Manage Patients</h1>
                             <p className="mt-2 text-sm text-gray-500">Search, sort, and manage active or archived patient records from one workspace.</p>
                         </div>
 
-                        {!showArchived && (
+                        <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto lg:justify-end">
+                            {!showArchived && (
                             <button
                                 onClick={() => navigate('/admin/add-patient')}
                                 className="w-full rounded-xl bg-[#555555] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#c4ba9d] shadow-lg transition hover:bg-[#404040] sm:w-auto"
                             >
                                 + Add Patient
                             </button>
-                        )}
+                            )}
+                            <button
+                                type="button"
+                                onClick={handleExport}
+                                className="w-full rounded-xl border border-gray-300 bg-white px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-500 sm:w-auto"
+                            >
+                                Export CSV
+                            </button>
+                        </div>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.5fr)_auto_auto] xl:items-end">
@@ -236,7 +266,7 @@ const ManagePatients = () => {
                 </button>
             </div>
 
-            <div className="mb-4 hidden grid-cols-12 gap-4 px-6 text-sm font-bold uppercase tracking-[0.18em] text-gray-400 xl:grid">
+            <div className="mb-2 hidden grid-cols-12 gap-4 border-b border-gray-200 bg-white px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-gray-500 xl:grid">
                 <div className="col-span-1 flex items-center gap-4">
                     <input
                         type="checkbox"
@@ -252,7 +282,7 @@ const ManagePatients = () => {
                 <div className="col-span-2 text-center">Actions</div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-3 readable-data-table xl:space-y-0 xl:overflow-hidden xl:border-y xl:border-gray-200 xl:bg-white">
                 {loading ? Array.from({ length: Math.max(3, Math.min(rowsPerPage, 5)) }).map((_, index) => (
                     <PatientRowSkeleton key={index} />
                 )) : currentRows.map((patient) => (
@@ -305,8 +335,8 @@ const ManagePatients = () => {
                             </div>
                         </div>
 
-                        <div className={`hidden grid-cols-12 gap-4 items-center rounded-[1.4rem] border bg-white p-5 transition-all xl:grid ${selectedPatients.includes(patient.user_id) ? 'border-[#d4af37] shadow-md' : 'border-gray-100 shadow-sm hover:border-gray-200'}`}>
-                            <div className="col-span-1 flex items-center gap-4 pl-2">
+                        <div className={`hidden grid-cols-12 gap-4 items-center border-b px-5 py-3 transition-colors xl:grid ${selectedPatients.includes(patient.user_id) ? 'border-[#d4af37] bg-[#fffdf5]' : 'border-gray-200 bg-white hover:bg-gray-50'}`}>
+                            <div className="col-span-1 flex items-center gap-4">
                                 <input
                                     type="checkbox"
                                     className="h-4 w-4 cursor-pointer accent-[#d4af37]"
@@ -316,21 +346,21 @@ const ManagePatients = () => {
                                 <span className="text-base font-semibold text-gray-500">{String(patient.patient_id).padStart(3, '0')}</span>
                             </div>
 
-                            <div className="col-span-3 flex items-center gap-4">
-                                <ProfileAvatar user={patient} className="h-12 w-12 rounded-full border border-gray-100" textSize="text-base" />
+                            <div className="col-span-3 flex items-center gap-3">
+                                <ProfileAvatar user={patient} className="h-10 w-10 rounded-full border border-gray-100" textSize="text-sm" />
                                 <div className="truncate">
                                     <p className="truncate text-base font-bold text-gray-800">{patient.first_name} {patient.last_name}</p>
-                                    <p className="mt-1 text-xs uppercase tracking-[0.18em] text-gray-500">
+                                    <p className="mt-0.5 text-xs uppercase tracking-[0.14em] text-gray-600">
                                         {patient.sex} | {patient.age} yrs | Added {formatCreatedAt(patient.created_at)}
                                     </p>
-                                    <p className="mt-1 truncate text-xs text-gray-400">{patient.email || 'No email on file'}</p>
+                                    <p className="mt-0.5 truncate text-xs text-gray-500">{patient.email || 'No email on file'}</p>
                                 </div>
                             </div>
 
-                            <div className="col-span-3 truncate pr-4 text-base text-gray-600">{patient.address || 'No address on file'}</div>
-                            <div className="col-span-3 text-base text-gray-600">{patient.phone || 'No phone on file'}</div>
+                            <div className="col-span-3 truncate pr-4 text-sm text-gray-700">{patient.address || 'No address on file'}</div>
+                            <div className="col-span-3 text-sm text-gray-700">{patient.phone || 'No phone on file'}</div>
 
-                            <div className="col-span-2 flex justify-center gap-4 text-gray-400">
+                            <div className="col-span-2 flex justify-center gap-4 text-gray-500">
                                 <button onClick={() => navigate(`/admin/patient/${patient.user_id}`)} className="transition hover:text-blue-500" title="View Profile">
                                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 0 1 6 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                                 </button>

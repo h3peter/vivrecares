@@ -19,6 +19,7 @@ const RequestAppointment = () => {
     const [availability, setAvailability] = useState([]);
     const [slots, setSlots] = useState([]);
     const [branchOptions, setBranchOptions] = useState(['Pasay Branch', 'Valenzuela Branch']);
+    const [hasActiveAppointment, setHasActiveAppointment] = useState(false);
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -35,9 +36,10 @@ const RequestAppointment = () => {
             const user = JSON.parse(userData);
 
             try {
-                const [profileRes, settingsRes] = await Promise.all([
+                const [profileRes, settingsRes, historyRes] = await Promise.all([
                     axios.get(`/get_profile.php?user_id=${user.id}`),
                     axios.get('/get_appointment_settings.php'),
+                    axios.get(`/get_patient_appointments.php?user_id=${user.id}`),
                 ]);
 
                 if (profileRes.data.status === 'success') {
@@ -50,6 +52,12 @@ const RequestAppointment = () => {
                     }
                     setAvailability(settingsRes.data.availability || []);
                     setSlots(settingsRes.data.slots || []);
+                }
+
+                if (Array.isArray(historyRes.data)) {
+                    setHasActiveAppointment(historyRes.data.some((appointment) =>
+                        ['pending', 'confirmed', 'rescheduled'].includes(String(appointment.status || '').toLowerCase())
+                    ));
                 }
             } catch (error) {
                 console.error('Error loading appointment request data:', error);
@@ -104,6 +112,15 @@ const RequestAppointment = () => {
                 tone: 'error',
                 title: 'Profile Still Loading',
                 message: 'Your profile is still loading or invalid. Please try again in a moment.',
+            });
+            return;
+        }
+
+        if (hasActiveAppointment) {
+            setFeedback({
+                tone: 'info',
+                title: 'Active Appointment Exists',
+                message: 'You can only have one active appointment request at a time. Please wait for the current appointment to be completed or cancelled.',
             });
             return;
         }
@@ -199,6 +216,13 @@ const RequestAppointment = () => {
                     </div>
 
                     <form onSubmit={handleSubmit} className="p-10 space-y-8">
+                        {hasActiveAppointment && (
+                            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+                                <p className="text-sm font-semibold text-amber-800">
+                                    You already have an active appointment. New requests are available after it is completed or cancelled.
+                                </p>
+                            </div>
+                        )}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div>
                                 <label className="text-xs uppercase tracking-[0.18em] text-gray-400 font-bold block mb-3">Appointment Purpose</label>
@@ -306,7 +330,7 @@ const RequestAppointment = () => {
                         <div className="pt-4 border-t border-gray-50 flex justify-end">
                             <button
                                 type="submit"
-                                disabled={loading || showSuccess || initialLoading || !patientId}
+                                disabled={loading || showSuccess || initialLoading || !patientId || hasActiveAppointment}
                                 className="px-10 py-4 bg-[#555555] text-[#c4ba9d] text-sm font-bold uppercase tracking-[0.18em] rounded-full shadow-lg hover:bg-black transition disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {loading ? 'Submitting...' : initialLoading ? 'Loading...' : 'Submit Request'}

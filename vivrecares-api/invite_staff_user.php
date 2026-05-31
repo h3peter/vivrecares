@@ -4,11 +4,13 @@ require_once 'config.php';
 require_once 'admin_security.php';
 require_once 'mail_helper.php';
 require_once 'staff_invitation_helper.php';
+require_once 'admin_permissions.php';
 
 init_api_auth();
 
 $data = json_decode(file_get_contents("php://input"), true);
 $authUser = require_admin_password($conn, is_array($data) ? $data : []);
+require_admin_permission($conn, 'settings');
 
 $firstName = trim($data['first_name'] ?? '');
 $lastName = trim($data['last_name'] ?? '');

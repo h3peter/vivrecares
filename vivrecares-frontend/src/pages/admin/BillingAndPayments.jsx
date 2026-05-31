@@ -4,6 +4,7 @@ import ActionFeedbackModal from '../../components/ActionFeedbackModal';
 import { MetricSkeletonGrid, TableRowsSkeleton } from '../../components/PageSkeleton';
 import { openProtectedDocument } from '../../utils/api';
 import { CLINIC_BRANCHES } from '../../utils/branches';
+import { downloadCsvReport } from '../../utils/reportExports';
 
 const BillingAndPayments = () => {
     const [billings, setBillings] = useState([]);
@@ -143,6 +144,27 @@ const BillingAndPayments = () => {
         .filter((billing) => billing.payment_status === 'Paid')
         .reduce((sum, billing) => sum + parseFloat(billing.total_amount || 0), 0);
     const uniqueClients = new Set(filteredBillings.map((billing) => `${billing.first_name} ${billing.last_name}`)).size;
+
+    const handleExport = () => {
+        downloadCsvReport({
+            filename: 'billing_and_payments.csv',
+            columns: [
+                { key: 'invoice_id', label: 'Invoice ID' },
+                { key: 'patient', label: 'Patient' },
+                { key: 'main_treatment', label: 'Service' },
+                { key: 'branch', label: 'Branch' },
+                { key: 'payment_date', label: 'Payment Date' },
+                { key: 'payment_method', label: 'Method' },
+                { key: 'reference_number', label: 'Reference' },
+                { key: 'payment_status', label: 'Status' },
+                { key: 'total_amount', label: 'Total Amount' },
+            ],
+            rows: filteredBillings.map((billing) => ({
+                ...billing,
+                patient: `${billing.first_name || ''} ${billing.last_name || ''}`.trim(),
+            })),
+        });
+    };
 
     const totalPages = Math.max(1, Math.ceil(filteredBillings.length / rowsPerPage));
     const indexOfLastRow = currentPage * rowsPerPage;
@@ -326,8 +348,19 @@ const BillingAndPayments = () => {
             />
             <div className="mb-8">
                 <p className="text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d] mb-2">Payments Console</p>
-                <h1 className="text-3xl lg:text-4xl font-bold text-gray-800 tracking-tight">Billing and Payments</h1>
-                <p className="text-sm text-gray-500 mt-2">Filter by payment status, method, service, date range, and patient to review transactions faster.</p>
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <h1 className="text-3xl lg:text-4xl font-bold text-gray-800 tracking-tight">Billing and Payments</h1>
+                        <p className="text-sm text-gray-500 mt-2">Filter by payment status, method, service, date range, and patient to review transactions faster.</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleExport}
+                        className="w-full rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-500 lg:w-auto"
+                    >
+                        Export CSV
+                    </button>
+                </div>
             </div>
 
             <div className="mb-10">
@@ -450,7 +483,7 @@ const BillingAndPayments = () => {
                     </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 readable-data-table">
                     {loading ? (
                         <TableRowsSkeleton rows={5} columns={9} />
                     ) : paginatedBillings.map((billing) => (

@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import axios from 'axios';
 import AdminPasswordPrompt from '../../components/AdminPasswordPrompt';
 import ActionFeedbackModal from '../../components/ActionFeedbackModal';
+import { downloadCsvReport } from '../../utils/reportExports';
 
 const importModes = {
     patients: {
@@ -203,6 +204,23 @@ const AdminImports = () => {
         setNeedsAdminPassword(true);
     };
 
+    const exportValidationErrors = () => {
+        if (!Array.isArray(result?.errors) || result.errors.length === 0) return;
+        downloadCsvReport({
+            filename: `${mode}_import_validation_errors.csv`,
+            columns: [
+                { key: 'line', label: 'Line' },
+                { key: 'record', label: 'Record' },
+                { key: 'issue', label: 'Issue' },
+            ],
+            rows: result.errors.map((error) => ({
+                line: error.line,
+                record: error.email || error.patient || 'Row',
+                issue: (error.errors || []).join(', '),
+            })),
+        });
+    };
+
     return (
         <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
             <ActionFeedbackModal
@@ -321,9 +339,19 @@ const AdminImports = () => {
                             </p>
 
                             {Array.isArray(result.errors) && result.errors.length > 0 && (
-                                <div className="mt-4 max-h-96 overflow-auto rounded-xl bg-white">
+                                <div className="mt-4">
+                                    <div className="mb-3 flex justify-end">
+                                        <button
+                                            type="button"
+                                            onClick={exportValidationErrors}
+                                            className="rounded-xl border border-red-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-red-700"
+                                        >
+                                            Export CSV
+                                        </button>
+                                    </div>
+                                    <div className="max-h-96 overflow-auto rounded-xl bg-white readable-data-table">
                                     <table className="w-full text-left text-sm">
-                                        <thead className="bg-red-100 text-xs uppercase tracking-[0.16em] text-red-700">
+                                        <thead className="bg-red-100 text-xs uppercase tracking-[0.16em] text-red-800">
                                             <tr>
                                                 <th className="p-3">Line</th>
                                                 <th className="p-3">Record</th>
@@ -340,6 +368,7 @@ const AdminImports = () => {
                                             ))}
                                         </tbody>
                                     </table>
+                                    </div>
                                 </div>
                             )}
                         </div>

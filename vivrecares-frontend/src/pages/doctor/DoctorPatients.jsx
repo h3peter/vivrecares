@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import ProfileAvatar from '../../components/ProfileAvatar';
 import { TableRowsSkeleton } from '../../components/PageSkeleton';
+import { downloadCsvReport } from '../../utils/reportExports';
 
 const DoctorPatients = () => {
     const navigate = useNavigate();
@@ -46,12 +47,40 @@ const DoctorPatients = () => {
         setCurrentPage(1);
     }, [searchTerm, rowsPerPage]);
 
+    const handleExport = () => {
+        downloadCsvReport({
+            filename: 'doctor_patients.csv',
+            columns: [
+                { key: 'patient_id', label: 'Patient ID' },
+                { key: 'name', label: 'Patient' },
+                { key: 'phone', label: 'Phone' },
+                { key: 'sex', label: 'Sex' },
+                { key: 'age', label: 'Age' },
+            ],
+            rows: filteredPatients.map((patient) => ({
+                ...patient,
+                name: `${patient.first_name || ''} ${patient.last_name || ''}`.trim(),
+            })),
+        });
+    };
+
     return (
         <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
             <div className="mb-8">
                 <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d]">Doctor Workspace</p>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">Patient Records</h1>
-                <p className="mt-2 text-sm text-gray-500">Open any patient to review history and add consultation documentation.</p>
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">Patient Records</h1>
+                        <p className="mt-2 text-sm text-gray-500">Open any patient to review history and add consultation documentation.</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleExport}
+                        className="w-full rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-500 lg:w-auto"
+                    >
+                        Export CSV
+                    </button>
+                </div>
             </div>
 
             <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm lg:p-8">
@@ -72,7 +101,7 @@ const DoctorPatients = () => {
                     <div className="col-span-3 text-right">Action</div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 readable-data-table">
                     {loading ? (
                         <TableRowsSkeleton rows={5} columns={4} />
                     ) : currentRows.map((patient) => (

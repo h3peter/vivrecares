@@ -3,11 +3,13 @@ require_once 'auth.php';
 require_once 'config.php';
 require_once 'admin_security.php';
 require_once 'branch_helper.php';
+require_once 'admin_permissions.php';
 
 init_api_auth();
 
 $data = json_decode(file_get_contents("php://input"), true);
 require_admin_password($conn, is_array($data) ? $data : []);
+require_admin_permission($conn, 'settings');
 
 $branchId = isset($data['branch_id']) ? (int) $data['branch_id'] : 0;
 $branchName = normalize_clinic_branch_name($data['branch_name'] ?? '');

@@ -2,9 +2,10 @@
 require_once 'auth.php';
 require_once 'config.php';
 require_once 'billing_branch.php';
+require_once 'admin_permissions.php';
 
 init_api_auth();
-require_roles(['Admin']);
+require_admin_permission($conn, 'billing');
 
 try {
     ensure_billings_branch_column($conn);

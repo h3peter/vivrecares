@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import ActionFeedbackModal from '../components/ActionFeedbackModal';
+import { downloadCsvReport } from '../utils/reportExports';
 
 const AppointmentHistory = () => {
     const [appointments, setAppointments] = useState([]);
@@ -195,6 +196,25 @@ const AppointmentHistory = () => {
         setCurrentPage(1);
     }, [rowsPerPage, appointments.length]);
 
+    const handleExport = () => {
+        downloadCsvReport({
+            filename: 'appointment_history.csv',
+            columns: [
+                { key: 'appointment_id', label: 'Appointment ID' },
+                { key: 'appointment_type', label: 'Type' },
+                { key: 'branch', label: 'Branch' },
+                { key: 'date', label: 'Date' },
+                { key: 'time_label', label: 'Time' },
+                { key: 'status', label: 'Status' },
+                { key: 'concerns', label: 'Concerns' },
+            ],
+            rows: appointments.map((appointment) => ({
+                ...appointment,
+                time_label: formatTime(appointment.time),
+            })),
+        });
+    };
+
     return (
         <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
             <ActionFeedbackModal
@@ -206,8 +226,19 @@ const AppointmentHistory = () => {
             />
             <div className="mb-8">
                 <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d]">Patient Portal</p>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">Appointment History</h1>
-                <p className="mt-2 text-sm text-gray-500">Track your past and upcoming appointments in one place.</p>
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">Appointment History</h1>
+                        <p className="mt-2 text-sm text-gray-500">Track your past and upcoming appointments in one place.</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleExport}
+                        className="w-full rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-500 lg:w-auto"
+                    >
+                        Export CSV
+                    </button>
+                </div>
             </div>
 
             <div className="rounded-[2.5rem] border border-gray-100 bg-white p-5 shadow-sm lg:p-8">
@@ -218,7 +249,7 @@ const AppointmentHistory = () => {
                     <div className="col-span-3 text-right">Status</div>
                 </div>
 
-                <div className="space-y-3 px-0 lg:px-2">
+                <div className="space-y-3 px-0 lg:px-2 readable-data-table">
                     {loading ? (
                         Array.from({ length: Math.max(3, Math.min(rowsPerPage, 5)) }).map((_, index) => (
                             <AppointmentHistorySkeleton key={index} />
@@ -304,11 +335,6 @@ const AppointmentHistory = () => {
                                             {actionAppointmentId === apt.appointment_id ? 'Processing...' : 'Cancel Appointment'}
                                         </button>
                                     )}
-                                    {!canCancelAppointment(apt) && isPastAppointment(apt) && ['pending', 'confirmed', 'rescheduled'].includes(String(apt.status || '').toLowerCase()) && (
-                                        <p className="mt-4 rounded-xl border border-gray-200 bg-white px-4 py-3 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-gray-400">
-                                            Past appointments can no longer be cancelled
-                                        </p>
-                                    )}
                                 </div>
 
                                 <div className="hidden grid-cols-12 items-center gap-4 rounded-[1.5rem] border border-gray-50 bg-[#faf9f6] p-5 text-base text-gray-700 transition hover:border-[#c4ba9d] lg:grid">
@@ -380,11 +406,6 @@ const AppointmentHistory = () => {
                                             >
                                                 {actionAppointmentId === apt.appointment_id ? 'Processing...' : 'Cancel'}
                                             </button>
-                                        )}
-                                        {!canCancelAppointment(apt) && isPastAppointment(apt) && ['pending', 'confirmed', 'rescheduled'].includes(String(apt.status || '').toLowerCase()) && (
-                                            <p className="max-w-[10rem] text-[10px] font-semibold uppercase tracking-[0.16em] text-gray-400">
-                                                Cannot cancel past date
-                                            </p>
                                         )}
                                     </div>
                                 </div>

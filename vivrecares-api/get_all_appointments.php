@@ -2,9 +2,10 @@
 require_once 'auth.php';
 require_once 'config.php';
 require_once 'appointment_reschedule.php';
+require_once 'admin_permissions.php';
 
 init_api_auth();
-require_roles(['Admin']);
+require_admin_permission($conn, 'appointments');
 
 try {
     ensure_appointment_reschedule_columns($conn);

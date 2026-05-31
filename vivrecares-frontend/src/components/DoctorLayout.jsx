@@ -11,6 +11,7 @@ const DoctorLayout = () => {
             navItems={[
                 { label: 'Patients', path: '/doctor/patients' },
                 { label: 'Appointments', path: '/doctor/appointments' },
+                { label: 'Availability', path: '/doctor/availability' },
                 { label: 'Clinical Reports', path: '/doctor/reports' },
                 { label: 'My Profile', path: '/doctor/profile' },
             ]}

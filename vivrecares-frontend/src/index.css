@@ -15,3 +15,29 @@
   display: none !important;
   pointer-events: none;
 }
+
+.readable-data-table {
+  color: #1f2937;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.readable-data-table .text-gray-400,
+.readable-data-table .text-gray-500 {
+  color: #4b5563;
+}
+
+.readable-data-table .text-\[\#b2a58d\],
+.readable-data-table .text-\[\#c4ba9d\] {
+  color: #76623c;
+}
+
+.readable-data-table .bg-\[\#faf9f6\] {
+  background-color: #ffffff;
+}
+
+.readable-data-table .truncate {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}

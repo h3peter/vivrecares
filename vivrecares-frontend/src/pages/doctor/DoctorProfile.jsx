@@ -5,6 +5,12 @@ import PasswordChangePanel from '../../components/PasswordChangePanel';
 import { profilePhotoCandidates, profilePhotoUrl } from '../../utils/api';
 import { prepareProfilePhotoUpload } from '../../utils/imageUpload';
 
+const getSlotKey = (slot) => {
+    if (slot.slot_id) return `slot-${slot.slot_id}`;
+    if (slot.local_id) return `slot-local-${slot.local_id}`;
+    return `slot-${slot.branch}-${slot.slot_time}-${slot.slot_label}`;
+};
+
 const DoctorProfile = () => {
     const [formData, setFormData] = useState({
         first_name: '',
@@ -19,6 +25,11 @@ const DoctorProfile = () => {
     const [uploading, setUploading] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [feedback, setFeedback] = useState(null);
+    const [branches, setBranches] = useState([]);
+    const [selectedBranch, setSelectedBranch] = useState('');
+    const [availability, setAvailability] = useState([]);
+    const [slots, setSlots] = useState([]);
+    const [savingSchedule, setSavingSchedule] = useState(false);
     const fileInputRef = useRef(null);
 
     const applyPersistedPhoto = (filename) => {
@@ -51,6 +62,25 @@ const DoctorProfile = () => {
             }
         };
         fetchCurrentData();
+    }, []);
+
+    useEffect(() => {
+        const fetchSchedule = async () => {
+            try {
+                const res = await axios.get('/get_appointment_settings.php');
+                if (res.data.status === 'success') {
+                    const activeBranches = res.data.branches || [];
+                    setBranches(activeBranches);
+                    setSelectedBranch((current) => current || activeBranches[0] || '');
+                    setAvailability(res.data.availability || []);
+                    setSlots((res.data.slots || []).map((slot) => ({ ...slot, is_new: false })));
+                }
+            } catch (error) {
+                console.error('Failed to fetch doctor schedule settings', error);
+            }
+        };
+
+        fetchSchedule();
     }, []);
 
     const handlePhotoPick = async (e) => {
@@ -132,6 +162,78 @@ const DoctorProfile = () => {
     };
 
     const initials = `${formData.first_name?.[0] ?? ''}${formData.last_name?.[0] ?? ''}`.toUpperCase();
+    const branchAvailability = availability.filter((day) => day.branch === selectedBranch);
+    const branchSlots = slots
+        .filter((slot) => slot.branch === selectedBranch)
+        .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
+
+    const updateBranchDay = (weekday, nextValue) => {
+        setAvailability((prev) =>
+            prev.map((day) =>
+                day.branch === selectedBranch && Number(day.weekday) === Number(weekday)
+                    ? { ...day, is_active: nextValue ? 1 : 0 }
+                    : day
+            )
+        );
+    };
+
+    const updateBranchSlot = (slotKey, field, value) => {
+        setSlots((prev) =>
+            prev.map((slot) => (slot.branch === selectedBranch && getSlotKey(slot) === slotKey ? { ...slot, [field]: value } : slot))
+        );
+    };
+
+    const addBranchSlot = () => {
+        const localId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        setSlots((prev) => [
+            ...prev,
+            {
+                local_id: localId,
+                branch: selectedBranch,
+                slot_time: '',
+                slot_label: '',
+                sort_order: branchSlots.length + 1,
+                is_active: 1,
+                is_new: true,
+            },
+        ]);
+    };
+
+    const removeBranchSlot = (slotKey) => {
+        setSlots((prev) => prev.filter((slot) => !(slot.branch === selectedBranch && getSlotKey(slot) === slotKey)));
+    };
+
+    const handleSaveSchedule = async () => {
+        setSavingSchedule(true);
+        try {
+            const res = await axios.post('/save_appointment_settings.php', {
+                branch: selectedBranch,
+                availability: branchAvailability.map((day) => ({
+                    weekday: Number(day.weekday),
+                    weekday_name: day.weekday_name,
+                    is_active: Number(day.is_active) === 1,
+                })),
+                slots: branchSlots
+                    .filter((slot) => slot.slot_time && slot.slot_label)
+                    .map((slot, index) => ({
+                        slot_time: slot.slot_time,
+                        slot_label: slot.slot_label,
+                        sort_order: index + 1,
+                        is_active: Number(slot.is_active) === 1,
+                    })),
+            });
+
+            if (res.data.status === 'success') {
+                setFeedback({ tone: 'success', title: 'Schedule Saved', message: 'Available appointment slots were updated.' });
+            } else {
+                setFeedback({ tone: 'error', title: 'Schedule Not Saved', message: res.data.message || 'Unable to save schedule.' });
+            }
+        } catch (error) {
+            setFeedback({ tone: 'error', title: 'Schedule Not Saved', message: 'Unable to save schedule right now.' });
+        } finally {
+            setSavingSchedule(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
@@ -231,15 +333,82 @@ const DoctorProfile = () => {
             <div className="max-w-6xl mx-auto mt-8">
                 <PasswordChangePanel roleLabel="Doctor" />
             </div>
+
+            <div className="max-w-6xl mx-auto mt-8 rounded-xl border border-gray-100 bg-white p-6 shadow-sm lg:p-8">
+                <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-800">Available Time Slots</h2>
+                        <p className="mt-2 text-sm text-gray-500">Set valid clinic weekdays and appointment slots by branch.</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleSaveSchedule}
+                        disabled={savingSchedule || !selectedBranch}
+                        className="rounded-xl bg-[#555555] px-6 py-3 text-sm font-bold uppercase tracking-[0.18em] text-[#c4ba9d] disabled:opacity-50"
+                    >
+                        {savingSchedule ? 'Saving...' : 'Save Schedule'}
+                    </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+                    <div>
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Branch</label>
+                        <select
+                            value={selectedBranch}
+                            onChange={(e) => setSelectedBranch(e.target.value)}
+                            className="w-full rounded-xl border border-gray-200 bg-[#faf9f6] px-4 py-3 text-sm text-gray-700 outline-none focus:border-[#c4ba9d]"
+                        >
+                            {branches.map((branch) => <option key={branch} value={branch}>{branch}</option>)}
+                        </select>
+
+                        <div className="mt-6 space-y-3">
+                            {branchAvailability.map((day) => (
+                                <label key={`${day.branch}-${day.weekday}`} className="flex items-center justify-between rounded-xl border border-gray-100 bg-[#faf9f6] px-4 py-3">
+                                    <span className="text-sm font-semibold text-gray-700">{day.weekday_name}</span>
+                                    <input type="checkbox" checked={Number(day.is_active) === 1} onChange={(e) => updateBranchDay(day.weekday, e.target.checked)} className="h-4 w-4 accent-[#c4ba9d]" />
+                                </label>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div className="mb-3 flex items-center justify-between">
+                            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-[#b2a58d]">Time Slots</h3>
+                            <button type="button" onClick={addBranchSlot} disabled={!selectedBranch} className="text-xs font-bold uppercase tracking-[0.18em] text-[#8f6d1f] disabled:opacity-50">+ Add Slot</button>
+                        </div>
+                        <div className="space-y-3">
+                            {branchSlots.map((slot) => {
+                                const slotKey = getSlotKey(slot);
+                                return (
+                                    <div key={`${selectedBranch}-${slotKey}`} className="rounded-xl border border-gray-100 bg-[#faf9f6] p-4">
+                                        <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_auto] md:items-end">
+                                            <InputGroup label="Time" type="time" value={slot.slot_time} onChange={(value) => updateBranchSlot(slotKey, 'slot_time', value)} />
+                                            <InputGroup label="Label" value={slot.slot_label} onChange={(value) => updateBranchSlot(slotKey, 'slot_label', value)} />
+                                            <button type="button" onClick={() => removeBranchSlot(slotKey)} className="rounded-xl border border-red-200 px-4 py-3 text-xs font-bold uppercase tracking-[0.18em] text-red-500">Remove</button>
+                                        </div>
+                                        <label className="mt-3 flex items-center gap-3 text-sm text-gray-600">
+                                            <input type="checkbox" checked={Number(slot.is_active) === 1} onChange={(e) => updateBranchSlot(slotKey, 'is_active', e.target.checked ? 1 : 0)} className="h-4 w-4 accent-[#c4ba9d]" />
+                                            Active slot
+                                        </label>
+                                    </div>
+                                );
+                            })}
+                            {branchSlots.length === 0 && (
+                                <div className="rounded-xl border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500">No slots configured for this branch.</div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };
 
-const InputGroup = ({ label, value, onChange }) => (
+const InputGroup = ({ label, value, onChange, type = 'text' }) => (
     <div className="space-y-1">
         <label className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">{label}</label>
         <input
-            type="text"
+            type={type}
             required
             value={value ?? ''}
             onChange={(e) => onChange(e.target.value)}

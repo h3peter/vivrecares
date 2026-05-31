@@ -47,6 +47,18 @@ try {
         throw new Exception('A valid patient profile is required.');
     }
 
+    if ($authenticatedUser['role'] === 'Patient') {
+        $activeStmt = $conn->prepare("SELECT appointment_id
+                                      FROM appointments
+                                      WHERE patient_id = ?
+                                        AND status IN ('Pending', 'Confirmed', 'Rescheduled')
+                                      LIMIT 1");
+        $activeStmt->execute([$requestedPatientId]);
+        if ($activeStmt->fetchColumn()) {
+            throw new Exception('You already have an active appointment request. Please wait for it to be completed or cancelled before requesting another.');
+        }
+    }
+
     if ($serviceId) {
         $serviceStmt = $conn->prepare("SELECT service_name, is_active FROM services WHERE service_id = ? LIMIT 1");
         $serviceStmt->execute([$serviceId]);

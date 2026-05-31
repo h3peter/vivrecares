@@ -1,21 +1,17 @@
 import ResponsivePortalLayout from './ResponsivePortalLayout';
 import { getStoredUser } from '../utils/session';
+import { ADMIN_TASKS, getAdminPermissions } from '../utils/adminAccess';
 
 const AdminLayout = () => {
     const user = getStoredUser();
+    const permissions = getAdminPermissions(user);
 
     return (
         <ResponsivePortalLayout
             user={user}
             displayName={user?.first_name || 'Admin'}
             navItems={[
-                { label: 'Dashboard', path: '/admin/dashboard' },
-                { label: 'Manage Patients', path: '/admin/patients' },
-                { label: 'Appointment Logs', path: '/admin/appointments' },
-                { label: 'Billing & Payments', path: '/admin/billing' },
-                { label: 'Reports', path: '/admin/reports' },
-                { label: 'Import', path: '/admin/imports' },
-                { label: 'Settings', path: '/admin/settings' },
+                ...ADMIN_TASKS.filter((task) => permissions.includes(task.key)).map(({ label, path }) => ({ label, path })),
                 { label: 'My Profile', path: '/admin/profile' },
             ]}
         />

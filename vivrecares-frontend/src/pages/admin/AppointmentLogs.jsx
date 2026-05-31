@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import ActionFeedbackModal from '../../components/ActionFeedbackModal';
 import { TableRowsSkeleton } from '../../components/PageSkeleton';
+import { downloadCsvReport } from '../../utils/reportExports';
 
 const normalizeStatus = (status) => (status || '').toString().trim().toLowerCase();
 
@@ -251,6 +252,27 @@ const AppointmentLogs = () => {
         setEndDate('');
     };
 
+    const handleExport = () => {
+        downloadCsvReport({
+            filename: 'appointment_logs.csv',
+            columns: [
+                { key: 'appointment_id', label: 'Appointment ID' },
+                { key: 'patient', label: 'Patient' },
+                { key: 'appointment_type', label: 'Type' },
+                { key: 'branch', label: 'Branch' },
+                { key: 'date', label: 'Date' },
+                { key: 'time_label', label: 'Time' },
+                { key: 'status', label: 'Status' },
+                { key: 'concerns', label: 'Concerns' },
+            ],
+            rows: filteredLogs.map((apt) => ({
+                ...apt,
+                patient: `${apt.first_name || ''} ${apt.last_name || ''}`.trim(),
+                time_label: formatTime(apt.time),
+            })),
+        });
+    };
+
     const scheduleChanged = selectedApt
         ? selectedApt.date !== selectedApt.original_date
             || selectedApt.time !== selectedApt.original_time
@@ -279,6 +301,13 @@ const AppointmentLogs = () => {
                         <div className="text-sm text-gray-500">
                             Showing <span className="font-semibold text-gray-700">{loading ? '...' : filteredLogs.length}</span> of {loading ? '...' : appointments.length} appointments
                         </div>
+                        <button
+                            type="button"
+                            onClick={handleExport}
+                            className="w-full rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-500 lg:w-auto"
+                        >
+                            Export CSV
+                        </button>
                     </div>
 
                     <div className="lg:hidden">
@@ -371,7 +400,7 @@ const AppointmentLogs = () => {
                     <div className="col-span-1 text-center">Action</div>
                 </div>
 
-                <div className="space-y-4 px-0 pb-0 lg:px-4 lg:pb-4">
+                <div className="space-y-4 px-0 pb-0 lg:px-4 lg:pb-4 readable-data-table">
                     {loading ? (
                         <TableRowsSkeleton rows={5} columns={6} />
                     ) : paginatedLogs.map((apt) => (

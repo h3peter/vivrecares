@@ -3,6 +3,7 @@ import axios from 'axios';
 import ActionFeedbackModal from '../components/ActionFeedbackModal';
 import { TableRowsSkeleton } from '../components/PageSkeleton';
 import { openProtectedDocument } from '../utils/api';
+import { downloadCsvReport } from '../utils/reportExports';
 
 const PatientInvoices = () => {
     const [invoices, setInvoices] = useState([]);
@@ -59,6 +60,22 @@ const PatientInvoices = () => {
 
     const filteredInvoices = invoices.filter((invoice) => statusFilter === 'All' || invoice.payment_status === statusFilter);
 
+    const handleExport = () => {
+        downloadCsvReport({
+            filename: 'billing_history.csv',
+            columns: [
+                { key: 'invoice_id', label: 'Invoice ID' },
+                { key: 'main_treatment', label: 'Main Service' },
+                { key: 'payment_date', label: 'Date Paid' },
+                { key: 'payment_method', label: 'Method' },
+                { key: 'reference_number', label: 'Reference' },
+                { key: 'payment_status', label: 'Status' },
+                { key: 'total_amount', label: 'Total Amount' },
+            ],
+            rows: filteredInvoices,
+        });
+    };
+
     const getStatusBadge = (status) => {
         if (status === 'Paid') return 'bg-green-50 text-green-600';
         if (status === 'Overdue') return 'bg-amber-50 text-amber-600';
@@ -80,14 +97,23 @@ const PatientInvoices = () => {
                     <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">My Billing History</h1>
                     <p className="mt-2 text-sm text-gray-500">Review your invoices, payment status, and payment references.</p>
                 </div>
-                <div className="w-full lg:w-auto">
-                    <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Filter Status</label>
-                    <select className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-700 outline-none focus:border-[#c4ba9d] lg:w-auto" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
-                        <option value="All">All statuses</option>
-                        <option value="Paid">Paid</option>
-                        <option value="Unpaid">Unpaid</option>
-                        <option value="Overdue">Overdue</option>
-                    </select>
+                <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto lg:items-end">
+                    <div className="w-full lg:w-auto">
+                        <label className="mb-2 block text-xs font-bold uppercase tracking-[0.18em] text-gray-400">Filter Status</label>
+                        <select className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-base text-gray-700 outline-none focus:border-[#c4ba9d] lg:w-auto" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+                            <option value="All">All statuses</option>
+                            <option value="Paid">Paid</option>
+                            <option value="Unpaid">Unpaid</option>
+                            <option value="Overdue">Overdue</option>
+                        </select>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleExport}
+                        className="rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-500"
+                    >
+                        Export CSV
+                    </button>
                 </div>
             </div>
 
@@ -103,7 +129,7 @@ const PatientInvoices = () => {
                     <div className="col-span-1"></div>
                 </div>
 
-                <div className="space-y-3 px-0 lg:px-2">
+                <div className="space-y-3 px-0 lg:px-2 readable-data-table">
                     {loading ? (
                         <TableRowsSkeleton rows={5} columns={8} />
                     ) : filteredInvoices.map((invoice) => (

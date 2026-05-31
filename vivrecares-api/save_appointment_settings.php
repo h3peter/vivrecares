@@ -2,9 +2,13 @@
 require_once 'auth.php';
 require_once 'config.php';
 require_once 'branch_helper.php';
+require_once 'admin_permissions.php';
 
 init_api_auth();
-require_roles(['Admin']);
+$authUser = require_roles(['Admin', 'Doctor']);
+if (($authUser['role'] ?? '') === 'Admin') {
+    require_admin_permission($conn, 'settings');
+}
 
 $data = json_decode(file_get_contents("php://input"), true);
 

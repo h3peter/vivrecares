@@ -1,9 +1,13 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once 'admin_permissions.php';
 
 init_api_auth();
-require_roles(['Admin', 'Doctor']);
+$authUser = require_roles(['Admin', 'Doctor']);
+if (($authUser['role'] ?? '') === 'Admin') {
+    require_admin_permission($conn, 'patients');
+}
 
 $isArchived = isset($_GET['archived']) && $_GET['archived'] == '1';
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { downloadCsvReport } from '../../utils/reportExports';
 
 const DoctorAppointments = () => {
     const navigate = useNavigate();
@@ -72,12 +73,43 @@ const DoctorAppointments = () => {
         setCurrentPage(1);
     }, [search, viewMode, anchorDate, rowsPerPage]);
 
+    const handleExport = () => {
+        downloadCsvReport({
+            filename: 'doctor_appointments.csv',
+            columns: [
+                { key: 'appointment_id', label: 'Appointment ID' },
+                { key: 'date', label: 'Date' },
+                { key: 'time', label: 'Time' },
+                { key: 'patient', label: 'Patient' },
+                { key: 'appointment_type', label: 'Consultation Topic' },
+                { key: 'branch', label: 'Branch' },
+                { key: 'status', label: 'Status' },
+                { key: 'concerns', label: 'Concerns' },
+            ],
+            rows: scopedAppointments.map((appointment) => ({
+                ...appointment,
+                patient: `${appointment.first_name || ''} ${appointment.last_name || ''}`.trim(),
+            })),
+        });
+    };
+
     return (
         <div className="min-h-screen bg-[#f4f4f4] p-4 sm:p-6 lg:p-12">
             <div className="mb-8">
                 <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d]">Doctor Workspace</p>
-                <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">Appointment Schedule</h1>
-                <p className="mt-2 text-sm text-gray-500">View your consultation queue by day, week, or month and open patient records quickly.</p>
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">Appointment Schedule</h1>
+                        <p className="mt-2 text-sm text-gray-500">View your consultation queue by day, week, or month and open patient records quickly.</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleExport}
+                        className="w-full rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-bold uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-500 lg:w-auto"
+                    >
+                        Export CSV
+                    </button>
+                </div>
             </div>
 
             <div className="mb-8 rounded-3xl border border-gray-100 bg-white p-5 shadow-sm lg:p-8">
@@ -120,7 +152,7 @@ const DoctorAppointments = () => {
                     <div className="col-span-1 text-right">Open</div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-3 readable-data-table">
                     {loading ? Array.from({ length: Math.max(3, Math.min(rowsPerPage, 5)) }).map((_, index) => (
                         <AppointmentRowSkeleton key={index} />
                     )) : currentRows.map((appt) => (

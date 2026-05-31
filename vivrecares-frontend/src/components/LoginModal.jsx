@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import logoBlack from '../assets/vivre-black.png';
 import PasswordInput from './PasswordInput';
 import { clearStoredSession, rememberStoredToken, rememberStoredUser } from '../utils/session';
+import { firstAdminPath } from '../utils/adminAccess';
 
 const REMEMBERED_EMAIL_KEY = 'rememberedLoginEmail';
 const FRIENDLY_MAIL_SEND_ERROR = 'We could not send the code right now. Please try again in a moment.';
@@ -83,7 +84,7 @@ const LoginModal = ({ onClose }) => {
         rememberStoredUser(confirmedUser, authToken);
 
         if (confirmedUser.role === 'Admin') {
-          navigate('/admin/dashboard');
+          navigate(firstAdminPath(confirmedUser));
         } else if (confirmedUser.role === 'Doctor') {
           navigate('/doctor/appointments');
         } else {

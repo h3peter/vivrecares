@@ -5,9 +5,11 @@ require_once 'auth.php';
 require_once 'config.php';
 require_once 'billing_branch.php';
 require_once 'admin_security.php';
+require_once 'admin_permissions.php';
 
 init_api_auth();
 require_admin_password($conn, $_POST);
+require_admin_permission($conn, 'imports');
 
 function normalize_import_header($value) {
     return strtolower(trim(preg_replace('/[^a-zA-Z0-9]+/', '_', (string) $value), '_'));

@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import AdminPasswordPrompt from '../../components/AdminPasswordPrompt';
 import { PanelSkeleton } from '../../components/PageSkeleton';
+import { ADMIN_TASKS } from '../../utils/adminAccess';
+import { getStoredUser, rememberStoredUser, getStoredToken } from '../../utils/session';
+import { downloadCsvReport } from '../../utils/reportExports';
 
 const defaultServiceForm = {
     service_id: null,
@@ -38,6 +41,7 @@ const AdminSettings = () => {
     const [branches, setBranches] = useState([]);
     const [staffUsers, setStaffUsers] = useState([]);
     const [pendingStaffInvites, setPendingStaffInvites] = useState([]);
+    const [permissionDefinitions, setPermissionDefinitions] = useState(ADMIN_TASKS.reduce((acc, task) => ({ ...acc, [task.key]: task.label }), {}));
     const [serviceForm, setServiceForm] = useState(defaultServiceForm);
     const [staffForm, setStaffForm] = useState(defaultStaffForm);
     const [branchForm, setBranchForm] = useState(defaultBranchForm);
@@ -89,6 +93,7 @@ const AdminSettings = () => {
             if (staffRes.data.status === 'success') {
                 setStaffUsers(staffRes.data.data || []);
                 setPendingStaffInvites(staffRes.data.pending_invites || []);
+                setPermissionDefinitions(staffRes.data.permission_definitions || permissionDefinitions);
             }
         } catch (error) {
             console.error('Failed to load settings', error);
@@ -384,12 +389,72 @@ const AdminSettings = () => {
         });
     };
 
+    const updateStaffPermissions = (staffUserId, permissions) => {
+        setStaffUsers((prev) =>
+            prev.map((staff) =>
+                Number(staff.user_id) === Number(staffUserId)
+                    ? { ...staff, admin_permissions: permissions, is_super_admin: 0 }
+                    : staff
+            )
+        );
+    };
+
+    const toggleSuperAdminDraft = (staffUserId, enabled) => {
+        setStaffUsers((prev) =>
+            prev.map((staff) => ({
+                ...staff,
+                is_super_admin: Number(staff.user_id) === Number(staffUserId) && enabled ? 1 : (enabled ? 0 : staff.is_super_admin),
+            }))
+        );
+    };
+
+    const saveAdminTaskAccess = (staff) => {
+        const currentUser = getStoredUser();
+        if (!currentUser?.is_super_admin) {
+            showToast('error', 'Only the super admin can assign admin tasks.');
+            return;
+        }
+
+        setProtectedAction({
+            title: 'Update Admin Access',
+            message: `Enter your admin password to update ${staff.first_name} ${staff.last_name}'s admin tasks.`,
+            onConfirm: async (adminPassword) => {
+                try {
+                    const res = await axios.post('/save_admin_permissions.php', {
+                        user_id: staff.user_id,
+                        is_super_admin: Number(staff.is_super_admin) === 1 ? 1 : 0,
+                        permissions: staff.admin_permissions || [],
+                        admin_password: adminPassword,
+                    });
+                    if (res.data.status === 'success') {
+                        await fetchAll();
+                        if (Number(staff.user_id) === Number(currentUser.id)) {
+                            const sessionRes = await axios.get('/session_status.php');
+                            if (sessionRes.data.status === 'success') {
+                                rememberStoredUser(sessionRes.data.user, getStoredToken());
+                            }
+                        }
+                        showToast('success', res.data.message || 'Admin task access updated.');
+                    } else {
+                        showToast('error', res.data.message || 'Unable to update admin task access.');
+                    }
+                } catch (error) {
+                    showToast('error', 'Unable to update admin task access.');
+                }
+            },
+        });
+    };
+
     const handleProtectedConfirm = async (adminPassword) => {
         const action = protectedAction;
         setProtectedAction(null);
         if (action?.onConfirm) {
             await action.onConfirm(adminPassword);
         }
+    };
+
+    const exportRows = (filename, columns, rows) => {
+        downloadCsvReport({ filename, columns, rows });
     };
 
     return (
@@ -427,8 +492,25 @@ const AdminSettings = () => {
             ) : <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.2fr_0.8fr]">
                 <section className="bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
                     <div className="border-b border-gray-100 bg-[#faf9f6] px-5 py-6 sm:px-8">
-                        <h2 className="text-2xl font-bold text-gray-800">Service Catalog</h2>
-                        <p className="text-sm text-gray-500 mt-2">Archive services to inactive instead of deleting records.</p>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <h2 className="text-2xl font-bold text-gray-800">Service Catalog</h2>
+                                <p className="text-sm text-gray-500 mt-2">Archive services to inactive instead of deleting records.</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => exportRows('services.csv', [
+                                    { key: 'service_id', label: 'Service ID' },
+                                    { key: 'service_name', label: 'Service' },
+                                    { key: 'category_name', label: 'Category' },
+                                    { key: 'base_price', label: 'Base Price' },
+                                    { key: 'is_active', label: 'Active' },
+                                ], services)}
+                                className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-gray-700"
+                            >
+                                Export CSV
+                            </button>
+                        </div>
                     </div>
 
                     <div className="space-y-8 p-5 sm:p-8">
@@ -598,8 +680,24 @@ const AdminSettings = () => {
             {settingsLoading ? <div className="mt-8"><PanelSkeleton tall /></div> : (
             <section className="mt-8 bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-8 py-6 border-b border-gray-100 bg-[#faf9f6]">
-                    <h2 className="text-2xl font-bold text-gray-800">Branches</h2>
-                    <p className="text-sm text-gray-500 mt-2">Control which clinic branches are available for new appointments and invoices.</p>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-800">Branches</h2>
+                            <p className="text-sm text-gray-500 mt-2">Control which clinic branches are available for new appointments and invoices.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => exportRows('branches.csv', [
+                                { key: 'branch_id', label: 'Branch ID' },
+                                { key: 'branch_name', label: 'Branch' },
+                                { key: 'address', label: 'Address' },
+                                { key: 'is_active', label: 'Active' },
+                            ], branches)}
+                            className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-gray-700"
+                        >
+                            Export CSV
+                        </button>
+                    </div>
                 </div>
 
                 <div className="p-8 grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-8">
@@ -648,8 +746,29 @@ const AdminSettings = () => {
 
             {settingsLoading ? <div className="mt-8"><PanelSkeleton tall /></div> : <section className="mt-8 bg-white rounded-[2rem] border border-gray-100 shadow-sm overflow-hidden">
                 <div className="px-8 py-6 border-b border-gray-100 bg-[#faf9f6]">
-                    <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
-                    <p className="text-sm text-gray-500 mt-2">Invite and manage Admin/Doctor accounts from the settings module.</p>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-800">User Management</h2>
+                            <p className="text-sm text-gray-500 mt-2">Invite and manage Admin/Doctor accounts from the settings module.</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => exportRows('staff_users.csv', [
+                                { key: 'user_id', label: 'User ID' },
+                                { key: 'name', label: 'Name' },
+                                { key: 'email', label: 'Email' },
+                                { key: 'role_label', label: 'Role' },
+                                { key: 'deleted_at', label: 'Archived At' },
+                            ], staffUsers.map((staff) => ({
+                                ...staff,
+                                name: `${staff.first_name || ''} ${staff.last_name || ''}`.trim(),
+                                role_label: Number(staff.is_super_admin) === 1 ? 'Super Admin' : staff.role,
+                            })))}
+                            className="rounded-xl border border-gray-300 bg-white px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-gray-700"
+                        >
+                            Export CSV
+                        </button>
+                    </div>
                 </div>
 
                 <div className="p-8 grid grid-cols-1 xl:grid-cols-[0.95fr_1.05fr] gap-8">
@@ -692,23 +811,71 @@ const AdminSettings = () => {
                             <div className="max-h-[320px] overflow-auto">
                                 {staffUsers.map((staff) => {
                                     const isActive = !staff.deleted_at;
+                                    const isAdmin = staff.role === 'Admin';
+                                    const staffPermissions = Array.isArray(staff.admin_permissions)
+                                        ? staff.admin_permissions
+                                        : ADMIN_TASKS.map((task) => task.key);
                                     return (
-                                        <div key={staff.user_id} className="grid grid-cols-[1.1fr_1fr_0.8fr_0.7fr] gap-3 items-center px-5 py-3 border-b border-gray-100 text-sm">
-                                            <div className="font-semibold text-gray-800">{staff.first_name} {staff.last_name}</div>
-                                            <div className="text-gray-500 truncate">{staff.email}</div>
-                                            <div>
-                                                <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-[0.16em] ${staff.role === 'Admin' ? 'bg-blue-50 text-blue-600' : 'bg-amber-100 text-amber-700'}`}>
-                                                    {staff.role}
-                                                </span>
+                                        <div key={staff.user_id} className="border-b border-gray-100 px-5 py-4 text-sm">
+                                            <div className="grid grid-cols-[1.1fr_1fr_0.8fr_0.7fr] gap-3 items-center">
+                                                <div className="font-semibold text-gray-800">{staff.first_name} {staff.last_name}</div>
+                                                <div className="text-gray-500 truncate">{staff.email}</div>
+                                                <div>
+                                                    <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-[0.16em] ${isAdmin ? 'bg-blue-50 text-blue-600' : 'bg-amber-100 text-amber-700'}`}>
+                                                        {Number(staff.is_super_admin) === 1 ? 'Super Admin' : staff.role}
+                                                    </span>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleToggleStaffStatus(staff)}
+                                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-[0.16em] ${
+                                                        isActive ? 'bg-red-50 text-red-600' : 'bg-emerald-100 text-emerald-700'
+                                                    }`}
+                                                >
+                                                    {isActive ? 'Archive' : 'Restore'}
+                                                </button>
                                             </div>
-                                            <button
-                                                onClick={() => handleToggleStaffStatus(staff)}
-                                                className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-[0.16em] ${
-                                                    isActive ? 'bg-red-50 text-red-600' : 'bg-emerald-100 text-emerald-700'
-                                                }`}
-                                            >
-                                                {isActive ? 'Archive' : 'Restore'}
-                                            </button>
+                                            {isAdmin && (
+                                                <div className="mt-4 rounded-xl border border-gray-100 bg-white p-4">
+                                                    <label className="mb-3 flex items-center gap-3 text-sm font-semibold text-gray-700">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={Number(staff.is_super_admin) === 1}
+                                                            onChange={(e) => toggleSuperAdminDraft(staff.user_id, e.target.checked)}
+                                                            className="h-4 w-4 accent-[#c4ba9d]"
+                                                        />
+                                                        Super admin
+                                                    </label>
+                                                    {Number(staff.is_super_admin) !== 1 && (
+                                                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                                                            {ADMIN_TASKS.map((task) => (
+                                                                <label key={`${staff.user_id}-${task.key}`} className="flex items-center gap-2 rounded-lg bg-[#faf9f6] px-3 py-2 text-xs font-semibold text-gray-600">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={staffPermissions.includes(task.key)}
+                                                                        onChange={(e) => {
+                                                                            const nextPermissions = e.target.checked
+                                                                                ? [...new Set([...staffPermissions, task.key])]
+                                                                                : staffPermissions.filter((permission) => permission !== task.key);
+                                                                            updateStaffPermissions(staff.user_id, nextPermissions);
+                                                                        }}
+                                                                        className="h-4 w-4 accent-[#c4ba9d]"
+                                                                    />
+                                                                    {permissionDefinitions[task.key] || task.label}
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    <div className="mt-4 flex justify-end">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => saveAdminTaskAccess(staff)}
+                                                            className="rounded-xl bg-[#555555] px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-[#c4ba9d]"
+                                                        >
+                                                            Save Access
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

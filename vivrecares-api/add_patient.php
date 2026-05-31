@@ -1,11 +1,12 @@
 <?php
 require_once 'auth.php';
 require_once 'config.php';
+require_once 'admin_permissions.php';
 require_once 'Encryption.php';
 require_once 'verification_helper.php';
 
 init_api_auth();
-require_roles(['Admin']);
+require_admin_permission($conn, 'patients');
 
 $data = json_decode(file_get_contents("php://input"), true);
 

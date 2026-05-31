@@ -4,6 +4,7 @@ import { clearStoredSession, getStoredToken, getStoredUser, rememberStoredUser }
 import { lazy, Suspense, useEffect, useState } from 'react';
 import axios from 'axios';
 import AppLoadingScreen from './components/AppLoadingScreen';
+import { canAccessAdminTask, firstAdminPath } from './utils/adminAccess';
 
 const Login = lazy(() => import('./pages/Login'));
 const EvaluationGuide = lazy(() => import('./pages/EvaluationGuide'));
@@ -33,6 +34,7 @@ const DoctorLayout = lazy(() => import('./components/DoctorLayout'));
 const DoctorPatients = lazy(() => import('./pages/doctor/DoctorPatients'));
 const DoctorPatientRecord = lazy(() => import('./pages/doctor/DoctorPatientRecord'));
 const DoctorAppointments = lazy(() => import('./pages/doctor/DoctorAppointments'));
+const DoctorAvailability = lazy(() => import('./pages/doctor/DoctorAvailability'));
 const DoctorReports = lazy(() => import('./pages/doctor/DoctorReports'));
 const DoctorProfile = lazy(() => import('./pages/doctor/DoctorProfile'));
 
@@ -52,6 +54,15 @@ const ProtectedRoute = ({ children, allowedRole, allowedRoles }) => {
   }
 
   // If they pass the checks, let them see the page
+  return children;
+};
+
+const AdminTaskRoute = ({ task, children }) => {
+  const user = getStoredUser();
+  if (!user) return <Navigate to="/" replace />;
+  if (!canAccessAdminTask(user, task)) {
+    return <Navigate to={firstAdminPath(user)} replace />;
+  }
   return children;
 };
 
@@ -124,23 +135,23 @@ function App() {
   <Route element={<ProtectedRoute allowedRole="Admin"><AdminLayout /></ProtectedRoute>}>
       <Route
           path="/admin"
-          element={<Navigate to="/admin/dashboard" replace />}
+          element={<Navigate to={firstAdminPath(getStoredUser())} replace />}
       />
       <Route
           path="/admin/dashboard"
-          element={<AdminDashboard />}
+          element={<AdminTaskRoute task="dashboard"><AdminDashboard /></AdminTaskRoute>}
       />
       <Route 
           path="/admin/patients" 
-          element={<ManagePatients />} 
+          element={<AdminTaskRoute task="patients"><ManagePatients /></AdminTaskRoute>} 
       />
       <Route 
       path="/admin/appointments" 
-      element={<AppointmentLogs />} 
+      element={<AdminTaskRoute task="appointments"><AppointmentLogs /></AdminTaskRoute>} 
   />
         <Route 
       path="/admin/billing" 
-      element={<BillingAndPayments />} 
+      element={<AdminTaskRoute task="billing"><BillingAndPayments /></AdminTaskRoute>} 
   />
         <Route 
       path="/admin/profile" 
@@ -148,27 +159,27 @@ function App() {
   />
     <Route 
         path="/admin/add-patient" 
-        element={<AdminAddPatient />} 
+        element={<AdminTaskRoute task="patients"><AdminAddPatient /></AdminTaskRoute>} 
     />
     <Route 
     path="/admin/edit-patient/:userId" 
-    element={<AdminEditPatient />} />
+    element={<AdminTaskRoute task="patients"><AdminEditPatient /></AdminTaskRoute>} />
     <Route 
         path="/admin/patient/:id" 
-        element={<AdminViewPatient />} 
+        element={<AdminTaskRoute task="patients"><AdminViewPatient /></AdminTaskRoute>} 
     />
     <Route 
     path="/admin/create-invoice" 
-    element={<AdminCreateInvoice />} />
+    element={<AdminTaskRoute task="billing"><AdminCreateInvoice /></AdminTaskRoute>} />
     <Route 
     path="/admin/settings" 
-    element={<AdminSettings />} />
+    element={<AdminTaskRoute task="settings"><AdminSettings /></AdminTaskRoute>} />
     <Route
     path="/admin/reports"
-    element={<AdminReports />} />
+    element={<AdminTaskRoute task="reports"><AdminReports /></AdminTaskRoute>} />
     <Route
     path="/admin/imports"
-    element={<AdminImports />} />
+    element={<AdminTaskRoute task="imports"><AdminImports /></AdminTaskRoute>} />
   </Route>
 
   <Route element={<ProtectedRoute allowedRole="Doctor"><DoctorLayout /></ProtectedRoute>}>
@@ -183,6 +194,10 @@ function App() {
     <Route
       path="/doctor/appointments"
       element={<DoctorAppointments />}
+    />
+    <Route
+      path="/doctor/availability"
+      element={<DoctorAvailability />}
     />
     <Route
       path="/doctor/reports"
