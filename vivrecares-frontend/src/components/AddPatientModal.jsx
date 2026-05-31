@@ -32,7 +32,7 @@ const AddPatientModal = ({ onClose, onSuccess }) => {
                 setError(res.data.message || 'Failed to add patient.');
             }
         } catch (err) {
-            setError('Server error. Please try again.');
+            setError(err.response?.data?.message || 'Server error. Please try again.');
         } finally {
             setLoading(false);
         }

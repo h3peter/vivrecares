@@ -16,6 +16,7 @@ if (!$data || !isset($data['email']) || !isset($data['first_name'])) {
 }
 
 try {
+    ensure_email_verification_schema($conn);
     $conn->beginTransaction();
 
     // 1. Check for duplicate email
@@ -99,7 +100,9 @@ try {
     echo json_encode(["status" => "success", "message" => "Account created successfully."]);
 
 } catch (Exception $e) {
-    $conn->rollBack();
+    if ($conn->inTransaction()) {
+        $conn->rollBack();
+    }
     echo json_encode(["status" => "error", "message" => "Database error: " . $e->getMessage()]);
 }
 ?>
