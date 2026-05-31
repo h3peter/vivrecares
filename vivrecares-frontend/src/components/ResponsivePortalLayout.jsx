@@ -90,7 +90,7 @@ const ResponsivePortalLayout = ({ user, displayName, navItems, homePath = '/' })
                     </h3>
                 </div>
 
-                <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 pb-6">
+                <nav className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 pb-6">
                     {navItems.map((item) => (
                         <SidebarButton
                             key={item.path}
@@ -105,22 +105,22 @@ const ResponsivePortalLayout = ({ user, displayName, navItems, homePath = '/' })
                     <div className="flex flex-col gap-3">
                         <button
                             onClick={() => navigate(homePath)}
-                            className="flex w-full items-center gap-3 rounded-xl bg-[#5c5c5c] px-4 py-3 text-gray-200 transition-all duration-200 hover:bg-[#686868] hover:text-white"
+                            className="flex w-full items-center gap-3 rounded-xl bg-[#5c5c5c] px-4 py-3.5 text-gray-100 transition-all duration-200 hover:bg-[#686868] hover:text-white"
                         >
                             <svg className="h-4 w-4 flex-shrink-0 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0 7-7 7 7M5 10v10a1 1 0 0 0 1 1h3m10-11 2 2m-2-2v10a1 1 0 0 1-1 1h-3m-6 0a1 1 0 0 0 1-1v-4a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v4a1 1 0 0 0 1 1m-6 0h6" />
                             </svg>
-                            <span className="text-[11px] font-semibold uppercase tracking-[0.22em]">Home</span>
+                            <span className="text-sm font-bold uppercase tracking-[0.12em]">Home</span>
                         </button>
 
                         <button
                             onClick={handleLogout}
-                            className="flex w-full items-center gap-3 rounded-xl bg-[#5c5c5c] px-4 py-3 text-red-400 transition-all duration-200 hover:bg-red-900/40 hover:text-red-300"
+                            className="flex w-full items-center gap-3 rounded-xl bg-[#5c5c5c] px-4 py-3.5 text-red-300 transition-all duration-200 hover:bg-red-900/40 hover:text-red-200"
                         >
                             <svg className="h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0-4-4m4 4H7m6 4v1a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1" />
                             </svg>
-                            <span className="text-[11px] font-semibold uppercase tracking-[0.22em]">Logout</span>
+                            <span className="text-sm font-bold uppercase tracking-[0.12em]">Logout</span>
                         </button>
                     </div>
                 </div>
@@ -177,9 +177,9 @@ const ResponsivePortalLayout = ({ user, displayName, navItems, homePath = '/' })
 const SidebarButton = ({ label, active, onClick }) => (
     <button
         onClick={onClick}
-        className={`w-full rounded-2xl border border-transparent px-5 py-3 text-left text-[10px] uppercase tracking-[0.22em] transition-all duration-300 ${active
-            ? 'border-[#d4af37]/30 bg-[#5c5c5c] text-[#d4af37] shadow-sm'
-            : 'text-gray-300 hover:bg-[#5c5c5c] hover:text-[#d4af37]'
+        className={`w-full rounded-xl border border-transparent px-5 py-3.5 text-left text-sm font-bold uppercase tracking-[0.12em] transition-all duration-300 ${active
+            ? 'border-[#d4af37]/40 bg-[#626262] text-[#f1d17a] shadow-sm'
+            : 'text-gray-100 hover:bg-[#5c5c5c] hover:text-[#f1d17a]'
             }`}
     >
         {label}
