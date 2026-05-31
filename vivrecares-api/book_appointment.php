@@ -2,6 +2,7 @@
 require_once 'auth.php';
 require_once 'config.php';
 require_once 'appointment_validation.php';
+require_once 'appointment_expiration.php';
 require_once 'mail_helper.php';
 
 init_api_auth();
@@ -27,6 +28,10 @@ try {
         throw new Exception('Branch, date, and time are required.');
     }
 
+    if (empty($data['terms_accepted'])) {
+        throw new Exception('Please accept the appointment terms and conditions before submitting your request.');
+    }
+
     $requestedPatientId = !empty($data['patientId']) ? (int) $data['patientId'] : 0;
     if ($requestedPatientId <= 0) {
         throw new Exception('Patient profile is missing. Please refresh and try again.');
@@ -46,6 +51,8 @@ try {
     } elseif ($authenticatedUser['role'] === 'Admin' && $requestedPatientId <= 0) {
         throw new Exception('A valid patient profile is required.');
     }
+
+    cancel_expired_pending_appointments($conn, $requestedPatientId);
 
     if ($authenticatedUser['role'] === 'Patient') {
         $activeStmt = $conn->prepare("SELECT appointment_id

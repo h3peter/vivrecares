@@ -3,6 +3,7 @@ header("Content-Type: application/json");
 require_once 'config.php';
 require_once 'auth.php';
 require_once 'appointment_reschedule.php';
+require_once 'appointment_expiration.php';
 
 init_api_auth();
 
@@ -17,6 +18,13 @@ require_same_user_or_roles($user_id, ['Admin', 'Doctor']);
 
 try {
     ensure_appointment_reschedule_columns($conn);
+
+    $patientStmt = $conn->prepare("SELECT patient_id FROM patients WHERE user_id = ? LIMIT 1");
+    $patientStmt->execute([$user_id]);
+    $patientId = $patientStmt->fetchColumn();
+    if ($patientId) {
+        cancel_expired_pending_appointments($conn, (int) $patientId);
+    }
 
     // We join the patients table so we can look them up by their login account (user_id)
     $sql = "SELECT a.appointment_id, COALESCE(s.service_name, a.appointment_type) AS appointment_type, 

@@ -20,6 +20,7 @@ const RequestAppointment = () => {
     const [slots, setSlots] = useState([]);
     const [branchOptions, setBranchOptions] = useState(['Pasay Branch', 'Valenzuela Branch']);
     const [hasActiveAppointment, setHasActiveAppointment] = useState(false);
+    const [termsAccepted, setTermsAccepted] = useState(false);
 
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -145,6 +146,15 @@ const RequestAppointment = () => {
             return;
         }
 
+        if (!termsAccepted) {
+            setFeedback({
+                tone: 'info',
+                title: 'Terms Required',
+                message: 'Please review and accept the appointment terms and conditions before submitting your request.',
+            });
+            return;
+        }
+
         setLoading(true);
 
         try {
@@ -155,6 +165,7 @@ const RequestAppointment = () => {
                 date,
                 time,
                 concerns,
+                terms_accepted: true,
             });
 
             if (res.data.status === 'success') {
@@ -327,10 +338,29 @@ const RequestAppointment = () => {
                             ></textarea>
                         </div>
 
+                        <div className="rounded-2xl border border-gray-200 bg-white p-5">
+                            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-gray-700">Appointment Terms and Conditions</h3>
+                            <div className="mt-3 space-y-2 text-sm leading-relaxed text-gray-600">
+                                <p>Your request is subject to clinic review and is not final until confirmed by the clinic.</p>
+                                <p>Please arrive on time and notify the clinic as early as possible if you need to cancel or reschedule.</p>
+                                <p>The information you submit will be used to prepare for your visit and may be reviewed by authorized clinic staff.</p>
+                                <p>For urgent or emergency medical concerns, do not wait for an online appointment confirmation. Contact emergency services or visit the nearest medical facility.</p>
+                            </div>
+                            <label className="mt-4 flex items-start gap-3 text-sm font-semibold text-gray-700">
+                                <input
+                                    type="checkbox"
+                                    checked={termsAccepted}
+                                    onChange={(e) => setTermsAccepted(e.target.checked)}
+                                    className="mt-0.5 h-4 w-4 accent-[#c4ba9d]"
+                                />
+                                <span>I have read and agree to the appointment terms and conditions.</span>
+                            </label>
+                        </div>
+
                         <div className="pt-4 border-t border-gray-50 flex justify-end">
                             <button
                                 type="submit"
-                                disabled={loading || showSuccess || initialLoading || !patientId || hasActiveAppointment}
+                                disabled={loading || showSuccess || initialLoading || !patientId || hasActiveAppointment || !termsAccepted}
                                 className="px-10 py-4 bg-[#555555] text-[#c4ba9d] text-sm font-bold uppercase tracking-[0.18em] rounded-full shadow-lg hover:bg-black transition disabled:cursor-not-allowed disabled:opacity-60"
                             >
                                 {loading ? 'Submitting...' : initialLoading ? 'Loading...' : 'Submit Request'}

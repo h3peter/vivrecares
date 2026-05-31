@@ -13,7 +13,7 @@ const PatientLayout = () => {
                 { label: 'Dashboard', path: '/dashboard' },
                 { label: 'Patient Profile', path: '/profile' },
                 { label: 'Request Appointment', path: '/request-appointment' },
-                { label: 'Appointment History', path: '/appointment-history' },
+                { label: 'My Appointments', path: '/appointment-history' },
                 { label: 'Billing History', path: '/billing-history' },
                 { label: 'Account Settings', path: '/account-settings' },
             ]}

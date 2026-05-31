@@ -2,12 +2,14 @@
 require_once 'auth.php';
 require_once 'config.php';
 require_once 'appointment_reschedule.php';
+require_once 'appointment_expiration.php';
 
 init_api_auth();
 require_roles(['Doctor', 'Admin']);
 
 try {
     ensure_appointment_reschedule_columns($conn);
+    cancel_expired_pending_appointments($conn);
 
     $sql = "SELECT a.appointment_id, a.patient_id, a.appointment_date AS date, a.appointment_time AS time,
                    a.status, CASE WHEN a.branch = 'Main Branch' THEN 'Pasay Branch' ELSE a.branch END AS branch,

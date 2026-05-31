@@ -174,7 +174,7 @@ const PatientDashboard = () => {
                                     onClick={() => navigate('/appointment-history')}
                                     className="w-full rounded-full border border-[#ddd8cf] px-6 py-3 text-center text-[11px] font-bold uppercase tracking-[0.18em] text-[#7a7060] transition hover:border-[#b8a98a] hover:text-[#8f8167] sm:w-auto"
                                 >
-                                    View History
+                                    View Appointments
                                 </button>
                             </div>
                         </div>
@@ -199,7 +199,7 @@ const PatientDashboard = () => {
                                 onClick={() => navigate('/appointment-history')}
                                 className="text-[10px] uppercase tracking-[0.2em] font-bold text-[#9e9485] hover:text-[#8f8167] transition"
                             >
-                                Open History {'->'}
+                                Open Appointments {'->'}
                             </button>
                         </div>
 
@@ -233,7 +233,7 @@ const PatientDashboard = () => {
                                         <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                                             <p className="text-[10px] uppercase tracking-[0.22em] font-bold text-amber-700">Action Needed</p>
                                             <p className="mt-2 text-sm leading-relaxed text-amber-800">
-                                                The clinic proposed a new schedule for this appointment. Open your appointment history to confirm or decline the updated slot.
+                                                The clinic proposed a new schedule for this appointment. Open My Appointments to confirm or decline the updated slot.
                                             </p>
                                         </div>
                                     )}

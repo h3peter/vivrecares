@@ -228,8 +228,8 @@ const AppointmentHistory = () => {
                 <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-[#b2a58d]">Patient Portal</p>
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">Appointment History</h1>
-                        <p className="mt-2 text-sm text-gray-500">Track your past and upcoming appointments in one place.</p>
+                        <h1 className="text-3xl font-bold tracking-tight text-gray-800 lg:text-4xl">My Appointments</h1>
+                        <p className="mt-2 text-sm text-gray-500">Manage active requests, reschedule responses, cancellations, and past appointment records in one place.</p>
                     </div>
                     <button
                         type="button"
@@ -413,7 +413,7 @@ const AppointmentHistory = () => {
                             );
                         })
                     ) : (
-                        <p className="py-10 text-center text-base italic text-gray-400">You have no appointment history.</p>
+                        <p className="py-10 text-center text-base italic text-gray-400">You have no appointments yet.</p>
                     )}
                 </div>
             </div>

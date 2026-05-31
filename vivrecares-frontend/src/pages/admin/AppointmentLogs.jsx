@@ -504,7 +504,7 @@ const AppointmentLogs = () => {
                                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4">
                                     <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-amber-700">Pending Patient Approval</p>
                                     <p className="mt-2 text-sm leading-relaxed text-amber-800">
-                                        This appointment already has a proposed schedule change. The patient can confirm or decline it from their appointment history.
+                                        This appointment already has a proposed schedule change. The patient can confirm or decline it from My Appointments.
                                     </p>
                                     {(selectedApt.previous_appointment_date || selectedApt.previous_appointment_time || selectedApt.previous_branch) && (
                                         <p className="mt-3 text-xs leading-relaxed text-amber-700">

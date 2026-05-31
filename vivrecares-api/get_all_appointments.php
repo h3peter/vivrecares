@@ -2,6 +2,7 @@
 require_once 'auth.php';
 require_once 'config.php';
 require_once 'appointment_reschedule.php';
+require_once 'appointment_expiration.php';
 require_once 'admin_permissions.php';
 
 init_api_auth();
@@ -9,6 +10,7 @@ require_admin_permission($conn, 'appointments');
 
 try {
     ensure_appointment_reschedule_columns($conn);
+    cancel_expired_pending_appointments($conn);
 
     $sql = "SELECT a.appointment_id, a.appointment_date as date, a.appointment_time as time, 
                    a.status,
