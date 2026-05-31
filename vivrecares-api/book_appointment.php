@@ -59,6 +59,7 @@ try {
                                       FROM appointments
                                       WHERE patient_id = ?
                                         AND status IN ('Pending', 'Confirmed', 'Rescheduled')
+                                        AND appointment_date >= CURDATE()
                                       LIMIT 1");
         $activeStmt->execute([$requestedPatientId]);
         if ($activeStmt->fetchColumn()) {

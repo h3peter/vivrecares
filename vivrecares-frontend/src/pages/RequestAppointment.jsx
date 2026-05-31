@@ -26,6 +26,16 @@ const RequestAppointment = () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     const minDate = tomorrow.toISOString().split('T')[0];
 
+    const isCurrentOrFutureAppointment = (appointment) => {
+        if (!appointment?.date) return true;
+        const appointmentDate = new Date(`${appointment.date}T00:00:00`);
+        if (Number.isNaN(appointmentDate.getTime())) return true;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return appointmentDate >= today;
+    };
+
     useEffect(() => {
         const fetchInitialData = async () => {
             const userData = localStorage.getItem('user');
@@ -58,6 +68,7 @@ const RequestAppointment = () => {
                 if (Array.isArray(historyRes.data)) {
                     setHasActiveAppointment(historyRes.data.some((appointment) =>
                         ['pending', 'confirmed', 'rescheduled'].includes(String(appointment.status || '').toLowerCase())
+                        && isCurrentOrFutureAppointment(appointment)
                     ));
                 }
             } catch (error) {
