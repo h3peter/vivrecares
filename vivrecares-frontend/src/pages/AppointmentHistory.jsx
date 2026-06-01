@@ -94,6 +94,10 @@ const AppointmentHistory = () => {
         if (!appointmentDate) return null;
         const status = String(appointment?.status || '').toLowerCase();
 
+        if (['cancelled', 'canceled'].includes(status)) {
+            return null;
+        }
+
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
